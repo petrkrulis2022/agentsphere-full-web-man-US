@@ -55,4 +55,5 @@ export interface DeployedObject {
   scale?: any;
   filecoin_cid?: string;
   ipfs_hash?: string;
+  chainId?: number;
 }

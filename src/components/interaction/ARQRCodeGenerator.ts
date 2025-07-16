@@ -68,24 +68,23 @@ export class ARQRCodeGenerator {
   }
 
   private createBlockchainQRContent(paymentData: PaymentData): string {
-    // Create proper EIP-681 compliant URL format that MetaMask recognizes
+    // Create proper EIP-681 compliant URL format for ERC-20 token transfers
+    const tokenContractAddress = '0x6533fe2Ebb66CcE28FDdBA9663Fe433A308137e9'; // BDAG Token Contract Address
     const recipientAddress = paymentData.merchantAddress;
     const amountInWei = (paymentData.amount * Math.pow(10, 18)).toString();
-    const chainId = 1042; // BlockDAG Primordial Testnet
-    const gasLimit = '21000';
-    const gasPrice = '20000000000'; // 20 gwei
+    const chainId = 1043; // BlockDAG Primordial Testnet - CORRECTED CHAIN ID
     
-    // EIP-681 standard format: ethereum:<address>[@<chain_id>][?<parameters>]
-    const eip681Url = `ethereum:${recipientAddress}@${chainId}?value=${amountInWei}&gas=${gasLimit}&gasPrice=${gasPrice}`;
+    // EIP-681 standard format for ERC-20 token transfers: ethereum:<token_contract>[@<chain_id>]/transfer?address=<recipient>&uint256=<amount>
+    const eip681Url = `ethereum:${tokenContractAddress}@${chainId}/transfer?address=${recipientAddress}&uint256=${amountInWei}`;
     
-    console.log('🎯 Creating MetaMask-compatible EIP-681 QR content:', eip681Url);
+    console.log('🎯 Creating MetaMask-compatible EIP-681 ERC-20 QR content:', eip681Url);
     console.log('📋 QR Data Details:', {
+      tokenContract: tokenContractAddress,
       recipient: recipientAddress,
       amountBDAG: paymentData.amount,
       amountWei: amountInWei,
       chainId: chainId,
-      gasLimit: gasLimit,
-      gasPrice: gasPrice
+      format: 'ERC-20 Transfer'
     });
     
     return eip681Url;
