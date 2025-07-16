@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NEAR AgentSphere | Deploy NEAR Agents in Your Near World</title>
+    <meta name="description" content="Create, interact, and earn USDFC with location-based NEAR agents through NeAR QR Pay technology" />
+    <meta name="keywords" content="NEAR Protocol, NEAR Agents, AR, AgentSphere, NeAR QR Pay, blockchain, AI agents, NEAR Hackathon 2025" />
+    <meta property="og:title" content="NEAR AgentSphere - Deploy NEAR Agents in Your Near World" />
+    <meta property="og:description" content="Revolutionary NEAR-powered AR agent deployment platform with NeAR QR Pay technology. Built for NEAR Protocol Hackathon 2025." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="NEAR AgentSphere - Revolutionary NeAR QR Pay" />
+    <meta name="twitter:description" content="Deploy NEAR agents in your near world with revolutionary AR QR payment system." />
+    
+    <!-- Optimized Content Security Policy for AR and camera functionality -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://*.thirdweb.com https://*.walletconnect.com https://*.walletconnect.org https://*.sentry.io;
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com;
+      img-src 'self' data: blob: https: http:;
+      media-src 'self' blob: mediastream: data:;
+      connect-src 'self' https: wss: ws: https://*.thirdweb.com https://*.walletconnect.com https://*.walletconnect.org https://*.sentry.io https://*.supabase.co https://*.supabase.io;
+      worker-src 'self' blob: data:;
+      child-src 'self' blob: data:;
+      frame-src 'self' https://*.thirdweb.com https://*.walletconnect.com;
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+    ">
+    
+    <!-- Remove restrictive Cross-Origin policies that block camera access -->
+    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

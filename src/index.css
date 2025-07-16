@@ -1,0 +1,250 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #10B981;
+  --primary-light: #34D399;
+  --secondary: #059669;
+  --dark: #1E1B4B;
+  --light: #ECFDF5;
+  --near-green: #00EC97;
+  --near-dark: #000000;
+  --near-emerald: #10B981;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  @apply bg-gradient-to-b from-green-50 to-emerald-50 min-h-screen;
+}
+
+.hero-gradient {
+  @apply bg-gradient-to-r from-green-600 to-emerald-600;
+}
+
+.glow-button {
+  @apply relative overflow-hidden transition-all duration-500;
+}
+
+.glow-button::after {
+  @apply content-[''] absolute top-0 left-0 w-full h-full bg-white opacity-0 transition-opacity duration-300;
+  box-shadow: 0 0 20px 10px rgba(16, 185, 129, 0.5);
+}
+
+.glow-button:hover::after {
+  @apply opacity-20;
+}
+
+.card-hover {
+  @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+}
+
+.aura-coin {
+  @apply relative;
+}
+
+.aura-coin::before {
+  @apply content-[''] absolute -inset-1 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 opacity-75 blur;
+}
+
+.waitlist-gradient {
+  @apply bg-gradient-to-r from-green-500 via-emerald-500 to-green-600;
+}
+
+.feature-card {
+  @apply bg-white bg-opacity-90 backdrop-blur-sm rounded-xl shadow-md p-6 card-hover;
+}
+
+.agent-dot {
+  @apply absolute w-2 h-2 rounded-full bg-green-500;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+  }
+  
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.globe-container {
+  @apply relative;
+}
+
+.globe-container::after {
+  @apply content-[''] absolute top-1/2 left-1/2 w-[120%] h-[120%] -translate-x-1/2 -translate-y-1/2 rounded-full;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0) 70%);
+}
+
+/* Enhanced Deploy Button Styling */
+.deploy-button-enhanced {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 20px rgba(0, 236, 151, 0.3);
+}
+
+.deploy-button-enhanced:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 236, 151, 0.4);
+}
+
+.deploy-button-enhanced .button-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.deploy-button-enhanced .main-action {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.deploy-button-enhanced .storage-action {
+  font-size: 12px;
+  opacity: 0.9;
+  font-weight: 600;
+}
+
+.deploy-button-enhanced .dual-logos {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 11px;
+}
+
+.deploy-button-enhanced .near-logo,
+.deploy-button-enhanced .filecoin-logo {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.deploy-button-enhanced .usdc-logo {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.deploy-button-enhanced .plus {
+  font-weight: bold;
+  opacity: 0.8;
+}
+
+/* Deployment Status Styling */
+.deployment-status .step {
+  text-align: center;
+  padding: 10px 5px;
+  border-radius: 8px;
+  font-size: 12px;
+  transition: all 0.3s ease;
+}
+
+.deployment-status .step.completed {
+  background: rgba(0, 236, 151, 0.2);
+  color: #00EC97;
+  border: 1px solid #00EC97;
+}
+
+.deployment-status .step.pending {
+  background: rgba(255, 255, 255, 0.05);
+  color: #888;
+  border: 1px solid #333;
+}
+
+.deployment-status .step-icon {
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.deployment-status .step-text {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* Success Modal Styling */
+.success-content .result-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 20px;
+  border-left: 4px solid #00EC97;
+}
+
+.success-content .result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+  padding: 5px 0;
+  gap: 10px;
+}
+
+.success-content .result-item .label {
+  flex-shrink: 0;
+  min-width: 100px;
+}
+
+.success-content .result-item .value {
+  flex: 1;
+  text-align: right;
+  word-break: break-all;
+}
+
+.success-content .next-step-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 10px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  transition: background 0.3s ease;
+}
+
+.success-content .next-step-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.success-content .powered-by {
+  text-align: center;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .deploy-button-enhanced .main-action {
+    font-size: 16px;
+  }
+  
+  .deploy-button-enhanced .storage-action {
+    font-size: 11px;
+  }
+  
+  .deploy-button-enhanced .dual-logos {
+    font-size: 10px;
+    gap: 6px;
+  }
+  
+  .success-content .result-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  
+  .success-content .result-item .value {
+    text-align: left;
+  }
+}
