@@ -178,10 +178,14 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
       return;
     }
     
-    // Use connected wallet address as receiving address (for testing purposes)
-    const receivingAddress = connectedAddress;
+    // Validate wallet address format
+    if (!connectedAddress.startsWith('0x') || connectedAddress.length !== 42) {
+      alert('Invalid wallet address format. Please ensure MetaMask is properly connected.');
+      return;
+    }
     
-    console.log('🔗 Using connected wallet as recipient:', receivingAddress);
+    console.log('🔗 Using connected wallet as recipient:', connectedAddress);
+    console.log('💰 Interaction fee:', getInteractionFee(selectedInteractionType), 'BDAG');
 
     const paymentData: PaymentData = {
       agentId: agent.name,
@@ -190,16 +194,16 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
       transactionId: generateTransactionId(),
       timestamp: Date.now(),
       walletAddress: connectedAddress,
-      merchantAddress: receivingAddress,
+      merchantAddress: connectedAddress, // Using connected wallet for testing
       currency: 'BDAG',
       network: 'BlockDAG-Primordial-Testnet'
     };
 
-    console.log('🎯 Generating EIP-681 compliant QR payment with data:', paymentData);
+    console.log('🎯 Generating MetaMask-compatible QR payment with data:', paymentData);
     setQrCodeData(paymentData);
     setPaymentStep('qr-generated');
     
-    // Generate EIP-681 compliant AR QR code
+    // Generate MetaMask-compatible AR QR code
     if (window.generateARQRCode) {
       window.generateARQRCode(paymentData);
     }
@@ -621,6 +625,10 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
                           }
                         </span>
                       </div>
+                      <div className="flex justify-between items-center text-sm mt-1">
+                        <span className="text-gray-500">Network:</span>
+                        <span className="text-gray-700 text-xs">BlockDAG Primordial (1042)</span>
+                      </div>
                     </div>
                     
                     {/* EIP-681 Compliant AR QR Payment Option */}
@@ -893,7 +901,7 @@ const ARQRModal: React.FC<ARQRModalProps> = ({
 
       {/* Instructions */}
       <div className="instructions">
-        <p>🦊 <strong>MetaMask Instructions:</strong> This QR code follows EIP-681 standard and contains BDAG transaction data. Open MetaMask mobile app and scan this QR code to initiate the payment.</p>
+        <p>🦊 <strong>MetaMask Instructions:</strong> Open MetaMask mobile app → Tap "Send" → Tap camera icon → Scan this QR code. The transaction details will auto-populate for {paymentData.amount} BDAG on BlockDAG Primordial network.</p>
       </div>
 
       {/* Action Buttons */}
@@ -914,7 +922,7 @@ const ARQRModal: React.FC<ARQRModalProps> = ({
 
       {/* AR Simulation Note */}
       <div className="ar-note">
-        <small>💡 EIP-681 Compliant: MetaMask-compatible QR code for {paymentData.amount} BDAG to {connectedAddress || paymentData.merchantAddress} on BlockDAG Primordial Testnet (Chain ID: 1042)</small>
+        <small>💡 <strong>EIP-681 Standard:</strong> ethereum:{connectedAddress || paymentData.merchantAddress}@1042?value={(paymentData.amount * Math.pow(10, 18)).toString()}&gas=21000&gasPrice=20000000000</small>
       </div>
     </div>
   );

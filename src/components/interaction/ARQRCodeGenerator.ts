@@ -68,19 +68,26 @@ export class ARQRCodeGenerator {
   }
 
   private createBlockchainQRContent(paymentData: PaymentData): string {
-    // Create EIP-681 compliant transaction format for MetaMask compatibility
-    const eip681Data: EIP681Data = {
-      to: paymentData.merchantAddress,
-      value: (paymentData.amount * Math.pow(10, 18)).toString(), // Convert to wei
-      gas: '21000',
-      gasPrice: '20000000000', // 20 gwei
-      chainId: 1042 // BlockDAG Primordial Testnet
-    };
+    // Create proper EIP-681 compliant URL format that MetaMask recognizes
+    const recipientAddress = paymentData.merchantAddress;
+    const amountInWei = (paymentData.amount * Math.pow(10, 18)).toString();
+    const chainId = 1042; // BlockDAG Primordial Testnet
+    const gasLimit = '21000';
+    const gasPrice = '20000000000'; // 20 gwei
     
-    // Create EIP-681 compliant URL format
-    const eip681Url = `ethereum:${eip681Data.to}@${eip681Data.chainId}?value=${eip681Data.value}&gas=${eip681Data.gas}&gasPrice=${eip681Data.gasPrice}`;
+    // EIP-681 standard format: ethereum:<address>[@<chain_id>][?<parameters>]
+    const eip681Url = `ethereum:${recipientAddress}@${chainId}?value=${amountInWei}&gas=${gasLimit}&gasPrice=${gasPrice}`;
     
-    console.log('🎯 Creating EIP-681 compliant QR content:', eip681Url);
+    console.log('🎯 Creating MetaMask-compatible EIP-681 QR content:', eip681Url);
+    console.log('📋 QR Data Details:', {
+      recipient: recipientAddress,
+      amountBDAG: paymentData.amount,
+      amountWei: amountInWei,
+      chainId: chainId,
+      gasLimit: gasLimit,
+      gasPrice: gasPrice
+    });
+    
     return eip681Url;
   }
 
