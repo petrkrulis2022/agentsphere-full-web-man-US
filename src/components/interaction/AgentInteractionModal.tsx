@@ -172,8 +172,16 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
   const handleGenerateQRPayment = async () => {
     if (!agent) return;
     
-    // Use connected wallet address as receiving address (as specified in requirements)
-    const receivingAddress = connectedAddress || '0x0000000000000000000000000000000000000000';
+    // Validate connected wallet address
+    if (!connectedAddress) {
+      alert('Please connect your MetaMask wallet first to generate QR payment');
+      return;
+    }
+    
+    // Use connected wallet address as receiving address (for testing purposes)
+    const receivingAddress = connectedAddress;
+    
+    console.log('🔗 Using connected wallet as recipient:', receivingAddress);
 
     const paymentData: PaymentData = {
       agentId: agent.name,
@@ -181,17 +189,17 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
       amount: getInteractionFee(selectedInteractionType),
       transactionId: generateTransactionId(),
       timestamp: Date.now(),
-      walletAddress: connectedAddress || 'user-wallet-address',
+      walletAddress: connectedAddress,
       merchantAddress: receivingAddress,
       currency: 'BDAG',
       network: 'BlockDAG-Primordial-Testnet'
     };
 
-    console.log('🎯 Generating real QR payment with data:', paymentData);
+    console.log('🎯 Generating EIP-681 compliant QR payment with data:', paymentData);
     setQrCodeData(paymentData);
     setPaymentStep('qr-generated');
     
-    // Generate real AR QR code
+    // Generate EIP-681 compliant AR QR code
     if (window.generateARQRCode) {
       window.generateARQRCode(paymentData);
     }
@@ -587,35 +595,48 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
                 {paymentStep === 'selection' && (
                   <div className="text-center">
                     <div className="mb-4">
-                      <Wallet size={48} className="mx-auto text-blue-500" />
+                      <div className="flex items-center justify-center space-x-2">
+                        <Wallet size={48} className="text-blue-500" />
+                        <span className="text-2xl">🦊</span>
+                      </div>
                     </div>
-                    <h3 className="text-lg font-semibold mb-2">Choose Payment Method</h3>
+                    <h3 className="text-lg font-semibold mb-2">MetaMask Compatible Payment</h3>
                     <p className="text-gray-600 mb-4">
                       Start {selectedInteractionType} with {agent.name}
                     </p>
                     <div className="bg-gray-50 rounded-lg p-3 mb-6">
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center mb-2">
                         <span className="text-gray-600">Cost:</span>
                         <div className="flex items-center text-green-600 font-semibold">
                           <DollarSign size={16} />
                           <span>{getInteractionFee(selectedInteractionType)} BDAG</span>
                         </div>
                       </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-500">To Address:</span>
+                        <span className="text-gray-700 font-mono text-xs">
+                          {connectedAddress ? 
+                            `${connectedAddress.slice(0, 6)}...${connectedAddress.slice(-4)}` : 
+                            'Connect Wallet'
+                          }
+                        </span>
+                      </div>
                     </div>
                     
-                    {/* Revolutionary AR QR Payment Option */}
+                    {/* EIP-681 Compliant AR QR Payment Option */}
                     <div className="space-y-3 mb-6">
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={handleGenerateQRPayment}
+                        disabled={!connectedAddress}
                         className="w-full p-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-lg transition-all"
                       >
                         <div className="flex items-center justify-center space-x-3">
                           <QrCode size={24} />
                           <div className="text-left">
-                            <div className="font-semibold">🚀 Real AR QR Payment</div>
-                            <div className="text-sm opacity-90">Generate real BDAG QR code</div>
+                            <div className="font-semibold">🦊 MetaMask AR QR Payment</div>
+                            <div className="text-sm opacity-90">EIP-681 compliant BDAG QR code</div>
                           </div>
                         </div>
                       </motion.button>
@@ -872,7 +893,7 @@ const ARQRModal: React.FC<ARQRModalProps> = ({
 
       {/* Instructions */}
       <div className="instructions">
-        <p>📱 <strong>Instructions:</strong> This is a real QR code containing BDAG transaction data. Scan with a compatible wallet or use the simulation button below.</p>
+        <p>🦊 <strong>MetaMask Instructions:</strong> This QR code follows EIP-681 standard and contains BDAG transaction data. Open MetaMask mobile app and scan this QR code to initiate the payment.</p>
       </div>
 
       {/* Action Buttons */}
@@ -893,7 +914,7 @@ const ARQRModal: React.FC<ARQRModalProps> = ({
 
       {/* AR Simulation Note */}
       <div className="ar-note">
-        <small>💡 Real QR Code: Contains actual BDAG transaction data for {paymentData.amount} BDAG to {connectedAddress || paymentData.merchantAddress}</small>
+        <small>💡 EIP-681 Compliant: MetaMask-compatible QR code for {paymentData.amount} BDAG to {connectedAddress || paymentData.merchantAddress} on BlockDAG Primordial Testnet (Chain ID: 1042)</small>
       </div>
     </div>
   );

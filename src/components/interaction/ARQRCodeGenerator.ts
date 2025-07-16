@@ -1,4 +1,5 @@
 import QRCode from 'qrcode';
+import EthereumQRPlugin from 'ethereum-qr-code';
 
 export interface PaymentData {
   agentId: string;
@@ -10,6 +11,16 @@ export interface PaymentData {
   merchantAddress: string;
   currency: string;
   network: string;
+}
+
+export interface EIP681Data {
+  to: string;
+  value?: string;
+  gas?: string;
+  gasPrice?: string;
+  chainId?: number;
+  functionName?: string;
+  argsDefaults?: any[];
 }
 
 export interface BlockchainData {
@@ -57,22 +68,20 @@ export class ARQRCodeGenerator {
   }
 
   private createBlockchainQRContent(paymentData: PaymentData): string {
-    // Create real blockchain transaction format for BlockDAG network
-    const blockchainData: BlockchainData = {
+    // Create EIP-681 compliant transaction format for MetaMask compatibility
+    const eip681Data: EIP681Data = {
       to: paymentData.merchantAddress,
-      amount: paymentData.amount,
-      currency: paymentData.currency || 'BDAG',
-      memo: `Payment for ${paymentData.interactionType} with ${paymentData.agentId}`,
-      transactionId: paymentData.transactionId,
-      network: paymentData.network || 'BlockDAG-Primordial-Testnet',
-      timestamp: paymentData.timestamp,
-      chainId: 1042, // BlockDAG Primordial Testnet
+      value: (paymentData.amount * Math.pow(10, 18)).toString(), // Convert to wei
+      gas: '21000',
       gasPrice: '20000000000', // 20 gwei
-      gasLimit: '21000'
+      chainId: 1042 // BlockDAG Primordial Testnet
     };
     
-    console.log('🎯 Creating real blockchain QR content:', blockchainData);
-    return JSON.stringify(blockchainData);
+    // Create EIP-681 compliant URL format
+    const eip681Url = `ethereum:${eip681Data.to}@${eip681Data.chainId}?value=${eip681Data.value}&gas=${eip681Data.gas}&gasPrice=${eip681Data.gasPrice}`;
+    
+    console.log('🎯 Creating EIP-681 compliant QR content:', eip681Url);
+    return eip681Url;
   }
 
   private async generateQRTexture(content: string): Promise<HTMLCanvasElement> {
@@ -88,7 +97,7 @@ export class ARQRCodeGenerator {
         canvas.width = 512;
         canvas.height = 512;
         
-        // Generate real QR code using imported QRCode library
+        // Generate EIP-681 compliant QR code for MetaMask compatibility
         QRCode.toCanvas(canvas, content, {
           width: 512,
           margin: 2,
@@ -99,10 +108,10 @@ export class ARQRCodeGenerator {
           errorCorrectionLevel: 'M'
         }, (error: Error | null | undefined) => {
           if (error) {
-            console.error('❌ QR code generation failed:', error);
+            console.error('❌ EIP-681 QR code generation failed:', error);
             reject(error);
           } else {
-            console.log('✅ Real QR code generated successfully');
+            console.log('✅ EIP-681 compliant QR code generated successfully');
             resolve(canvas);
           }
         });
@@ -223,7 +232,7 @@ export class ARQRCodeGenerator {
     // Create floating text display above QR code
     const textEntity = document.createElement('a-entity');
     
-    const paymentText = `${paymentData.amount} ${paymentData.currency || 'BDAG'}\n${paymentData.interactionType.toUpperCase()} CHAT\nScan to Pay\nExpires in 5:00`;
+    const paymentText = `${paymentData.amount} BDAG\n${paymentData.interactionType.toUpperCase()} CHAT\nTo: ${paymentData.merchantAddress.slice(0, 6)}...${paymentData.merchantAddress.slice(-4)}\nScan with MetaMask\nExpires in 5:00`;
     
     textEntity.setAttribute('text', {
       value: paymentText,
@@ -295,12 +304,22 @@ export class ARQRCodeGenerator {
   private handleQRCodeScan(paymentData: PaymentData): void {
     console.log('🔍 QR Code scanned!', paymentData);
     
+    // Show MetaMask-compatible transaction details
+    const transactionDetails = {
+      to: paymentData.merchantAddress,
+      value: `${paymentData.amount} BDAG`,
+      chainId: 1042,
+      network: 'BlockDAG Primordial Testnet'
+    };
+    
+    console.log('📱 MetaMask transaction details:', transactionDetails);
+    
     // Trigger blockchain payment simulation
     if (window.blockchainPaymentSimulator) {
       window.blockchainPaymentSimulator.simulatePayment(paymentData);
     } else {
       // Fallback: show alert
-      alert(`QR Code Scanned!\nAmount: ${paymentData.amount} USDFC\nAgent: ${paymentData.agentId}\nType: ${paymentData.interactionType}`);
+      alert(`MetaMask Compatible QR Code Scanned!\nAmount: ${paymentData.amount} BDAG\nTo: ${paymentData.merchantAddress}\nAgent: ${paymentData.agentId}\nType: ${paymentData.interactionType}\nChain ID: 1042`);
     }
   }
 

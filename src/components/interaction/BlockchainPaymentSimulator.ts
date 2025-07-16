@@ -43,6 +43,10 @@ export class BlockchainPaymentSimulator {
               <span>${qrData.amount} ${qrData.currency || 'BDAG'}</span>
             </div>
             <div class="detail-row">
+              <span>Chain ID:</span>
+              <span>1042 (BlockDAG Primordial)</span>
+            </div>
+            <div class="detail-row">
               <span>Gas Fee:</span>
               <span>0.001 BDAG</span>
             </div>
@@ -62,11 +66,11 @@ export class BlockchainPaymentSimulator {
           
           <div class="wallet-actions">
             <button class="btn-cancel">Cancel</button>
-            <button class="btn-confirm">Sign & Send</button>
+            <button class="btn-confirm">🦊 Sign & Send with MetaMask</button>
           </div>
           
           <div class="wallet-footer">
-            <small>🔒 Secured by BlockDAG Network</small>
+            <small>🔒 EIP-681 Compatible • Secured by BlockDAG Network</small>
           </div>
         </div>
       `;
