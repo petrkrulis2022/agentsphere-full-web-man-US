@@ -354,12 +354,12 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
       <div className="absolute top-4 left-4 z-10 bg-black bg-opacity-70 backdrop-blur-sm rounded-xl p-4 text-white max-w-sm">
         <div className="flex items-center mb-3">
           <Eye className="h-5 w-5 mr-2 text-green-400" />
-          <h2 className="text-lg font-bold">NeAR Viewer</h2>
+          <h2 className="text-lg font-bold">AR Viewer</h2>
         </div>
         
         <div className="space-y-2 text-sm">
           <div className="flex items-center justify-between">
-            <span className="text-gray-300">Active NEAR Agents:</span>
+            <span className="text-gray-300">Active AI Agents:</span>
             <span className="font-bold text-green-400">{objects.length}</span>
           </div>
           
