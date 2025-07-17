@@ -644,7 +644,7 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
                         <div className="flex items-center justify-center space-x-3">
                           <QrCode size={24} />
                           <div className="text-left">
-                            <div className="font-semibold">🦊 MetaMask AR QR Payment</div>
+                            <div className="font-semibold">🦊 MetaMask QR Payment</div>
                             <div className="text-sm opacity-90">EIP-681 compliant BDAG QR code</div>
                           </div>
                         </div>

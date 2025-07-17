@@ -1,8 +1,8 @@
-# NEAR AgentSphere - Complete Ecosystem
+# AgentSphere - Complete Ecosystem
 
 ## 🌟 **Three-Repository Architecture**
 
-AgentSphere is a comprehensive NEAR Protocol-powered platform consisting of three interconnected repositories:
+AgentSphere is a comprehensive blockchain-powered platform consisting of three interconnected repositories:
 
 ### 🏠 **1. Main Repository (This Repo)**
 **AgentSphere Landing Page & Core UI**
@@ -12,8 +12,9 @@ AgentSphere is a comprehensive NEAR Protocol-powered platform consisting of thre
 - Integration hub for all components
 
 ### 🔗 **2. NEAR + Filecoin + USDC Integrations**
+### 🔗 **2. Blockchain + Storage + Payment Integrations**
 **Repository:** [geospatila-agent-near-shade-integrations](https://github.com/BeerSlothAgent/geospatila-agent-near-shade-integrations)
-- NEAR Protocol smart contracts
+- Blockchain smart contracts
 - Filecoin/IPFS storage integration
 - USDC payment processing
 - Blockchain deployment logic
@@ -32,11 +33,12 @@ AgentSphere is a comprehensive NEAR Protocol-powered platform consisting of thre
 - **AR Viewer:** [Live AR Experience](https://admirable-hamster-b9c370.netlify.app/)
 
 ## 🎯 **NEAR Hackathon 2025 Integration**
+## 🎯 **Blockchain Integration**
 
-### **NEAR Protocol Features:**
+### **Blockchain Features:**
 - ✅ Smart contract deployment
-- ✅ NEAR wallet integration
-- ✅ NEAR-based payments
+- ✅ Wallet integration
+- ✅ Blockchain-based payments
 - ✅ Decentralized agent management
 
 ### **Filecoin/IPFS Features:**
@@ -55,7 +57,7 @@ AgentSphere is a comprehensive NEAR Protocol-powered platform consisting of thre
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    NEAR AgentSphere                         │
+│                    AgentSphere                              │
 │                   Complete Ecosystem                        │
 └─────────────────────────────────────────────────────────────┘
                               │
@@ -70,6 +72,7 @@ AgentSphere is a comprehensive NEAR Protocol-powered platform consisting of thre
     │ Repository  │  │  +USDC Integr.  │  │   Repository    │
     │             │  │                 │  │                 │
     │ • Landing   │  │ • NEAR Smart    │  │ • AR Camera     │
+    │ • Landing   │  │ • Smart         │  │ • AR Camera     │
     │ • UI/UX     │  │   Contracts     │  │ • WebXR         │
     │ • Auth      │  │ • Filecoin      │  │ • A-Frame       │
     │ • Hub       │  │ • IPFS Storage  │  │ • GPS/Location  │
@@ -86,8 +89,8 @@ AgentSphere is a comprehensive NEAR Protocol-powered platform consisting of thre
 - React Router
 - Vite
 
-### **Blockchain (NEAR+Filecoin+USDC Repo):**
-- NEAR Protocol SDK
+### **Blockchain (Blockchain+Storage+Payment Repo):**
+- Blockchain Protocol SDK
 - Filecoin/IPFS integration
 - USDC smart contracts
 - Web3 wallet connections
@@ -107,7 +110,7 @@ AgentSphere is a comprehensive NEAR Protocol-powered platform consisting of thre
 # Main repository
 git clone https://github.com/BeerSlothAgent/Agent-Sphere-1.git
 
-# NEAR + Filecoin + USDC integrations
+# Blockchain + Storage + Payment integrations
 git clone https://github.com/BeerSlothAgent/geospatila-agent-near-shade-integrations.git
 
 # AR Viewer
@@ -153,11 +156,11 @@ VITE_THIRDWEB_CLIENT_ID=your_thirdweb_id
 
 ## 🎯 **Key Features**
 
-### **🔗 NEAR Protocol Integration:**
+### **🔗 Blockchain Integration:**
 - Smart contract deployment for agents
-- NEAR wallet connectivity
+- Wallet connectivity
 - Decentralized agent ownership
-- NEAR-based payment processing
+- Blockchain-based payment processing
 
 ### **📁 Filecoin/IPFS Storage:**
 - Agent metadata storage on IPFS
@@ -177,10 +180,10 @@ VITE_THIRDWEB_CLIENT_ID=your_thirdweb_id
 - GPS-accurate positioning
 - WebXR compatibility
 
-## 🏆 **NEAR Hackathon 2025 Submission**
+## 🏆 **Blockchain Innovation**
 
 This project demonstrates:
-- ✅ **Deep NEAR Protocol integration**
+- ✅ **Deep blockchain integration**
 - ✅ **Innovative use of Filecoin/IPFS**
 - ✅ **Real-world utility and adoption potential**
 - ✅ **Professional development practices**
@@ -203,7 +206,7 @@ MIT License - See individual repositories for specific license terms.
 ## 🔗 **Links**
 
 - **Main Repository:** [Agent-Sphere-1](https://github.com/BeerSlothAgent/Agent-Sphere-1)
-- **NEAR+Filecoin+USDC:** [geospatila-agent-near-shade-integrations](https://github.com/BeerSlothAgent/geospatila-agent-near-shade-integrations)
+- **Blockchain+Storage+Payment:** [geospatila-agent-near-shade-integrations](https://github.com/BeerSlothAgent/geospatila-agent-near-shade-integrations)
 - **AR Viewer:** [geospatial-agent-ar-viewer](https://github.com/BeerSlothAgent/geospatial-agent-ar-viewer)
 - **Presentation** https://agentsphere-0xa1tku.gamma.site/
 - **Main AgentSPher** https://playful-cranachan-e941e5.netlify.app/
@@ -212,5 +215,5 @@ MIT License - See individual repositories for specific license terms.
 
 ---
 
-**Built for NEAR Protocol Hackathon 2025** 🚀
-**Powered by NEAR + Filecoin + USDC** 💎
+**Built with Blockchain Innovation** 🚀
+**Powered by Blockchain + Filecoin + USDC** 💎
