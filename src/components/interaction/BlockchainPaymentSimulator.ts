@@ -60,7 +60,7 @@ export class BlockchainPaymentSimulator {
             </div>
             <div class="detail-row">
               <span>Network:</span>
-              <span>${qrData.network || 'BlockDAG-Primordial-Testnet'}</span>
+              <span>BlockDAG Primordial (1043)</span>
             </div>
           </div>
           
