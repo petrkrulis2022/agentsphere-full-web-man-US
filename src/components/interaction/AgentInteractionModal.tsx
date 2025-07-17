@@ -628,7 +628,7 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
                       </div>
                       <div className="flex justify-between items-center text-sm mt-1">
                         <span className="text-gray-500">Network:</span>
-                        <span className="text-gray-700 text-xs">BlockDAG Primordial (1043)</span>
+                        <span className="text-gray-700 text-xs">BlockDAG Primordial Testnet (1043)</span>
                       </div>
                     </div>
                     
@@ -756,20 +756,22 @@ const ARQRModal: React.FC<ARQRModalProps> = ({
   const generateLargeQRCode = async () => {
     setQrGenerating(true);
     try {
-      // Construct the EIP-681 compliant URL for ERC-20 token transfer
-      // Format: ethereum:<token_contract_address>[@<chain_id>]/transfer?address=<recipient_address>&uint256=<amount_in_wei>
+      // Construct the EIP-681 compliant URL for BDAG ERC-20 token transfer
+      // Format: ethereum:<token_contract_address>@<chain_id>/transfer?address=<recipient_address>&uint256=<amount_in_wei>
       const tokenContractAddress = '0x6533fe2Ebb66CcE28FDdBA9663Fe433A308137e9'; // BDAG Token Contract Address
-      const amountInWei = (paymentData.amount * Math.pow(10, 18)).toString();
+      const amountInWei = (paymentData.amount * Math.pow(10, 18)).toString(); // BDAG uses 18 decimals
       const eip681Url = `ethereum:${tokenContractAddress}@1043/transfer?address=${paymentData.merchantAddress}&uint256=${amountInWei}`;
 
-      console.log('🎯 Generating EIP-681 compliant ERC-20 QR code:', eip681Url);
-      console.log('📋 ERC-20 Transfer Details:', {
+      console.log('🎯 Generating EIP-681 compliant BDAG ERC-20 QR code:', eip681Url);
+      console.log('📋 BDAG ERC-20 Transfer Details:', {
         tokenContract: tokenContractAddress,
         recipient: paymentData.merchantAddress,
         amountBDAG: paymentData.amount,
         amountWei: amountInWei,
         chainId: 1043,
-        format: 'ERC-20 Transfer'
+        format: 'BDAG ERC-20 Transfer',
+        decimals: 18,
+        network: 'BlockDAG Primordial Testnet'
       });
       
       // Import and use QRCode library dynamically
@@ -903,7 +905,8 @@ const ARQRModal: React.FC<ARQRModalProps> = ({
 
       {/* Instructions */}
       <div className="instructions">
-        <p>🦊 <strong>MetaMask Instructions:</strong> Open MetaMask mobile app → Tap "Send" → Tap camera icon → Scan this QR code. The ERC-20 token transfer will auto-populate for {paymentData.amount} BDAG tokens on BlockDAG Primordial network (Chain ID: 1043).</p>
+        <p>🦊 <strong>MetaMask Instructions:</strong> Open MetaMask mobile app → Tap "Send" → Tap camera icon → Scan this QR code. The BDAG token transfer will auto-populate for {paymentData.amount} BDAG tokens on BlockDAG Primordial Testnet (Chain ID: 1043).</p>
+        <p><strong>⚠️ Important:</strong> Make sure MetaMask is connected to BlockDAG Primordial Testnet and the BDAG token (0x6533fe2Ebb66CcE28FDdBA9663Fe433A308137e9) is added to your wallet.</p>
       </div>
 
       {/* Action Buttons */}
@@ -924,7 +927,7 @@ const ARQRModal: React.FC<ARQRModalProps> = ({
 
       {/* AR Simulation Note */}
       <div className="ar-note">
-        <small>💡 <strong>EIP-681 Standard:</strong> ethereum:0x6533fe2Ebb66CcE28FDdBA9663Fe433A308137e9@1043/transfer?address={connectedAddress || paymentData.merchantAddress}&uint256={(paymentData.amount * Math.pow(10, 18)).toString()}</small>
+        <small>💡 <strong>EIP-681 BDAG Transfer:</strong> ethereum:0x6533fe2Ebb66CcE28FDdBA9663Fe433A308137e9@1043/transfer?address={connectedAddress || paymentData.merchantAddress}&uint256={(paymentData.amount * Math.pow(10, 18)).toString()}</small>
       </div>
     </div>
   );

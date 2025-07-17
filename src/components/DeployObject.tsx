@@ -96,7 +96,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   });
 
   // BDAG token contract address
-  const BDAG_CONTRACT = '0x6533fe2Ebb66CcE28FDdBA9663Fe433A308137e9';
+  const BDAG_CONTRACT = '0x6533fe2Ebb66CcE28FDdBA9663Fe433A308137e9'; // BDAG Token on BlockDAG Primordial Testnet
 
   // Agent type options
   const agentTypes = [
