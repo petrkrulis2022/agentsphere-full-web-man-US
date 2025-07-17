@@ -61,7 +61,7 @@ const AuthSection = ({ waitlistCount, setWaitlistCount, supabase }: AuthSectionP
           >
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Join the Waitlist</h2>
             <p className="mt-4 text-lg text-gray-600 max-w-lg">
-              Be among the first to deploy NEAR agents at your school. Early access members get bonus USDFC and exclusive NEAR agent templates.
+              Be among the first to deploy AI agents at your school. Early access members get bonus USDFC and exclusive AI agent templates.
             </p>
             
             <div className="mt-8">
@@ -102,7 +102,7 @@ const AuthSection = ({ waitlistCount, setWaitlistCount, supabase }: AuthSectionP
               </div>
               <h3 className="mt-4 text-xl font-bold text-gray-900">Earn 500 USDFC</h3>
               <p className="mt-2 text-gray-600">
-                Join now and receive 500 USDFC when we launch - enough to deploy your first 5 NEAR agents!
+                Join now and receive 500 USDFC when we launch - enough to deploy your first 5 AI agents!
               </p>
             </div>
           </motion.div>
@@ -118,7 +118,7 @@ const AuthSection = ({ waitlistCount, setWaitlistCount, supabase }: AuthSectionP
               <div className="px-6 py-8 sm:p-10 sm:pb-6">
                 <div className="flex justify-between items-baseline">
                   <h3 className="text-2xl leading-8 font-extrabold text-white sm:text-3xl">
-                    NEAR Early Access
+                    Early Access
                   </h3>
                   <span className="px-3 py-1 rounded-full text-sm font-semibold bg-white bg-opacity-20 text-white">
                     Limited Spots
@@ -129,7 +129,7 @@ const AuthSection = ({ waitlistCount, setWaitlistCount, supabase }: AuthSectionP
                   <span className="ml-1 text-xl font-semibold">for beta testers</span>
                 </div>
                 <p className="mt-5 text-lg text-white text-opacity-90">
-                  Get exclusive early access to NEAR AgentSphere and help shape the future of NeAR agents.
+                  Get exclusive early access to AgentSphere and help shape the future of AR agents.
                 </p>
               </div>
               
@@ -206,7 +206,7 @@ const AuthSection = ({ waitlistCount, setWaitlistCount, supabase }: AuthSectionP
                     </div>
                     <h3 className="mt-4 text-xl font-medium text-white">You're on the list!</h3>
                     <p className="mt-2 text-white text-opacity-80">
-                      We'll notify you when NEAR AgentSphere is ready for early access.
+                      We'll notify you when AgentSphere is ready for early access.
                     </p>
                     
                     <div className="mt-8 bg-white rounded-xl shadow-md p-6">

@@ -53,9 +53,9 @@ const MapVisualization = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900">NEAR Agents Around the Globe</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900">AI Agents Around the Globe</h2>
           <p className="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">
-            Join thousands of students deploying NEAR agents at schools and communities worldwide with NeAR QR Pay
+            Join thousands of students deploying AI agents at schools and communities worldwide with AR QR Pay
           </p>
         </motion.div>
 
@@ -89,7 +89,7 @@ const MapVisualization = () => {
               <div className="text-sm font-medium text-gray-700">
                 <div className="flex items-center space-x-2 mb-1">
                   <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                  <span>5,723 Active NEAR Agents</span>
+                  <span>5,723 Active AI Agents</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 rounded-full bg-green-500"></div>
@@ -97,7 +97,7 @@ const MapVisualization = () => {
                 </div>
                 <div className="flex items-center space-x-2 mt-1">
                   <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                  <span>NeAR QR Pay Active</span>
+                  <span>AR QR Pay Active</span>
                 </div>
               </div>
             </div>

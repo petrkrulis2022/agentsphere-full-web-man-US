@@ -5,31 +5,31 @@ const Features = () => {
   const features = [
     {
       icon: <Scan className="w-10 h-10 text-green-600" />,
-      title: "Scan & Deploy NEAR Agents",
-      description: "Use your phone to scan real locations and deploy personalized NEAR agents",
+      title: "Scan & Deploy Agents",
+      description: "Use your phone to scan real locations and deploy personalized AI agents",
       image: "https://images.pexels.com/photos/7014337/pexels-photo-7014337.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
       delay: 0.1
     },
     {
       icon: <Glasses className="w-10 h-10 text-green-600" />,
-      title: "NeAR Interaction",
-      description: "See and talk to NEAR agents through augmented reality on your mobile device",
+      title: "AR Interaction",
+      description: "See and talk to AI agents through augmented reality on your mobile device",
       image: "https://images.pexels.com/photos/3761348/pexels-photo-3761348.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
       delay: 0.2
     },
     {
       icon: <Coins className="w-10 h-10 text-green-600" />,
-      title: "NeAR QR Pay",
-      description: "Revolutionary AR QR payment system powered by NEAR Protocol for instant transactions",
+      title: "AR QR Pay",
+      description: "Revolutionary AR QR payment system powered by blockchain technology for instant transactions",
       image: "https://images.pexels.com/photos/844124/pexels-photo-844124.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
       delay: 0.3
     }
   ];
 
   const agentTypes = [
-    { name: "NEAR Study Buddy", emoji: "📚" },
-    { name: "NEAR Campus Guide", emoji: "🧭" },
-    { name: "NEAR Event Announcer", emoji: "📢" }
+    { name: "AI Study Buddy", emoji: "📚" },
+    { name: "AI Campus Guide", emoji: "🧭" },
+    { name: "AI Event Announcer", emoji: "📢" }
   ];
 
   return (
@@ -113,7 +113,6 @@ const Features = () => {
                 <span className="text-white text-2xl">🔗</span>
               </div>
               <h4 className="font-bold text-lg mb-2">NEAR + Filecoin + USDC</h4>
-              <h4 className="font-bold text-lg mb-2">Blockchain + Storage + Payments</h4>
               <p className="text-gray-600 text-sm mb-4">Blockchain integrations and smart contracts</p>
               <a 
                 href="https://github.com/BeerSlothAgent/geospatila-agent-near-shade-integrations" 
@@ -143,7 +142,6 @@ const Features = () => {
           </div>
           
           <h3 className="text-2xl font-bold text-center mb-6">Popular NEAR Agent Types</h3>
-          <h3 className="text-2xl font-bold text-center mb-6">Popular AI Agent Types</h3>
           <div className="flex flex-wrap justify-center gap-4">
             {agentTypes.map((agent, index) => (
               <div 

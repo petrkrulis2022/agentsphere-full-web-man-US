@@ -108,7 +108,7 @@ const Hero = () => {
   const phones = [
     {
       id: 'deploy',
-      title: '🚀 Deploy NEAR Agent',
+      title: '🚀 Deploy Agent',
       subtitle: 'Create & Place',
       description: 'Design your AI agent and deploy it at precise locations',
       buttonText: 'Deploy Agent',
@@ -121,7 +121,7 @@ const Hero = () => {
             <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3">
               <Plus className="text-white text-2xl" />
             </div>
-            <div className="font-bold text-sm">NEAR Agent Configuration</div>
+            <div className="font-bold text-sm">Agent Configuration</div>
             <div className="text-xs opacity-80">Choose type, name & location</div>
           </div>
         </div>
@@ -129,7 +129,7 @@ const Hero = () => {
     },
     {
       id: 'preview',
-      title: '🔍 Preview NEAR Agents',
+      title: '🔍 Preview Agents',
       subtitle: 'Test & Debug',
       description: 'Test your deployed AI agents in our AR preview environment',
       buttonText: 'AR Preview',
@@ -143,7 +143,7 @@ const Hero = () => {
             <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3">
               <Eye className="text-white text-2xl" />
             </div>
-            <div className="font-bold text-sm">NeAR Testing Mode</div>
+            <div className="font-bold text-sm">AR Testing Mode</div>
             <div className="text-xs opacity-80">View & interact with AI agents</div>
           </div>
           
@@ -181,7 +181,7 @@ const Hero = () => {
     },
     {
       id: 'experience',
-      title: '🌍 Enter NeAR World',
+      title: '🌍 Enter AR World',
       subtitle: 'Live Experience',
       description: 'Experience full AR with camera and real-world AI agents',
       buttonText: 'Go Live',
@@ -195,12 +195,11 @@ const Hero = () => {
             <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3">
               <Camera className="text-white text-2xl" />
             </div>
-            <div className="font-bold text-sm">Live NeAR Camera</div>
+            <div className="font-bold text-sm">Live AR Camera</div>
             <div className="text-xs opacity-80">Full production experience</div>
           </div>
           <div className="absolute top-4 right-4 bg-red-500/80 backdrop-blur-sm rounded-lg px-2 py-1 text-white text-xs flex items-center">
             <div className="w-2 h-2 rounded-full bg-red-300 mr-1 animate-pulse"></div>
-            Live NeAR
             Live AR
           </div>
         </div>
