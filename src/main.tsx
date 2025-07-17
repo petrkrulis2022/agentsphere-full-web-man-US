@@ -7,7 +7,7 @@ import { ThirdwebProvider } from '@thirdweb-dev/react'
 
 // BlockDAG Primordial Testnet configuration
 const BlockDAGTestnet = {
-  chainId: 1042,
+  chainId: 1043,
   slug: "primordial-blockdag-testnet",
   name: "Primordial BlockDAG Testnet",
   nativeCurrency: {
