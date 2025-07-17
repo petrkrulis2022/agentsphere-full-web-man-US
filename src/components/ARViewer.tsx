@@ -354,12 +354,12 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
       <div className="absolute top-4 left-4 z-10 bg-black bg-opacity-70 backdrop-blur-sm rounded-xl p-4 text-white max-w-sm">
         <div className="flex items-center mb-3">
           <Eye className="h-5 w-5 mr-2 text-green-400" />
-          <h2 className="text-lg font-bold">AR Viewer</h2>
+          <h2 className="text-lg font-bold">NeAR Viewer</h2>
         </div>
         
         <div className="space-y-2 text-sm">
           <div className="flex items-center justify-between">
-            <span className="text-gray-300">Active AI Agents:</span>
+            <span className="text-gray-300">Active NEAR Agents:</span>
             <span className="font-bold text-green-400">{objects.length}</span>
           </div>
           
@@ -398,13 +398,13 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
       <div className="absolute top-4 right-4 z-10 bg-black bg-opacity-70 backdrop-blur-sm rounded-xl p-4 text-white max-w-xs max-h-96 overflow-y-auto">
         <h3 className="text-lg font-bold mb-3 flex items-center">
           <MapPin className="h-5 w-5 mr-2 text-green-400" />
-          Nearby NEAR Agents
+          Nearby AI Agents
         </h3>
         
         {objects.length === 0 ? (
           <div className="text-center py-4">
-            <p className="text-gray-400 text-sm">No active NEAR Agents found</p>
-            <p className="text-gray-500 text-xs mt-1">Deploy some NEAR agents first!</p>
+            <p className="text-gray-400 text-sm">No active AI Agents found</p>
+            <p className="text-gray-500 text-xs mt-1">Deploy some AI agents first!</p>
           </div>
         ) : (
           <div className="space-y-3">

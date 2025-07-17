@@ -713,7 +713,7 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
                     </p>
                     <div className="bg-green-50 rounded-lg p-3">
                       <p className="text-sm text-green-800">
-                        ✅ BDAG payment confirmed - Chat interface opening
+                        ✅ Payment confirmed - Chat interface opening
                       </p>
                     </div>
                   </div>
