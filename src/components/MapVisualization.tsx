@@ -113,7 +113,7 @@ const MapVisualization = () => {
         >
           <div className="bg-white rounded-xl shadow-md p-6 text-center">
             <div className="text-3xl font-bold text-green-600 mb-2">5,723</div>
-            <div className="text-gray-600">Active NEAR Agents</div>
+            <div className="text-gray-600">Active AI Agents</div>
           </div>
           <div className="bg-white rounded-xl shadow-md p-6 text-center">
             <div className="text-3xl font-bold text-green-600 mb-2">312</div>

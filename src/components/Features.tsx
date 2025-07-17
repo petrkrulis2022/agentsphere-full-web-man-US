@@ -113,6 +113,7 @@ const Features = () => {
                 <span className="text-white text-2xl">🔗</span>
               </div>
               <h4 className="font-bold text-lg mb-2">NEAR + Filecoin + USDC</h4>
+              <h4 className="font-bold text-lg mb-2">Blockchain + Storage + Payments</h4>
               <p className="text-gray-600 text-sm mb-4">Blockchain integrations and smart contracts</p>
               <a 
                 href="https://github.com/BeerSlothAgent/geospatila-agent-near-shade-integrations" 
@@ -142,6 +143,7 @@ const Features = () => {
           </div>
           
           <h3 className="text-2xl font-bold text-center mb-6">Popular NEAR Agent Types</h3>
+          <h3 className="text-2xl font-bold text-center mb-6">Popular AI Agent Types</h3>
           <div className="flex flex-wrap justify-center gap-4">
             {agentTypes.map((agent, index) => (
               <div 
@@ -156,7 +158,7 @@ const Features = () => {
           <div className="mt-6 text-center">
             <div className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-full text-sm font-medium">
               <span className="w-2 h-2 bg-green-300 rounded-full mr-2"></span>
-              Powered by NEAR Protocol
+              Powered by Blockchain Technology
             </div>
           </div>
         </motion.div>

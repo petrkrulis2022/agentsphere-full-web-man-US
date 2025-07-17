@@ -40,13 +40,10 @@ const Navbar = () => {
             <div className="flex items-center">
               <Link to="/" className="flex-shrink-0 flex items-center">
                 <div className="h-8 w-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center text-white font-bold mr-2">
-                  N
+                  A
                 </div>
                 <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-500 to-emerald-600">
                   AgentSphere
-                </span>
-                <span className="ml-2 text-xs text-gray-500 font-normal">
-                  powered by NEAR
                 </span>
               </Link>
             </div>
@@ -75,14 +72,14 @@ const Navbar = () => {
                 className="flex items-center text-gray-700 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium"
               >
                 <Plus className="h-4 w-4 mr-1" />
-                Deploy NEAR Agent
+                Deploy Agent
               </Link>
               <Link 
                 to="/ar" 
                 className="flex items-center text-gray-700 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium"
               >
                 <Eye className="h-4 w-4 mr-1" />
-                View NeAR
+                View AR
               </Link>
 
               {/* Supabase Connection Button */}
@@ -95,7 +92,7 @@ const Navbar = () => {
                 }`}
               >
                 <Database className="h-4 w-4 mr-1" />
-                {isSupabaseConnected ? 'NEAR Database Connected' : 'Connect NEAR Database'}
+                {isSupabaseConnected ? 'Database Connected' : 'Connect Database'}
               </button>
               
               {/* Wallet Connection */}
@@ -407,8 +404,8 @@ const Navbar = () => {
                   <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                     <h4 className="font-medium text-blue-800 mb-2">Database Schema</h4>
                     <p className="text-blue-700 text-sm">
-                      The NEAR-optimized database schema is already configured with the <code className="bg-blue-100 px-1 rounded">deployed_objects</code> table and NEAR Protocol integration. 
-                      Once you connect, NEAR agents and NeAR QR Pay will work automatically!
+                      The database schema is already configured with the <code className="bg-blue-100 px-1 rounded">deployed_objects</code> table. 
+                      Once you connect, AI agents and AR QR Pay will work automatically!
                     </p>
                   </div>
                 </div>

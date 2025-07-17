@@ -628,9 +628,9 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
         <div className="text-xs text-gray-300 space-y-1">
           <div>• Mouse: Look around</div>
           <div>• WASD: Move around</div>
-          <div>• Click NEAR agents: View details</div>
-          <div>• NEAR agents spin automatically</div>
-          <div>• NeAR QR Pay: Instant payments</div>
+          <div>• Click AI agents: View details</div>
+          <div>• AI agents spin automatically</div>
+          <div>• AR QR Pay: Instant payments</div>
         </div>
       </div>
     </div>

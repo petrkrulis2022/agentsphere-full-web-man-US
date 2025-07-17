@@ -110,8 +110,8 @@ const Hero = () => {
       id: 'deploy',
       title: '🚀 Deploy NEAR Agent',
       subtitle: 'Create & Place',
-      description: 'Design your NEAR agent and deploy it at precise locations',
-      buttonText: 'Deploy NEAR Agent',
+      description: 'Design your AI agent and deploy it at precise locations',
+      buttonText: 'Deploy Agent',
       buttonIcon: <Plus className="h-4 w-4" />,
       link: '/deploy',
       bgImage: 'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1',
@@ -131,8 +131,8 @@ const Hero = () => {
       id: 'preview',
       title: '🔍 Preview NEAR Agents',
       subtitle: 'Test & Debug',
-      description: 'Test your deployed NEAR agents in our AR preview environment',
-      buttonText: 'NeAR Preview',
+      description: 'Test your deployed AI agents in our AR preview environment',
+      buttonText: 'AR Preview',
       buttonIcon: <Eye className="h-4 w-4" />,
       link: '/ar',
       bgImage: 'https://images.pexels.com/photos/267885/pexels-photo-267885.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1',
@@ -144,7 +144,7 @@ const Hero = () => {
               <Eye className="text-white text-2xl" />
             </div>
             <div className="font-bold text-sm">NeAR Testing Mode</div>
-            <div className="text-xs opacity-80">View & interact with NEAR agents</div>
+            <div className="text-xs opacity-80">View & interact with AI agents</div>
           </div>
           
           {/* Interactive Agent Dots for AR Preview */}
@@ -183,7 +183,7 @@ const Hero = () => {
       id: 'experience',
       title: '🌍 Enter NeAR World',
       subtitle: 'Live Experience',
-      description: 'Experience full NeAR with camera and real-world NEAR agents',
+      description: 'Experience full AR with camera and real-world AI agents',
       buttonText: 'Go Live',
       buttonIcon: <Camera className="h-4 w-4" />,
       link: 'https://admirable-hamster-b9c370.netlify.app/',
@@ -201,6 +201,7 @@ const Hero = () => {
           <div className="absolute top-4 right-4 bg-red-500/80 backdrop-blur-sm rounded-lg px-2 py-1 text-white text-xs flex items-center">
             <div className="w-2 h-2 rounded-full bg-red-300 mr-1 animate-pulse"></div>
             Live NeAR
+            Live AR
           </div>
         </div>
       )
@@ -224,16 +225,16 @@ const Hero = () => {
             transition={{ duration: 0.5 }}
           >
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900">
-              <span className="block">Deploy NEAR Agents</span>
-              <span className="block bg-clip-text text-transparent bg-gradient-to-r from-green-500 to-emerald-600">in Your Near World</span>
+              <span className="block">Deploy Agents</span>
+              <span className="block bg-clip-text text-transparent bg-gradient-to-r from-green-500 to-emerald-600">in Your World</span>
             </h1>
             <p className="mt-6 text-lg md:text-xl text-gray-600 max-w-4xl mx-auto">
-              Create, test, and experience location-based NEAR Agents through AR. Transform your school and community with personalized digital assistants powered by NEAR Protocol.
+              Create, test, and experience location-based AI Agents through AR. Transform your school and community with personalized digital assistants.
             </p>
             <div className="mt-4 flex items-center justify-center">
               <div className="bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-medium flex items-center">
                 <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                Powered by NEAR Protocol
+                Powered by Blockchain Technology
               </div>
             </div>
             <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
@@ -252,7 +253,7 @@ const Hero = () => {
               </a>
             </div>
             <div className="mt-6 text-sm text-gray-500">
-              <span className="font-medium">NEAR Hackathon 2025:</span> Revolutionary AR QR Payment System
+              <span className="font-medium">Revolutionary AR QR Payment System</span>
             </div>
           </motion.div>
         </div>

@@ -220,10 +220,10 @@ const AuthSection = ({ waitlistCount, setWaitlistCount, supabase }: AuthSectionP
                           aria-describedby="wallet-status"
                         >
                           <Wallet className="h-5 w-5 mr-2" />
-                          Connect NEAR Wallet (Coming Soon)
+                          Connect Wallet (Coming Soon)
                         </button>
                         <p id="wallet-status" className="mt-2 text-sm text-gray-500 text-center">
-                          NEAR wallet integration will be available at launch
+                          Wallet integration will be available at launch
                         </p>
                       </div>
                     </div>
