@@ -145,10 +145,10 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     setBalanceError('');
     try {
       console.log('🔍 Fetching BDAG balance for address:', address);
-      console.log('🌐 Using RPC:', 'https://test-rpc.primordial.bdagscan.com/');
+      console.log('🌐 Using RPC: https://test-rpc.primordial.bdagscan.com/');
       console.log('📄 Contract:', BDAG_CONTRACT);
       
-      // Create provider using the new RPC endpoint
+      // Create provider using the correct RPC endpoint
       const { ethers } = await import('ethers');
       const provider = new ethers.providers.JsonRpcProvider('https://test-rpc.primordial.bdagscan.com/');
       
@@ -157,30 +157,37 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         "function balanceOf(address owner) view returns (uint256)",
         "function decimals() view returns (uint8)",
         "function symbol() view returns (string)",
-        "function name() view returns (string)"
+        "function name() view returns (string)",
+        "function totalSupply() view returns (uint256)"
       ];
       
       const contract = new ethers.Contract(BDAG_CONTRACT, erc20ABI, provider);
       
-      // Get token info
-      const [balance, decimals, symbol, name] = await Promise.all([
+      // Get comprehensive token info and balance
+      const [balance, decimals, symbol, name, totalSupply] = await Promise.all([
         contract.balanceOf(address),
         contract.decimals(),
         contract.symbol(),
-        contract.name()
+        contract.name(),
+        contract.totalSupply()
       ]);
       
       // Convert from wei to readable format
       const formattedBalance = ethers.utils.formatUnits(balance, decimals);
       const balanceNumber = parseFloat(formattedBalance);
+      const formattedTotalSupply = ethers.utils.formatUnits(totalSupply, decimals);
       
       console.log('✅ BDAG Balance Query Results:');
       console.log('   Token Name:', name);
       console.log('   Token Symbol:', symbol);
       console.log('   Decimals:', decimals.toString());
+      console.log('   Total Supply:', formattedTotalSupply, 'BDAG');
       console.log('   Raw Balance:', balance.toString());
       console.log('   Formatted Balance:', formattedBalance);
       console.log('   Final Balance:', balanceNumber.toFixed(2), 'BDAG');
+      console.log('   Account Address:', address);
+      console.log('   Contract Address:', BDAG_CONTRACT);
+      console.log('   Network: BlockDAG Primordial Testnet (Chain ID: 1043)');
       
       setBdagBalance(balanceNumber.toFixed(2));
       
@@ -189,12 +196,12 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         console.log(`🎉 You have ${balanceNumber.toFixed(2)} BDAG in your connected account!`);
       } else {
         console.log('⚠️ No BDAG balance found in connected account');
-        setBalanceError('No BDAG balance found. Make sure BDAG tokens are in your wallet on BlockDAG Primordial Testnet.');
+        setBalanceError(`No BDAG balance found for ${address}. Ensure BDAG tokens are in this account on BlockDAG Primordial Testnet (Chain ID: 1043).`);
       }
       
     } catch (error) {
       console.error('❌ Error fetching BDAG balance:', error);
-      setBalanceError(`Balance fetch failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setBalanceError(`Balance fetch failed: ${error instanceof Error ? error.message : 'Unknown error'}. Check network connection and RPC endpoint.`);
       setBdagBalance('0.00');
     } finally {
       setLoadingBalance(false);

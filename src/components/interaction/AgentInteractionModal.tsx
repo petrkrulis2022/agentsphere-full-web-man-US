@@ -630,6 +630,13 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
                         <span className="text-gray-500">Network:</span>
                         <span className="text-gray-700 text-xs">BlockDAG Primordial Testnet (1043)</span>
                       </div>
+                      <div className="flex justify-between items-center text-sm mt-1">
+                        <span className="text-gray-500">RPC:</span>
+                        <span className="text-gray-700 text-xs">test-rpc.primordial.bdagscan.com</span>
+                      </div>
+                      <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-800">
+                        💡 <strong>Note:</strong> MetaMask will use your currently active account as sender. Make sure your active account has BDAG tokens.
+                      </div>
                     </div>
                     
                     {/* EIP-681 Compliant AR QR Payment Option */}
@@ -644,8 +651,8 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
                         <div className="flex items-center justify-center space-x-3">
                           <QrCode size={24} />
                           <div className="text-left">
-                            <div className="font-semibold">🦊 MetaMask QR Payment</div>
-                            <div className="text-sm opacity-90">EIP-681 compliant BDAG QR code</div>
+                            <div className="font-semibold">🦊 Scan with MetaMask Mobile</div>
+                            <div className="text-sm opacity-90">Uses your active MetaMask account</div>
                           </div>
                         </div>
                       </motion.button>
