@@ -49,6 +49,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   const sdk = useSDK();
   const [bdagBalance, setBdagBalance] = useState<string>('0.00');
   const [loadingBalance, setLoadingBalance] = useState(false);
+  const [balanceError, setBalanceError] = useState<string>('');
   
   // Location states
   const [location, setLocation] = useState<LocationData | null>(null);
@@ -141,28 +142,59 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     if (!address) return;
     
     setLoadingBalance(true);
+    setBalanceError('');
     try {
-      // Use Thirdweb SDK to get provider
-      if (sdk && window.ethereum) {
-        const { ethers } = await import('ethers');
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        
-        // ERC-20 ABI for balanceOf function
-        const erc20ABI = [
-          "function balanceOf(address owner) view returns (uint256)",
-          "function decimals() view returns (uint8)"
-        ];
-        
-        const contract = new ethers.Contract(BDAG_CONTRACT, erc20ABI, provider);
-        const balance = await contract.balanceOf(address);
-        const decimals = await contract.decimals();
-        
-        // Convert from wei to readable format
-        const formattedBalance = ethers.utils.formatUnits(balance, decimals);
-        setBdagBalance(parseFloat(formattedBalance).toFixed(2));
+      console.log('🔍 Fetching BDAG balance for address:', address);
+      console.log('🌐 Using RPC:', 'https://test-rpc.primordial.bdagscan.com/');
+      console.log('📄 Contract:', BDAG_CONTRACT);
+      
+      // Create provider using the new RPC endpoint
+      const { ethers } = await import('ethers');
+      const provider = new ethers.providers.JsonRpcProvider('https://test-rpc.primordial.bdagscan.com/');
+      
+      // ERC-20 ABI for balanceOf function
+      const erc20ABI = [
+        "function balanceOf(address owner) view returns (uint256)",
+        "function decimals() view returns (uint8)",
+        "function symbol() view returns (string)",
+        "function name() view returns (string)"
+      ];
+      
+      const contract = new ethers.Contract(BDAG_CONTRACT, erc20ABI, provider);
+      
+      // Get token info
+      const [balance, decimals, symbol, name] = await Promise.all([
+        contract.balanceOf(address),
+        contract.decimals(),
+        contract.symbol(),
+        contract.name()
+      ]);
+      
+      // Convert from wei to readable format
+      const formattedBalance = ethers.utils.formatUnits(balance, decimals);
+      const balanceNumber = parseFloat(formattedBalance);
+      
+      console.log('✅ BDAG Balance Query Results:');
+      console.log('   Token Name:', name);
+      console.log('   Token Symbol:', symbol);
+      console.log('   Decimals:', decimals.toString());
+      console.log('   Raw Balance:', balance.toString());
+      console.log('   Formatted Balance:', formattedBalance);
+      console.log('   Final Balance:', balanceNumber.toFixed(2), 'BDAG');
+      
+      setBdagBalance(balanceNumber.toFixed(2));
+      
+      // Show balance in UI notification
+      if (balanceNumber > 0) {
+        console.log(`🎉 You have ${balanceNumber.toFixed(2)} BDAG in your connected account!`);
+      } else {
+        console.log('⚠️ No BDAG balance found in connected account');
+        setBalanceError('No BDAG balance found. Make sure BDAG tokens are in your wallet on BlockDAG Primordial Testnet.');
       }
+      
     } catch (error) {
-      console.error('Error fetching BDAG balance:', error);
+      console.error('❌ Error fetching BDAG balance:', error);
+      setBalanceError(`Balance fetch failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setBdagBalance('0.00');
     } finally {
       setLoadingBalance(false);
@@ -390,6 +422,14 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     )}
                   </div>
                 </div>
+                {balanceError && (
+                  <div className="mt-2 text-red-200 text-sm">
+                    ⚠️ {balanceError}
+                  </div>
+                )}
+                <div className="mt-2 text-white text-opacity-80 text-xs">
+                  RPC: https://test-rpc.primordial.bdagscan.com/
+                </div>
               </div>
             )}
           </div>
@@ -428,6 +468,19 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     <Navigation className="h-5 w-5 mr-2" />
                   )}
                   Get RTK Enhanced Location
+                </button>
+                
+                <button
+                  onClick={fetchBDAGBalance}
+                  disabled={!address || loadingBalance}
+                  className="flex items-center justify-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {loadingBalance ? (
+                    <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  ) : (
+                    <DollarSign className="h-5 w-5 mr-2" />
+                  )}
+                  Check BDAG Balance
                 </button>
               </div>
 
