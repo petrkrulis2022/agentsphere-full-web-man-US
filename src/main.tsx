@@ -4,9 +4,10 @@ import App from './App.tsx'
 import './index.css'
 import { BrowserRouter } from 'react-router-dom'
 import { ThirdwebProvider } from '@thirdweb-dev/react'
+import { defineChain } from '@thirdweb-dev/react/chains'
 
 // BlockDAG Primordial Testnet configuration
-const BlockDAGTestnet = {
+const BlockDAGTestnet = defineChain({
   chainId: 1043,
   slug: "primordial-blockdag-testnet",
   name: "Primordial BlockDAG Testnet",
@@ -23,7 +24,7 @@ const BlockDAGTestnet = {
     },
   ],
   testnet: true,
-}
+})
 
 // Suppress Radix UI dialog title warnings from third-party components
 const originalConsoleError = console.error;
