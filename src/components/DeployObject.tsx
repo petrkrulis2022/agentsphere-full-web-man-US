@@ -17,8 +17,6 @@ import {
   Video,
   TrendingUp,
   Bell,
-  Eye,
-  Car,
   Navigation
 } from 'lucide-react';
 import { useAddress } from '@thirdweb-dev/react';

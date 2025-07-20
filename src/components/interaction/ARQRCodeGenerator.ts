@@ -1,5 +1,4 @@
 import QRCode from 'qrcode';
-import EthereumQRPlugin from 'ethereum-qr-code';
 
 export interface PaymentData {
   agentId: string;
