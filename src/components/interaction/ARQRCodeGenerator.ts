@@ -10,6 +10,7 @@ export interface PaymentData {
   merchantAddress: string;
   currency: string;
   network: string;
+  chainId?: number;
 }
 
 export interface EIP681Data {
@@ -391,7 +392,6 @@ export class ARQRCodeGenerator {
     
     // Try to get position from current agent reference
     if ((this as any).currentAgent) {
-      const agent = (this as any).currentAgent;
       // Use the same positioning logic as in ARViewer
       const angle = Math.random() * 360 * Math.PI / 180;
       const radius = 8;

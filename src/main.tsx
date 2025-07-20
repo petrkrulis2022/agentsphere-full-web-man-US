@@ -8,6 +8,8 @@ import { ThirdwebProvider } from '@thirdweb-dev/react'
 // BlockDAG Primordial Testnet configuration
 const BlockDAGTestnet = {
   chainId: 1043,
+  chain: "BlockDAG Primordial",
+  shortName: "bdag-primordial",
   slug: "primordial-blockdag-testnet",
   name: "Primordial BlockDAG Testnet",
   nativeCurrency: {
@@ -16,7 +18,7 @@ const BlockDAGTestnet = {
     decimals: 18,
   },
   rpc: ["https://test-rpc.primordial.bdagscan.com/"],
-  blockExplorers: [
+  explorers: [
     {
       name: "BlockDAG Explorer",
       url: "https://primordial.bdagscan.com",
