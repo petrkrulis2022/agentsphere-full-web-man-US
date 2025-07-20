@@ -68,18 +68,18 @@ export class ARQRCodeGenerator {
   }
 
   private createBlockchainQRContent(paymentData: PaymentData): string {
-    // Create EIP-681 compliant URL format for ERC-20 token transfers
-    // This format allows MetaMask to auto-detect the transaction without specifying sender
+    // Create strict EIP-681 compliant URL format for BDAG ERC-20 token transfers
+    // Format: ethereum:<token_contract_address>@<chain_id>/transfer?address=<recipient_address>&uint256=<amount_in_wei>
     const tokenContractAddress = '0x6533fe2Ebb66CcE28FDdBA9663Fe433A308137e9'; // BDAG Token Contract Address
     const recipientAddress = paymentData.merchantAddress;
     const amountInWei = (paymentData.amount * Math.pow(10, 18)).toString(); // BDAG has 18 decimals
     const chainId = 1043; // BlockDAG Primordial Testnet
     
-    // Enhanced EIP-681 format that works better with MetaMask mobile
+    // Strict EIP-681 format for ERC-20 token transfers (no gas parameter for token transfers)
     // This format lets MetaMask choose the active account automatically
-    const eip681Url = `ethereum:${tokenContractAddress}@${chainId}/transfer?address=${recipientAddress}&uint256=${amountInWei}&gas=21000`;
+    const eip681Url = `ethereum:${tokenContractAddress}@${chainId}/transfer?address=${recipientAddress}&uint256=${amountInWei}`;
     
-    console.log('🎯 Creating Enhanced EIP-681 BDAG Transfer QR Code:');
+    console.log('🎯 Creating Strict EIP-681 BDAG Transfer QR Code:');
     console.log('📋 QR Code URL:', eip681Url);
     console.log('📋 Transaction Details:', {
       tokenContract: tokenContractAddress,
@@ -90,8 +90,7 @@ export class ARQRCodeGenerator {
       chainId: chainId,
       network: 'BlockDAG Primordial Testnet',
       rpc: 'https://test-rpc.primordial.bdagscan.com/',
-      gasLimit: '21000',
-      format: 'EIP-681 ERC-20 Transfer'
+      format: 'Strict EIP-681 ERC-20 Transfer (No Gas Parameter)'
     });
     
     return eip681Url;
@@ -118,13 +117,13 @@ export class ARQRCodeGenerator {
             dark: '#000000',
             light: '#FFFFFF'
           },
-          errorCorrectionLevel: 'M'
+          errorCorrectionLevel: 'H' // Higher error correction for better scanning
         }, (error: Error | null | undefined) => {
           if (error) {
-            console.error('❌ EIP-681 QR code generation failed:', error);
+            console.error('❌ Strict EIP-681 QR code generation failed:', error);
             reject(error);
           } else {
-            console.log('✅ EIP-681 compliant QR code generated successfully');
+            console.log('✅ Strict EIP-681 compliant QR code generated successfully');
             resolve(canvas);
           }
         });

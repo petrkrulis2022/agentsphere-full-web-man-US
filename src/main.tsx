@@ -16,7 +16,6 @@ const BlockDAGTestnet = {
     decimals: 18,
   },
   rpc: ["https://test-rpc.primordial.bdagscan.com/"],
-  rpc: ["https://rpc.primordial.bdagscan.com/"],
   blockExplorers: [
     {
       name: "BlockDAG Explorer",
