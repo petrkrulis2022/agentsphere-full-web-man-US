@@ -934,7 +934,7 @@ const ARQRModal: React.FC<ARQRModalProps> = ({
 
       {/* AR Simulation Note */}
       <div className="ar-note">
-        <small>💡 <strong>EIP-681 BDAG Transfer:</strong> ethereum:0x6533fe2Ebb66CcE28FDdBA9663Fe433A308137e9@1043/transfer?address={connectedAddress || paymentData.merchantAddress}&uint256={(paymentData.amount * Math.pow(10, 18)).toString()}</small>
+        <small>💡 <strong>Strict EIP-681 BDAG Transfer:</strong> ethereum:0x6533fe2Ebb66CcE28FDdBA9663Fe433A308137e9@1043/transfer?address={connectedAddress || paymentData.merchantAddress}&uint256={(paymentData.amount * Math.pow(10, 18)).toString()}</small>
       </div>
     </div>
   );
