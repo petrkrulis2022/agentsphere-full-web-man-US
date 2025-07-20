@@ -95,7 +95,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   });
 
   // USDC token contract address on Base Sepolia
-  const USDC_CONTRACT = '0x036CbD53842c5426634e7929541eC2318f3dCF7e'; // USDC on Base Sepolia Testnet
+  const BDAG_CONTRACT = '0x6533fe2Ebb66CcE28FDdBA9663Fe433A308137e9'; // BDAG Token Contract Address
 
   // Agent type options
   const agentTypes = [
@@ -136,19 +136,19 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   ];
 
   // Fetch USDC balance
-  const fetchUSDCBalance = async () => {
+  const fetchBDAGBalance = async () => {
     if (!address) return;
     
     setLoadingBalance(true);
     setBalanceError('');
     try {
-      console.log('🔍 Fetching USDC balance for address:', address);
-      console.log('🌐 Using RPC: https://sepolia.base.org');
-      console.log('📄 Contract:', USDC_CONTRACT);
+      console.log('🔍 Fetching BDAG balance for address:', address);
+      console.log('🌐 Using RPC: https://test-rpc.primordial.bdagscan.com/');
+      console.log('📄 Contract:', BDAG_CONTRACT);
       
       // Create provider using the correct RPC endpoint
       const { ethers } = await import('ethers');
-      const provider = new ethers.providers.JsonRpcProvider('https://sepolia.base.org');
+      const provider = new ethers.providers.JsonRpcProvider('https://test-rpc.primordial.bdagscan.com/');
       
       // ERC-20 ABI for balanceOf function
       const erc20ABI = [
@@ -159,7 +159,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         "function totalSupply() view returns (uint256)"
       ];
       
-      const contract = new ethers.Contract(USDC_CONTRACT, erc20ABI, provider);
+      const contract = new ethers.Contract(BDAG_CONTRACT, erc20ABI, provider);
       
       // Get comprehensive token info and balance
       const [balance, decimals, symbol, name, totalSupply] = await Promise.all([
@@ -170,31 +170,31 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         contract.totalSupply()
       ]);
       
-      // Convert from wei to readable format
+      // Convert from raw units to readable format
       const formattedBalance = ethers.utils.formatUnits(balance, decimals);
       const balanceNumber = parseFloat(formattedBalance);
       const formattedTotalSupply = ethers.utils.formatUnits(totalSupply, decimals);
       
-      console.log('✅ USDC Balance Query Results:');
+      console.log('✅ BDAG Balance Query Results:');
       console.log('   Token Name:', name);
       console.log('   Token Symbol:', symbol);
       console.log('   Decimals:', decimals.toString());
-      console.log('   Total Supply:', formattedTotalSupply, 'USDC');
+      console.log('   Total Supply:', formattedTotalSupply, 'BDAG');
       console.log('   Raw Balance:', balance.toString());
-      console.log('   Formatted Balance:', formattedBalance);
-      console.log('   Final Balance:', balanceNumber.toFixed(2), 'USDC');
+      console.log('   Formatted Balance:', formattedBalance); // BDAG has 18 decimals
+      console.log('   Final Balance:', balanceNumber.toFixed(2), 'BDAG');
       console.log('   Account Address:', address);
-      console.log('   Contract Address:', USDC_CONTRACT);
-      console.log('   Network: Base Sepolia Testnet (Chain ID: 84532)');
+      console.log('   Contract Address:', BDAG_CONTRACT);
+      console.log('   Network: BlockDAG Primordial Testnet (Chain ID: 1043)');
       
-      setBdagBalance(balanceNumber.toFixed(6)); // USDC has 6 decimals
+      setBdagBalance(balanceNumber.toFixed(6)); // Display with 6 decimals for readability
       
       // Show balance in UI notification
       if (balanceNumber > 0) {
-        console.log(`🎉 You have ${balanceNumber.toFixed(6)} USDC in your connected account!`);
+        console.log(`🎉 You have ${balanceNumber.toFixed(6)} BDAG in your connected account!`);
       } else {
-        console.log('⚠️ No USDC balance found in connected account');
-        setBalanceError(`No USDC balance found for ${address}. Ensure USDC tokens are in this account on Base Sepolia Testnet (Chain ID: 84532).`);
+        console.log('⚠️ No BDAG balance found in connected account');
+        setBalanceError(`No BDAG balance found for ${address}. Ensure BDAG tokens are in this account on BlockDAG Primordial Testnet (Chain ID: 1043).`);
       }
       
     } catch (error) {
@@ -389,7 +389,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   // Load USDC balance when wallet connects
   useEffect(() => {
     if (address && sdk) {
-      fetchUSDCBalance();
+      fetchBDAGBalance();
     } else {
       setBdagBalance('0.00');
     }
@@ -419,11 +419,11 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     </span>
                   </div>
                   <div className="flex items-center">
-                    <span className="text-white mr-2">USDC Balance:</span>
+                    <span className="text-white mr-2">BDAG Balance:</span>
                     {loadingBalance ? (
                       <Loader2 className="h-4 w-4 text-white animate-spin" />
                     ) : (
-                      <span className="text-white font-bold">{bdagBalance} USDC</span>
+                      <span className="text-white font-bold">{bdagBalance} BDAG</span>
                     )}
                   </div>
                 </div>
@@ -476,7 +476,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                 </button>
                 
                 <button
-                  onClick={fetchUSDCBalance}
+                  onClick={fetchBDAGBalance}
                   disabled={!address || loadingBalance}
                   className="flex items-center justify-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
@@ -485,7 +485,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   ) : (
                     <DollarSign className="h-5 w-5 mr-2" />
                   )}
-                  Check USDC Balance
+                  Check BDAG Balance
                 </button>
               </div>
 

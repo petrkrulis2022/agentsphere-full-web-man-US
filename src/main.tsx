@@ -5,21 +5,21 @@ import './index.css'
 import { BrowserRouter } from 'react-router-dom'
 import { ThirdwebProvider } from '@thirdweb-dev/react'
 
-// Base Sepolia Testnet configuration (v4 format)
-const BaseSepoliaTestnet = {
-  chainId: 84532,
-  slug: "base-sepolia-testnet",
-  name: "Base Sepolia Testnet",
+// BlockDAG Primordial Testnet configuration (v4 format)
+const BlockDAGTestnet = {
+  chainId: 1043,
+  slug: "primordial-blockdag-testnet",
+  name: "Primordial BlockDAG Testnet",
   nativeCurrency: {
-    name: "Ethereum",
-    symbol: "ETH",
+    name: "BDAG",
+    symbol: "BDAG",
     decimals: 18,
   },
-  rpc: ["https://sepolia.base.org"],
+  rpc: ["https://test-rpc.primordial.bdagscan.com/"],
   explorers: [
     {
-      name: "Base Sepolia Explorer",
-      url: "https://sepolia-explorer.base.org",
+      name: "BlockDAG Explorer",
+      url: "https://primordial.bdagscan.com",
     },
   ],
   testnet: true,
@@ -38,7 +38,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ThirdwebProvider 
       clientId={import.meta.env.VITE_THIRDWEB_CLIENT_ID}
-      activeChain={BaseSepoliaTestnet}
+      activeChain={BlockDAGTestnet}
       autoConnect={false}
     >
       <BrowserRouter>
