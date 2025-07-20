@@ -3,10 +3,10 @@ import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 import { BrowserRouter } from 'react-router-dom'
-import { ThirdwebProvider } from '@thirdweb-dev/react'
+import { ThirdwebProvider, Chain } from '@thirdweb-dev/react'
 
 // BlockDAG Primordial Testnet configuration
-const BlockDAGTestnet = {
+const BlockDAGTestnet: Chain = {
   chainId: 1043,
   chain: "BlockDAG Primordial",
   shortName: "bdag-primordial",
