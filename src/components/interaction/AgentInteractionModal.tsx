@@ -614,7 +614,7 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
                         <span className="text-gray-600">Cost:</span>
                         <div className="flex items-center text-green-600 font-semibold">
                           <DollarSign size={16} />
-                          <span>{getInteractionFee(selectedInteractionType)} USDC</span>
+                          <span>{getInteractionFee(selectedInteractionType)} BDAG</span>
                         </div>
                       </div>
                       <div className="flex justify-between items-center text-sm">
@@ -628,14 +628,14 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
                       </div>
                       <div className="flex justify-between items-center text-sm mt-1">
                         <span className="text-gray-500">Network:</span>
-                        <span className="text-gray-700 text-xs">Base Sepolia Testnet (84532)</span>
+                        <span className="text-gray-700 text-xs">BlockDAG Primordial Testnet (1043)</span>
                       </div>
                       <div className="flex justify-between items-center text-sm mt-1">
                         <span className="text-gray-500">RPC:</span>
-                        <span className="text-gray-700 text-xs">https://sepolia.base.org</span>
+                        <span className="text-gray-700 text-xs">https://test-rpc.primordial.bdagscan.com/</span>
                       </div>
                       <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-800">
-                        💡 <strong>Note:</strong> MetaMask will use your currently active account as sender. Make sure your active account has USDC tokens.
+                        💡 <strong>Note:</strong> MetaMask will use your currently active account as sender. Make sure your active account has BDAG tokens.
                       </div>
                     </div>
                     

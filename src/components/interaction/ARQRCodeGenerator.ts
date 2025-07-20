@@ -70,26 +70,26 @@ export class ARQRCodeGenerator {
   private createBlockchainQRContent(paymentData: PaymentData): string {
     // Create strict EIP-681 compliant URL format for USDC ERC-20 token transfers
     // Format: ethereum:<token_contract_address>@<chain_id>/transfer?address=<recipient_address>&uint256=<amount_in_wei>
-    const tokenContractAddress = '0x036CbD53842c5426634e7929541eC2318f3dCF7e'; // USDC Token Contract Address on Base Sepolia
+    const tokenContractAddress = '0x6533fe2Ebb66CcE28FDdBA9663Fe433A308137e9'; // BDAG Token Contract Address
     const recipientAddress = paymentData.merchantAddress;
-    const amountInWei = (paymentData.amount * Math.pow(10, 6)).toString(); // USDC has 6 decimals
-    const chainId = 84532; // Base Sepolia Testnet
+    const amountInWei = (paymentData.amount * Math.pow(10, 18)).toString(); // BDAG has 18 decimals
+    const chainId = 1043; // BlockDAG Primordial Testnet
     
     // Strict EIP-681 format for ERC-20 token transfers (no gas parameter for token transfers)
     // This format lets MetaMask choose the active account automatically
     const eip681Url = `ethereum:${tokenContractAddress}@${chainId}/transfer?address=${recipientAddress}&uint256=${amountInWei}`;
     
-    console.log('🎯 Creating Strict EIP-681 USDC Transfer QR Code:');
+    console.log('🎯 Creating Strict EIP-681 BDAG Transfer QR Code:');
     console.log('📋 QR Code URL:', eip681Url);
     console.log('📋 Transaction Details:', {
       tokenContract: tokenContractAddress,
-      tokenSymbol: 'USDC',
+      tokenSymbol: 'BDAG',
       recipient: recipientAddress,
-      amountUSDC: paymentData.amount,
+      amountBDAG: paymentData.amount,
       amountWei: amountInWei,
       chainId: chainId,
-      network: 'Base Sepolia Testnet',
-      rpc: 'https://sepolia.base.org',
+      network: 'BlockDAG Primordial Testnet',
+      rpc: 'https://test-rpc.primordial.bdagscan.com/',
       format: 'Strict EIP-681 ERC-20 Transfer (No Gas Parameter)'
     });
     
@@ -243,7 +243,7 @@ export class ARQRCodeGenerator {
   private addPaymentInfoDisplay(paymentData: PaymentData): void {
     // Create floating text display above QR code
     const textEntity = document.createElement('a-entity');
-    
+
     const paymentText = `${paymentData.amount} USDC\n${paymentData.interactionType.toUpperCase()} CHAT\nTo: ${paymentData.merchantAddress.slice(0, 6)}...${paymentData.merchantAddress.slice(-4)}\nScan with MetaMask\nExpires in 5:00`;
     
     textEntity.setAttribute('text', {
@@ -319,9 +319,9 @@ export class ARQRCodeGenerator {
     // Show MetaMask-compatible transaction details
     const transactionDetails = {
       to: paymentData.merchantAddress,
-      value: `${paymentData.amount} USDC`,
-      chainId: 84532,
-      network: 'Base Sepolia Testnet'
+      value: `${paymentData.amount} BDAG`,
+      chainId: 1043,
+      network: 'BlockDAG Primordial Testnet'
     };
     
     console.log('📱 MetaMask transaction details:', transactionDetails);
@@ -331,7 +331,7 @@ export class ARQRCodeGenerator {
       window.blockchainPaymentSimulator.simulatePayment(paymentData);
     } else {
       // Fallback: show alert
-      alert(`MetaMask Compatible QR Code Scanned!\nAmount: ${paymentData.amount} USDC\nTo: ${paymentData.merchantAddress}\nAgent: ${paymentData.agentId}\nType: ${paymentData.interactionType}\nChain ID: 84532`);
+      alert(`MetaMask Compatible QR Code Scanned!\nAmount: ${paymentData.amount} BDAG\nTo: ${paymentData.merchantAddress}\nAgent: ${paymentData.agentId}\nType: ${paymentData.interactionType}\nChain ID: 1043`);
     }
   }
 
