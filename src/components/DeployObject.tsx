@@ -145,12 +145,11 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     setBalanceError('');
     try {
       console.log('🔍 Fetching BDAG balance for address:', address);
-      console.log('🌐 Using RPC: https://test-rpc.primordial.bdagscan.com/');
+      console.log('🌐 Using RPC: https://rpc.primordial.bdagscan.com/');
       console.log('📄 Contract:', BDAG_CONTRACT);
       
       // Create provider using the correct RPC endpoint
       const { ethers } = await import('ethers');
-      const provider = new ethers.providers.JsonRpcProvider('https://test-rpc.primordial.bdagscan.com/');
       
       // ERC-20 ABI for balanceOf function
       const erc20ABI = [
@@ -435,7 +434,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   </div>
                 )}
                 <div className="mt-2 text-white text-opacity-80 text-xs">
-                  RPC: https://test-rpc.primordial.bdagscan.com/
+                  RPC: https://rpc.primordial.bdagscan.com/
                 </div>
               </div>
             )}

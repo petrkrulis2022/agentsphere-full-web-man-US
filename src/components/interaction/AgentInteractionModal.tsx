@@ -632,7 +632,7 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
                       </div>
                       <div className="flex justify-between items-center text-sm mt-1">
                         <span className="text-gray-500">RPC:</span>
-                        <span className="text-gray-700 text-xs">test-rpc.primordial.bdagscan.com</span>
+                        <span className="text-gray-700 text-xs">rpc.primordial.bdagscan.com</span>
                       </div>
                       <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-800">
                         💡 <strong>Note:</strong> MetaMask will use your currently active account as sender. Make sure your active account has BDAG tokens.
