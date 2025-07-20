@@ -244,7 +244,6 @@ export class ARQRCodeGenerator {
     // Create floating text display above QR code
     const textEntity = document.createElement('a-entity');
     
-    const paymentText = `${paymentData.amount} BDAG\n${paymentData.interactionType.toUpperCase()} CHAT\nTo: ${paymentData.merchantAddress.slice(0, 6)}...${paymentData.merchantAddress.slice(-4)}\nScan with MetaMask\nExpires in 5:00`;
     const paymentText = `${paymentData.amount} USDC\n${paymentData.interactionType.toUpperCase()} CHAT\nTo: ${paymentData.merchantAddress.slice(0, 6)}...${paymentData.merchantAddress.slice(-4)}\nScan with MetaMask\nExpires in 5:00`;
     
     textEntity.setAttribute('text', {
