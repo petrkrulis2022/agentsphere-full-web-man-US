@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.3",
+    "@thirdweb-dev/chains": "^0.1.120",
     "@thirdweb-dev/react": "^4.1.10",
     "@thirdweb-dev/sdk": "^4.0.98",
     "aframe": "^1.4.0",
