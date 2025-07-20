@@ -40,19 +40,19 @@ export class BlockchainPaymentSimulator {
             </div>
             <div class="detail-row">
               <span>Amount:</span>
-              <span>${qrData.amount} ${qrData.currency || 'BDAG'}</span>
+              <span>${qrData.amount} ${qrData.currency || 'USDC'}</span>
             </div>
             <div class="detail-row">
               <span>Chain ID:</span>
-              <span>1042 (BlockDAG Primordial)</span>
+              <span>84532 (Base Sepolia)</span>
             </div>
             <div class="detail-row">
               <span>Gas Fee:</span>
-              <span>0.001 BDAG</span>
+              <span>0.001 ETH</span>
             </div>
             <div class="detail-row total">
               <span>Total:</span>
-              <span>${qrData.amount} ${qrData.currency || 'BDAG'} + 0.001 BDAG</span>
+              <span>${qrData.amount} ${qrData.currency || 'USDC'} + 0.001 ETH</span>
             </div>
             <div class="detail-row">
               <span>Memo:</span>
@@ -60,7 +60,7 @@ export class BlockchainPaymentSimulator {
             </div>
             <div class="detail-row">
               <span>Network:</span>
-              <span>BlockDAG Primordial (1043)</span>
+              <span>Base Sepolia (84532)</span>
             </div>
           </div>
           
@@ -70,7 +70,7 @@ export class BlockchainPaymentSimulator {
           </div>
           
           <div class="wallet-footer">
-            <small>🔒 EIP-681 Compatible • Secured by BlockDAG Network</small>
+            <small>🔒 EIP-681 Compatible • Secured by Base Network</small>
           </div>
         </div>
       `;
@@ -115,7 +115,7 @@ export class BlockchainPaymentSimulator {
       <div class="processing-state">
         <div class="spinner"></div>
         <h3>Processing Transaction...</h3>
-        <p>Broadcasting to NEAR network</p>
+        <p>Broadcasting to Base network</p>
         <div class="progress-bar">
           <div class="progress-fill"></div>
         </div>
@@ -137,7 +137,7 @@ export class BlockchainPaymentSimulator {
       <div class="success-state">
         <div class="success-icon">✅</div>
         <h3>Transaction Successful!</h3>
-        <p>Payment of ${qrData.amount} ${qrData.currency || 'BDAG'} sent</p>
+        <p>Payment of ${qrData.amount} ${qrData.currency || 'USDC'} sent</p>
         <div class="transaction-hash">
           <label>Transaction Hash:</label>
           <div class="hash-container">
@@ -152,7 +152,7 @@ export class BlockchainPaymentSimulator {
           </div>
           <div class="detail-row">
             <span>Gas Used:</span>
-            <span>0.001 BDAG</span>
+            <span>0.001 ETH</span>
           </div>
           <div class="detail-row">
             <span>Status:</span>
@@ -160,7 +160,7 @@ export class BlockchainPaymentSimulator {
           </div>
           <div class="detail-row">
             <span>Network:</span>
-            <span>${qrData.network || 'BlockDAG-Primordial-Testnet'}</span>
+            <span>${qrData.network || 'Base-Sepolia-Testnet'}</span>
           </div>
         </div>
         <button class="btn-close">Close</button>
