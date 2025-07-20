@@ -614,7 +614,7 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
                         <span className="text-gray-600">Cost:</span>
                         <div className="flex items-center text-green-600 font-semibold">
                           <DollarSign size={16} />
-                          <span>{getInteractionFee(selectedInteractionType)} BDAG</span>
+                          <span>{getInteractionFee(selectedInteractionType)} USDC</span>
                         </div>
                       </div>
                       <div className="flex justify-between items-center text-sm">
@@ -628,14 +628,14 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
                       </div>
                       <div className="flex justify-between items-center text-sm mt-1">
                         <span className="text-gray-500">Network:</span>
-                        <span className="text-gray-700 text-xs">BlockDAG Primordial Testnet (1043)</span>
+                        <span className="text-gray-700 text-xs">Base Sepolia Testnet (84532)</span>
                       </div>
                       <div className="flex justify-between items-center text-sm mt-1">
                         <span className="text-gray-500">RPC:</span>
-                        <span className="text-gray-700 text-xs">rpc.primordial.bdagscan.com</span>
+                        <span className="text-gray-700 text-xs">https://sepolia.base.org</span>
                       </div>
                       <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-800">
-                        💡 <strong>Note:</strong> MetaMask will use your currently active account as sender. Make sure your active account has BDAG tokens.
+                        💡 <strong>Note:</strong> MetaMask will use your currently active account as sender. Make sure your active account has USDC tokens.
                       </div>
                     </div>
                     
@@ -667,7 +667,7 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
                           <Wallet size={24} />
                           <div className="text-left">
                             <div className="font-semibold">Traditional Payment</div>
-                            <div className="text-sm opacity-90">Standard BDAG payment</div>
+                            <div className="text-sm opacity-90">Standard USDC payment</div>
                           </div>
                         </div>
                       </motion.button>
@@ -703,7 +703,7 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
                     </p>
                     <div className="bg-blue-50 rounded-lg p-3">
                       <p className="text-sm text-blue-800">
-                        🔒 Secured by NEAR Protocol
+                        🔒 Secured by Base Network
                       </p>
                     </div>
                   </div>

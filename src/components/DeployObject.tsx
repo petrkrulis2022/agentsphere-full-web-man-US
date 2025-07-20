@@ -94,8 +94,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     return address;
   });
 
-  // BDAG token contract address
-  const BDAG_CONTRACT = '0x6533fe2Ebb66CcE28FDdBA9663Fe433A308137e9'; // BDAG Token on BlockDAG Primordial Testnet
+  // USDC token contract address on Base Sepolia
+  const USDC_CONTRACT = '0x036CbD53842c5426634e7929541eC2318f3dCF7e'; // USDC on Base Sepolia Testnet
 
   // Agent type options
   const agentTypes = [
@@ -135,20 +135,20 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     'Entertainment'
   ];
 
-  // Fetch BDAG balance
-  const fetchBDAGBalance = async () => {
+  // Fetch USDC balance
+  const fetchUSDCBalance = async () => {
     if (!address) return;
     
     setLoadingBalance(true);
     setBalanceError('');
     try {
-      console.log('🔍 Fetching BDAG balance for address:', address);
-      console.log('🌐 Using RPC: https://test-rpc.primordial.bdagscan.com/');
-      console.log('📄 Contract:', BDAG_CONTRACT);
+      console.log('🔍 Fetching USDC balance for address:', address);
+      console.log('🌐 Using RPC: https://sepolia.base.org');
+      console.log('📄 Contract:', USDC_CONTRACT);
       
       // Create provider using the correct RPC endpoint
       const { ethers } = await import('ethers');
-      const provider = new ethers.providers.JsonRpcProvider('https://test-rpc.primordial.bdagscan.com/');
+      const provider = new ethers.providers.JsonRpcProvider('https://sepolia.base.org');
       
       // ERC-20 ABI for balanceOf function
       const erc20ABI = [
@@ -159,7 +159,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         "function totalSupply() view returns (uint256)"
       ];
       
-      const contract = new ethers.Contract(BDAG_CONTRACT, erc20ABI, provider);
+      const contract = new ethers.Contract(USDC_CONTRACT, erc20ABI, provider);
       
       // Get comprehensive token info and balance
       const [balance, decimals, symbol, name, totalSupply] = await Promise.all([
@@ -175,30 +175,30 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       const balanceNumber = parseFloat(formattedBalance);
       const formattedTotalSupply = ethers.utils.formatUnits(totalSupply, decimals);
       
-      console.log('✅ BDAG Balance Query Results:');
+      console.log('✅ USDC Balance Query Results:');
       console.log('   Token Name:', name);
       console.log('   Token Symbol:', symbol);
       console.log('   Decimals:', decimals.toString());
-      console.log('   Total Supply:', formattedTotalSupply, 'BDAG');
+      console.log('   Total Supply:', formattedTotalSupply, 'USDC');
       console.log('   Raw Balance:', balance.toString());
       console.log('   Formatted Balance:', formattedBalance);
-      console.log('   Final Balance:', balanceNumber.toFixed(2), 'BDAG');
+      console.log('   Final Balance:', balanceNumber.toFixed(2), 'USDC');
       console.log('   Account Address:', address);
-      console.log('   Contract Address:', BDAG_CONTRACT);
-      console.log('   Network: BlockDAG Primordial Testnet (Chain ID: 1043)');
+      console.log('   Contract Address:', USDC_CONTRACT);
+      console.log('   Network: Base Sepolia Testnet (Chain ID: 84532)');
       
-      setBdagBalance(balanceNumber.toFixed(2));
+      setBdagBalance(balanceNumber.toFixed(6)); // USDC has 6 decimals
       
       // Show balance in UI notification
       if (balanceNumber > 0) {
-        console.log(`🎉 You have ${balanceNumber.toFixed(2)} BDAG in your connected account!`);
+        console.log(`🎉 You have ${balanceNumber.toFixed(6)} USDC in your connected account!`);
       } else {
-        console.log('⚠️ No BDAG balance found in connected account');
-        setBalanceError(`No BDAG balance found for ${address}. Ensure BDAG tokens are in this account on BlockDAG Primordial Testnet (Chain ID: 1043).`);
+        console.log('⚠️ No USDC balance found in connected account');
+        setBalanceError(`No USDC balance found for ${address}. Ensure USDC tokens are in this account on Base Sepolia Testnet (Chain ID: 84532).`);
       }
       
     } catch (error) {
-      console.error('❌ Error fetching BDAG balance:', error);
+      console.error('❌ Error fetching USDC balance:', error);
       setBalanceError(`Balance fetch failed: ${error instanceof Error ? error.message : 'Unknown error'}. Check network connection and RPC endpoint.`);
       setBdagBalance('0.00');
     } finally {
@@ -337,8 +337,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         owner_wallet: address,
         agent_wallet_address: agentWallet,
         agent_wallet_type: 'evm_wallet',
-        network: 'blockdag-testnet',
-        currency_type: 'BDAG',
+        network: 'base-sepolia',
+        currency_type: 'USDC',
         chat_enabled: textChat,
         voice_enabled: voiceChat,
         defi_enabled: defiFeatures,
@@ -386,10 +386,10 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     }
   };
 
-  // Load BDAG balance when wallet connects
+  // Load USDC balance when wallet connects
   useEffect(() => {
     if (address && sdk) {
-      fetchBDAGBalance();
+      fetchUSDCBalance();
     } else {
       setBdagBalance('0.00');
     }
@@ -419,11 +419,11 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     </span>
                   </div>
                   <div className="flex items-center">
-                    <span className="text-white mr-2">BDAG Balance:</span>
+                    <span className="text-white mr-2">USDC Balance:</span>
                     {loadingBalance ? (
                       <Loader2 className="h-4 w-4 text-white animate-spin" />
                     ) : (
-                      <span className="text-white font-bold">{bdagBalance} BDAG</span>
+                      <span className="text-white font-bold">{bdagBalance} USDC</span>
                     )}
                   </div>
                 </div>
@@ -433,7 +433,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   </div>
                 )}
                 <div className="mt-2 text-white text-opacity-80 text-xs">
-                  RPC: https://test-rpc.primordial.bdagscan.com/
+                  RPC: https://sepolia.base.org
                 </div>
               </div>
             )}
@@ -476,7 +476,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                 </button>
                 
                 <button
-                  onClick={fetchBDAGBalance}
+                  onClick={fetchUSDCBalance}
                   disabled={!address || loadingBalance}
                   className="flex items-center justify-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
@@ -485,7 +485,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   ) : (
                     <DollarSign className="h-5 w-5 mr-2" />
                   )}
-                  Check BDAG Balance
+                  Check USDC Balance
                 </button>
               </div>
 
@@ -822,7 +822,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Interaction Fee (BDAG)
+                    Interaction Fee (USDC)
                   </label>
                   <input
                     type="number"
@@ -858,19 +858,19 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                   <div>
                     <div className="text-2xl font-bold text-green-600">
-                      {(interactionFee * revenueSharing / 100).toFixed(2)} BDAG
+                      {(interactionFee * revenueSharing / 100).toFixed(6)} USDC
                     </div>
                     <div className="text-sm text-gray-600">Per Interaction</div>
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-green-600">
-                      {(interactionFee * revenueSharing / 100 * 10).toFixed(2)} BDAG
+                      {(interactionFee * revenueSharing / 100 * 10).toFixed(6)} USDC
                     </div>
                     <div className="text-sm text-gray-600">10 Interactions/Day</div>
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-green-600">
-                      {(interactionFee * revenueSharing / 100 * 300).toFixed(2)} BDAG
+                      {(interactionFee * revenueSharing / 100 * 300).toFixed(6)} USDC
                     </div>
                     <div className="text-sm text-gray-600">Monthly Potential</div>
                   </div>
