@@ -4,7 +4,7 @@ import App from './App.tsx'
 import './index.css'
 import { BrowserRouter } from 'react-router-dom'
 import { ThirdwebProvider } from '@thirdweb-dev/react'
-import { defineChain } from '@thirdweb-dev/react'
+import { defineChain } from '@thirdweb-dev/chains'
 
 // BlockDAG Primordial Testnet configuration
 const BlockDAGTestnet = defineChain({
