@@ -338,7 +338,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         agent_wallet_address: agentWallet,
         agent_wallet_type: 'evm_wallet',
         network: 'base-sepolia',
-        currency_type: 'USDC',
+        currency_type: 'BDAG',
         chat_enabled: textChat,
         voice_enabled: voiceChat,
         defi_enabled: defiFeatures,
