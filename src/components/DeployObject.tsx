@@ -337,7 +337,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         owner_wallet: address,
         agent_wallet_address: agentWallet,
         agent_wallet_type: 'evm_wallet',
-        network: 'base-sepolia',
+        network: 'blockdag-testnet',
         currency_type: 'BDAG',
         chat_enabled: textChat,
         voice_enabled: voiceChat,
