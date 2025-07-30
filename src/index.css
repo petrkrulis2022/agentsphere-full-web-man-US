@@ -1,26 +1,26 @@
+/* Import landing page specific styles */
+@import "./styles/landing.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Import landing page specific styles */
-@import './styles/landing.css';
-
 :root {
-  --primary: #10B981;
-  --primary-light: #34D399;
+  --primary: #10b981;
+  --primary-light: #34d399;
   --secondary: #059669;
-  --dark: #1E1B4B;
-  --light: #ECFDF5;
-  --near-green: #00EC97;
+  --dark: #1e1b4b;
+  --light: #ecfdf5;
+  --near-green: #00ec97;
   --near-dark: #000000;
-  --near-emerald: #10B981;
+  --near-emerald: #10b981;
 }
 
 body {
   margin: 0;
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+    "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -93,8 +93,8 @@ body {
 
 .deployment-status .step.completed {
   background: rgba(0, 236, 151, 0.2);
-  color: #00EC97;
-  border: 1px solid #00EC97;
+  color: #00ec97;
+  border: 1px solid #00ec97;
 }
 
 .deployment-status .step.pending {
@@ -118,7 +118,7 @@ body {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 10px;
   padding: 20px;
-  border-left: 4px solid #00EC97;
+  border-left: 4px solid #00ec97;
 }
 
 .success-content .result-item {
@@ -167,22 +167,22 @@ body {
   .deploy-button-enhanced .main-action {
     font-size: 16px;
   }
-  
+
   .deploy-button-enhanced .storage-action {
     font-size: 11px;
   }
-  
+
   .deploy-button-enhanced .dual-logos {
     font-size: 10px;
     gap: 6px;
   }
-  
+
   .success-content .result-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 5px;
   }
-  
+
   .success-content .result-item .value {
     text-align: left;
   }

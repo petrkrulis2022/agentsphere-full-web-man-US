@@ -7,6 +7,8 @@ import Hero from "./components/Hero";
 import Features from "./components/Features";
 import MapVisualization from "./components/MapVisualization";
 import AuthSection from "./components/AuthSection";
+import TestimonialsSection from "./components/TestimonialsSection";
+import FAQSection from "./components/FAQSection";
 import Footer from "./components/Footer";
 import DeployObject from "./components/DeployObject";
 import ARViewer from "./components/ARViewer";
@@ -87,7 +89,9 @@ function App() {
               <>
                 <Hero />
                 <Features />
+                <TestimonialsSection />
                 <MapVisualization />
+                <FAQSection />
                 <AuthSection
                   waitlistCount={waitlistCount}
                   setWaitlistCount={setWaitlistCount}
