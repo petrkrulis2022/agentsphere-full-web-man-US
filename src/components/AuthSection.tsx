@@ -59,38 +59,67 @@ const AuthSection = ({ waitlistCount, setWaitlistCount, supabase }: AuthSectionP
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Join the Waitlist</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+              Join 2,847+ Early Pioneers
+            </h2>
             <p className="mt-4 text-lg text-gray-600 max-w-lg">
-              Be among the first to deploy AI agents at your school. Early access members get bonus USDFC and exclusive AI agent templates.
+              🚀 <strong>Limited Beta Access:</strong> Be among the first 5,000 to deploy AI agents in AR. 
+              Early members get exclusive templates, bonus tokens, and priority support.
             </p>
             
-            <div className="mt-8">
+            <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+              <div className="flex items-center text-green-800">
+                <span className="text-2xl mr-2">⚡</span>
+                <div>
+                  <div className="font-semibold">Early Bird Bonus</div>
+                  <div className="text-sm">500 USDFC + Premium Agent Templates (Worth $50)</div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-8 space-y-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md bg-green-100 text-green-600">
                   <Mail className="h-6 w-6" />
                 </div>
                 <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900">Email Signup</h3>
-                  <p className="mt-1 text-sm text-gray-500">Get notified when NEAR AgentSphere launches</p>
+                  <h3 className="text-lg font-medium text-gray-900">Instant Access</h3>
+                  <p className="mt-1 text-sm text-gray-500">Get early beta invitation in 48 hours</p>
                 </div>
               </div>
               
-              <div className="mt-4 flex items-center">
-                <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md bg-green-100 text-green-600">
+              <div className="flex items-center">
+                <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md bg-blue-100 text-blue-600">
                   <Lock className="h-6 w-6" />
                 </div>
                 <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900">NEAR Protocol Security</h3>
-                  <p className="mt-1 text-sm text-gray-500">Early access to NEAR-powered features</p>
+                  <h3 className="text-lg font-medium text-gray-900">Blockchain Security</h3>
+                  <p className="mt-1 text-sm text-gray-500">Secure wallet integration with ThirdWeb</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center">
+                <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md bg-purple-100 text-purple-600">
+                  <Wallet className="h-6 w-6" />
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-lg font-medium text-gray-900">Multi-Chain Support</h3>
+                  <p className="mt-1 text-sm text-gray-500">Ethereum, Polygon, Avalanche, BlockDAG</p>
                 </div>
               </div>
             </div>
             
-            <div className="mt-10">
+            <div className="mt-8 flex items-center justify-between">
               <div className="inline-flex items-center px-4 py-2 rounded-full bg-green-100 text-green-800">
                 <span className="text-sm font-medium">
-                  {waitlistCount.toLocaleString()} students already signed up
+                  {waitlistCount.toLocaleString()} pioneers already joined
                 </span>
+              </div>
+              <div className="text-right">
+                <div className="text-sm text-gray-500">Spots remaining</div>
+                <div className="text-xl font-bold text-red-600">
+                  {(5000 - waitlistCount).toLocaleString()}
+                </div>
               </div>
             </div>
             

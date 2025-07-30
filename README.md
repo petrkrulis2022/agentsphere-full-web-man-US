@@ -5,7 +5,9 @@
 AgentSphere is a cutting-edge platform for deploying and managing AI agents through augmented reality and QR code technology with full blockchain integration.
 
 ### 🚀 **Current Repository: Full Web Management System**
+
 **Complete AgentSphere Implementation**
+
 - Full-stack web application with React + TypeScript
 - Supabase database integration for real-time data
 - AR/QR code generation and management
@@ -15,12 +17,14 @@ AgentSphere is a cutting-edge platform for deploying and managing AI agents thro
 ## 🎯 **Current Setup Status**
 
 ### **✅ Environment Configuration Complete:**
+
 - Supabase database connection established
 - ThirdWeb blockchain integration configured
 - Assembly AI API integration ready
 - Development environment fully operational
 
 ### **✅ Core Features Implemented:**
+
 - Real-time database connectivity testing
 - AR/QR code generation capabilities
 - Interactive map visualization
@@ -28,6 +32,7 @@ AgentSphere is a cutting-edge platform for deploying and managing AI agents thro
 - Blockchain payment integration
 
 ### **✅ Database Schema:**
+
 - Complete `deployed_objects` table with advanced features
 - Support for trailing agents and interaction ranges
 - Multi-blockchain network compatibility
@@ -36,6 +41,7 @@ AgentSphere is a cutting-edge platform for deploying and managing AI agents thro
 ## 🚀 **Quick Start Guide**
 
 ### **Prerequisites:**
+
 - Node.js 18+ and npm
 - Git
 - Modern web browser with WebRTC support
@@ -43,18 +49,21 @@ AgentSphere is a cutting-edge platform for deploying and managing AI agents thro
 ### **Installation & Setup:**
 
 1. **Clone and Navigate:**
+
    ```bash
    git clone https://github.com/petrkrulis2022/agentsphere-full-web-man-US.git
    cd agentsphere-full-web-man-US
    ```
 
 2. **Install Dependencies:**
+
    ```bash
    npm install
    ```
 
 3. **Environment Variables:**
    The `.env` file is already configured with:
+
    ```env
    VITE_SUPABASE_URL=https://ncjbwzibnqrbrvicdmec.supabase.co
    VITE_SUPABASE_ANON_KEY=[configured]
@@ -64,6 +73,7 @@ AgentSphere is a cutting-edge platform for deploying and managing AI agents thro
    ```
 
 4. **Start Development Server:**
+
    ```bash
    npm run dev
    ```
@@ -101,6 +111,7 @@ AgentSphere is a cutting-edge platform for deploying and managing AI agents thro
 ## 🛠️ **Technology Stack**
 
 ### **Frontend (Main Repo):**
+
 - React + TypeScript
 - Tailwind CSS
 - Framer Motion
@@ -108,6 +119,7 @@ AgentSphere is a cutting-edge platform for deploying and managing AI agents thro
 - Vite
 
 ### **Blockchain (Blockchain+Storage+Payment Repo):**
+
 - Blockchain Protocol SDK
 - Filecoin/IPFS integration
 - USDC smart contracts
@@ -115,6 +127,7 @@ AgentSphere is a cutting-edge platform for deploying and managing AI agents thro
 - Supabase database
 
 ### **AR Viewer (AR Repo):**
+
 - A-Frame WebXR
 - Three.js
 - WebRTC camera access
@@ -124,6 +137,7 @@ AgentSphere is a cutting-edge platform for deploying and managing AI agents thro
 ## 🚀 **Getting Started**
 
 ### **1. Clone All Repositories:**
+
 ```bash
 # Main repository
 git clone https://github.com/BeerSlothAgent/Agent-Sphere-1.git
@@ -136,6 +150,7 @@ git clone https://github.com/BeerSlothAgent/geospatial-agent-ar-viewer.git
 ```
 
 ### **2. Setup Main Repository:**
+
 ```bash
 cd Agent-Sphere-1
 npm install
@@ -145,6 +160,7 @@ npm run dev
 ```
 
 ### **3. Setup Blockchain Integrations:**
+
 ```bash
 cd geospatila-agent-near-shade-integrations
 npm install
@@ -152,6 +168,7 @@ npm install
 ```
 
 ### **4. Setup AR Viewer:**
+
 ```bash
 cd geospatial-agent-ar-viewer
 npm install
@@ -161,6 +178,7 @@ npm install
 ## 🌐 **Environment Variables**
 
 ### **Main Repository (.env):**
+
 ```env
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_key
@@ -168,6 +186,7 @@ VITE_THIRDWEB_CLIENT_ID=your_thirdweb_id
 ```
 
 ### **Additional Configuration:**
+
 - See individual repository README files for specific setup instructions
 - Each repository has its own environment configuration
 - Cross-repository communication is handled via APIs and shared protocols
@@ -175,24 +194,28 @@ VITE_THIRDWEB_CLIENT_ID=your_thirdweb_id
 ## 🎯 **Key Features**
 
 ### **🔗 Blockchain Integration:**
+
 - Smart contract deployment for agents
 - Wallet connectivity
 - Decentralized agent ownership
 - Blockchain-based payment processing
 
 ### **📁 Filecoin/IPFS Storage:**
+
 - Agent metadata storage on IPFS
 - Long-term preservation via Filecoin
 - Decentralized content addressing
 - Immutable agent data
 
 ### **💰 USDC Payment System:**
+
 - Stable coin payments
 - Cross-chain compatibility
 - Instant settlement
 - Low transaction fees
 
 ### **👁️ Augmented Reality:**
+
 - Real-time AR agent visualization
 - Camera-based interaction
 - GPS-accurate positioning
@@ -201,6 +224,7 @@ VITE_THIRDWEB_CLIENT_ID=your_thirdweb_id
 ## 🏆 **Blockchain Innovation**
 
 This project demonstrates:
+
 - ✅ **Deep blockchain integration**
 - ✅ **Innovative use of Filecoin/IPFS**
 - ✅ **Real-world utility and adoption potential**
@@ -211,6 +235,7 @@ This project demonstrates:
 ## 🤝 **Contributing**
 
 Each repository accepts contributions:
+
 1. Fork the specific repository
 2. Create a feature branch
 3. Make your changes
@@ -229,7 +254,7 @@ MIT License - See individual repositories for specific license terms.
 - **Presentation** https://agentsphere-0xa1tku.gamma.site/
 - **Main AgentSPher** https://playful-cranachan-e941e5.netlify.app/
 - **Live AR Demo:** [https://admirable-hamster-b9c370.netlify.app/](https://admirable-hamster-b9c370.netlify.app/)
--    
+-
 
 ---
 
