@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { useSDK } from '@thirdweb-dev/react';
-import { 
-  MapPin, 
-  Crosshair, 
-  Plus, 
-  DollarSign, 
-  Loader2, 
-  CheckCircle, 
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { useSDK } from "@thirdweb-dev/react";
+import {
+  MapPin,
+  Crosshair,
+  Plus,
+  DollarSign,
+  Loader2,
+  CheckCircle,
   AlertCircle,
   Wallet,
   Settings,
@@ -17,9 +17,9 @@ import {
   Video,
   TrendingUp,
   Bell,
-  Navigation
-} from 'lucide-react';
-import { useAddress } from '@thirdweb-dev/react';
+  Navigation,
+} from "lucide-react";
+import { useAddress } from "@thirdweb-dev/react";
 
 interface DeployObjectProps {
   supabase: any;
@@ -45,162 +45,218 @@ interface PreciseLocationData extends LocationData {
 const DeployObject = ({ supabase }: DeployObjectProps) => {
   const address = useAddress();
   const sdk = useSDK();
-  const [bdagBalance, setBdagBalance] = useState<string>('0.00');
+  const [bdagBalance, setBdagBalance] = useState<string>("0.00");
   const [loadingBalance, setLoadingBalance] = useState(false);
-  const [balanceError, setBalanceError] = useState<string>('');
-  
+  const [balanceError, setBalanceError] = useState<string>("");
+
   // Location states
   const [location, setLocation] = useState<LocationData | null>(null);
-  const [preciseLocation, setPreciseLocation] = useState<PreciseLocationData | null>(null);
+  const [preciseLocation, setPreciseLocation] =
+    useState<PreciseLocationData | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
   const [rtkLoading, setRtkLoading] = useState(false);
-  
+
   // Agent configuration states
-  const [agentName, setAgentName] = useState('');
-  const [agentType, setAgentType] = useState('ai_agent');
-  const [agentDescription, setAgentDescription] = useState('');
-  const [locationType, setLocationType] = useState('Street');
+  const [agentName, setAgentName] = useState("");
+  const [agentType, setAgentType] = useState("intelligent_assistant");
+  const [agentDescription, setAgentDescription] = useState("");
+  const [locationType, setLocationType] = useState("Street");
   const [trailingAgent, setTrailingAgent] = useState(false);
   const [visibilityRange, setVisibilityRange] = useState(25);
   const [interactionRange, setInteractionRange] = useState(15);
   const [arNotifications, setArNotifications] = useState(true);
-  
+
   // Interaction methods
   const [textChat, setTextChat] = useState(true);
   const [voiceChat, setVoiceChat] = useState(false);
   const [videoChat, setVideoChat] = useState(false);
   const [defiFeatures, setDefiFeatures] = useState(false);
-  
+
   // MCP integrations
   const [mcpIntegrations, setMcpIntegrations] = useState<string[]>([]);
-  
+
   // Economics
-  const [interactionFee, setInteractionFee] = useState(0.50);
+  const [interactionFee, setInteractionFee] = useState(1); // Changed to integer
+  const [selectedToken, setSelectedToken] = useState("USDT"); // New token selection
   const [revenueSharing, setRevenueSharing] = useState(70);
-  
+
   // Deployment states
   const [isDeploying, setIsDeploying] = useState(false);
   const [deploymentSuccess, setDeploymentSuccess] = useState(false);
-  const [deploymentError, setDeploymentError] = useState('');
-  
-  // Simulated agent wallet
-  const [agentWallet] = useState(() => {
-    // Generate a valid Ethereum address format
-    const chars = '0123456789abcdef';
-    let address = '0x';
-    for (let i = 0; i < 40; i++) {
-      address += chars[Math.floor(Math.random() * chars.length)];
-    }
-    return address;
-  });
+  const [deploymentError, setDeploymentError] = useState("");
+
+  // Agent wallet = User connected wallet (same address)
+  const agentWallet = address || "0x000...000";
 
   // USDC token contract address on Base Sepolia
-  const BDAG_CONTRACT = '0x6533fe2Ebb66CcE28FDdBA9663Fe433A308137e9'; // BDAG Token Contract Address
+  const BDAG_CONTRACT = "0x6533fe2Ebb66CcE28FDdBA9663Fe433A308137e9"; // BDAG Token Contract Address
 
-  // Agent type options
+  // Agent type options - Updated with new categories
   const agentTypes = [
-    { value: 'ai_agent', label: 'AI Agent' },
-    { value: 'tutor', label: 'Tutor' },
-    { value: 'landmark', label: 'Landmark' },
-    { value: 'building', label: 'Building' }
+    { value: "intelligent_assistant", label: "Intelligent Assistant" },
+    { value: "local_services", label: "Local Services" },
+    { value: "payment_terminal", label: "Payment Terminal" },
+    { value: "game_agent", label: "Game Agent" },
+    { value: "3d_world_builder", label: "3D World Builder" },
+    { value: "home_security", label: "Home Security" },
+    { value: "content_creator", label: "Content Creator" },
+    { value: "real_estate_broker", label: "Real Estate Broker" },
+    { value: "bus_stop_agent", label: "Bus Stop Agent" },
+    // Conditional trailing agent types
+    ...(trailingAgent
+      ? [
+          {
+            value: "trailing_payment_terminal",
+            label: "Trailing Payment Terminal",
+          },
+          { value: "my_ghost", label: "My Ghost" },
+        ]
+      : []),
   ];
 
-  // Location type options
+  // Supported stablecoins for payment
+  const SUPPORTED_STABLECOINS = [
+    "USDT", // Tether USD
+    "USDC", // USD Coin
+    "USDs", // Stablecoin by Stably
+    "USDBG+", // USD Bancor Governance Plus
+    "USDe", // Ethena USD
+    "LSTD+", // Liquid Staked Token Derivative Plus
+    "AIX", // Aigang Token
+    "PYUSD", // PayPal USD
+    "RLUSD", // Ripple USD
+    "USDD", // USDD Stablecoin
+    "GHO", // GHO Stablecoin
+    "USDx", // USDx Stablecoin
+  ];
+
+  // Token contract addresses for BlockDAG Primordial Testnet (Chain ID 1043)
+  const TOKEN_ADDRESSES: { [key: string]: string } = {
+    USDT: "0x1234567890123456789012345678901234567890", // Placeholder - Replace with actual contract addresses
+    USDC: "0x2345678901234567890123456789012345678901",
+    USDs: "0x3456789012345678901234567890123456789012",
+    "USDBG+": "0x4567890123456789012345678901234567890123",
+    USDe: "0x5678901234567890123456789012345678901234",
+    "LSTD+": "0x6789012345678901234567890123456789012345",
+    AIX: "0x7890123456789012345678901234567890123456",
+    PYUSD: "0x8901234567890123456789012345678901234567",
+    RLUSD: "0x9012345678901234567890123456789012345678",
+    USDD: "0x0123456789012345678901234567890123456789",
+    GHO: "0x1234567890123456789012345678901234567891",
+    USDx: "0x2345678901234567890123456789012345678902",
+  };
+
+  // Location type options - Added Property
   const locationTypes = [
-    'Home',
-    'Street', 
-    'Countryside',
-    'Classroom',
-    'Office',
-    ...(trailingAgent ? ['Car'] : [])
+    "Home",
+    "Street",
+    "Countryside",
+    "Classroom",
+    "Office",
+    "Property",
+    ...(trailingAgent ? ["Car"] : []),
   ];
 
   // MCP integration options
   const mcpOptions = [
-    'Chat',
-    'Voice',
-    'Analysis',
-    'Information Lookup',
-    'Educational Content',
-    'Study Planning',
-    'Q&A',
-    'Location Services',
-    'Directory',
-    'Navigation',
-    'Content Generation',
-    'Brainstorming',
-    'Writing',
-    'Game Creation',
-    'Puzzles',
-    'Entertainment'
+    "Chat",
+    "Voice",
+    "Analysis",
+    "Information Lookup",
+    "Educational Content",
+    "Study Planning",
+    "Q&A",
+    "Location Services",
+    "Directory",
+    "Navigation",
+    "Content Generation",
+    "Brainstorming",
+    "Writing",
+    "Game Creation",
+    "Puzzles",
+    "Entertainment",
   ];
 
   // Fetch USDC balance
   const fetchBDAGBalance = async () => {
     if (!address) return;
-    
+
     setLoadingBalance(true);
-    setBalanceError('');
+    setBalanceError("");
     try {
-      console.log('🔍 Fetching BDAG balance for address:', address);
-      console.log('🌐 Using RPC: https://test-rpc.primordial.bdagscan.com/');
-      console.log('📄 Contract:', BDAG_CONTRACT);
-      
+      console.log("🔍 Fetching BDAG balance for address:", address);
+      console.log("🌐 Using RPC: https://test-rpc.primordial.bdagscan.com/");
+      console.log("📄 Contract:", BDAG_CONTRACT);
+
       // Create provider using the correct RPC endpoint
-      const { ethers } = await import('ethers');
-      const provider = new ethers.providers.JsonRpcProvider('https://test-rpc.primordial.bdagscan.com/');
-      
+      const { ethers } = await import("ethers");
+      const provider = new ethers.providers.JsonRpcProvider(
+        "https://test-rpc.primordial.bdagscan.com/"
+      );
+
       // ERC-20 ABI for balanceOf function
       const erc20ABI = [
         "function balanceOf(address owner) view returns (uint256)",
         "function decimals() view returns (uint8)",
         "function symbol() view returns (string)",
         "function name() view returns (string)",
-        "function totalSupply() view returns (uint256)"
+        "function totalSupply() view returns (uint256)",
       ];
-      
+
       const contract = new ethers.Contract(BDAG_CONTRACT, erc20ABI, provider);
-      
+
       // Get comprehensive token info and balance
       const [balance, decimals, symbol, name, totalSupply] = await Promise.all([
         contract.balanceOf(address),
         contract.decimals(),
         contract.symbol(),
         contract.name(),
-        contract.totalSupply()
+        contract.totalSupply(),
       ]);
-      
+
       // Convert from raw units to readable format
       const formattedBalance = ethers.utils.formatUnits(balance, decimals);
       const balanceNumber = parseFloat(formattedBalance);
-      const formattedTotalSupply = ethers.utils.formatUnits(totalSupply, decimals);
-      
-      console.log('✅ BDAG Balance Query Results:');
-      console.log('   Token Name:', name);
-      console.log('   Token Symbol:', symbol);
-      console.log('   Decimals:', decimals.toString());
-      console.log('   Total Supply:', formattedTotalSupply, 'BDAG');
-      console.log('   Raw Balance:', balance.toString());
-      console.log('   Formatted Balance:', formattedBalance); // BDAG has 18 decimals
-      console.log('   Final Balance:', balanceNumber.toFixed(2), 'BDAG');
-      console.log('   Account Address:', address);
-      console.log('   Contract Address:', BDAG_CONTRACT);
-      console.log('   Network: BlockDAG Primordial Testnet (Chain ID: 1043)');
-      
+      const formattedTotalSupply = ethers.utils.formatUnits(
+        totalSupply,
+        decimals
+      );
+
+      console.log("✅ BDAG Balance Query Results:");
+      console.log("   Token Name:", name);
+      console.log("   Token Symbol:", symbol);
+      console.log("   Decimals:", decimals.toString());
+      console.log("   Total Supply:", formattedTotalSupply, "BDAG");
+      console.log("   Raw Balance:", balance.toString());
+      console.log("   Formatted Balance:", formattedBalance); // BDAG has 18 decimals
+      console.log("   Final Balance:", balanceNumber.toFixed(2), "BDAG");
+      console.log("   Account Address:", address);
+      console.log("   Contract Address:", BDAG_CONTRACT);
+      console.log("   Network: BlockDAG Primordial Testnet (Chain ID: 1043)");
+
       setBdagBalance(balanceNumber.toFixed(6)); // Display with 6 decimals for readability
-      
+
       // Show balance in UI notification
       if (balanceNumber > 0) {
-        console.log(`🎉 You have ${balanceNumber.toFixed(6)} BDAG in your connected account!`);
+        console.log(
+          `🎉 You have ${balanceNumber.toFixed(
+            6
+          )} BDAG in your connected account!`
+        );
       } else {
-        console.log('⚠️ No BDAG balance found in connected account');
-        setBalanceError(`No BDAG balance found for ${address}. Ensure BDAG tokens are in this account on BlockDAG Primordial Testnet (Chain ID: 1043).`);
+        console.log("⚠️ No BDAG balance found in connected account");
+        setBalanceError(
+          `No BDAG balance found for ${address}. Ensure BDAG tokens are in this account on BlockDAG Primordial Testnet (Chain ID: 1043).`
+        );
       }
-      
     } catch (error) {
-      console.error('❌ Error fetching USDC balance:', error);
-      setBalanceError(`Balance fetch failed: ${error instanceof Error ? error.message : 'Unknown error'}. Check network connection and RPC endpoint.`);
-      setBdagBalance('0.00');
+      console.error("❌ Error fetching USDC balance:", error);
+      setBalanceError(
+        `Balance fetch failed: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }. Check network connection and RPC endpoint.`
+      );
+      setBdagBalance("0.00");
     } finally {
       setLoadingBalance(false);
     }
@@ -209,9 +265,9 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   // Get current location
   const getCurrentLocation = () => {
     setLocationLoading(true);
-    
+
     if (!navigator.geolocation) {
-      alert('Geolocation is not supported by this browser.');
+      alert("Geolocation is not supported by this browser.");
       setLocationLoading(false);
       return;
     }
@@ -222,15 +278,15 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
           altitude: position.coords.altitude || undefined,
-          accuracy: position.coords.accuracy
+          accuracy: position.coords.accuracy,
         };
         setLocation(locationData);
         setLocationLoading(false);
-        console.log('📍 Current location obtained:', locationData);
+        console.log("📍 Current location obtained:", locationData);
       },
       (error) => {
-        console.error('❌ Error getting location:', error);
-        alert('Error getting location: ' + error.message);
+        console.error("❌ Error getting location:", error);
+        alert("Error getting location: " + error.message);
         setLocationLoading(false);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
@@ -240,23 +296,28 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   // Get RTK enhanced location
   const getRTKLocation = async () => {
     if (!location) {
-      alert('Please get your current location first');
+      alert("Please get your current location first");
       return;
     }
 
     setRtkLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-precise-location`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({
-          latitude: location.latitude,
-          longitude: location.longitude
-        })
-      });
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_SUPABASE_URL
+        }/functions/v1/get-precise-location`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            latitude: location.latitude,
+            longitude: location.longitude,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -271,13 +332,13 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         correctionApplied: data.correctionApplied,
         fixType: data.fixType,
         satellites: data.satellites,
-        processingTime: data.processingTime
+        processingTime: data.processingTime,
       });
-      
-      console.log('🎯 RTK enhanced location:', data);
+
+      console.log("🎯 RTK enhanced location:", data);
     } catch (error) {
-      console.error('❌ RTK correction failed:', error);
-      alert('RTK correction failed. Using standard GPS location.');
+      console.error("❌ RTK correction failed:", error);
+      alert("RTK correction failed. Using standard GPS location.");
     } finally {
       setRtkLoading(false);
     }
@@ -285,9 +346,9 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
   // Handle MCP integration toggle
   const toggleMCPIntegration = (integration: string) => {
-    setMcpIntegrations(prev => 
+    setMcpIntegrations((prev) =>
       prev.includes(integration)
-        ? prev.filter(item => item !== integration)
+        ? prev.filter((item) => item !== integration)
         : [...prev, integration]
     );
   };
@@ -295,33 +356,37 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   // Deploy agent
   const deployAgent = async () => {
     if (!supabase) {
-      alert('Database connection not available. Please connect to Supabase first.');
+      alert(
+        "Database connection not available. Please connect to Supabase first."
+      );
       return;
     }
 
     if (!address) {
-      alert('Please connect your wallet first.');
+      alert("Please connect your wallet first.");
       return;
     }
 
     if (!agentName.trim()) {
-      alert('Please enter an agent name.');
+      alert("Please enter an agent name.");
       return;
     }
 
     if (!location) {
-      alert('Please get your current location first.');
+      alert("Please get your current location first.");
       return;
     }
 
     setIsDeploying(true);
-    setDeploymentError('');
+    setDeploymentError("");
 
     try {
       const deploymentData = {
         user_id: address,
         name: agentName.trim(),
-        description: agentDescription.trim() || `A ${agentType.toLowerCase()} agent deployed via AR`,
+        description:
+          agentDescription.trim() ||
+          `A ${agentType.toLowerCase()} agent deployed via AR`,
         object_type: agentType,
         location_type: locationType,
         latitude: preciseLocation?.preciseLatitude || location.latitude,
@@ -330,33 +395,38 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         preciselatitude: preciseLocation?.preciseLatitude,
         preciselongitude: preciseLocation?.preciseLongitude,
         precisealtitude: preciseLocation?.preciseAltitude,
-        accuracy: preciseLocation?.correctionApplied ? 0.02 : (location.accuracy || 10),
+        accuracy: preciseLocation?.correctionApplied
+          ? 0.02
+          : location.accuracy || 10,
         correctionapplied: preciseLocation?.correctionApplied || false,
         range_meters: visibilityRange,
         interaction_fee_usdfc: interactionFee,
         owner_wallet: address,
         agent_wallet_address: agentWallet,
-        agent_wallet_type: 'evm_wallet',
-        network: 'blockdag-testnet',
-        currency_type: 'BDAG',
+        agent_wallet_type: "evm_wallet",
+        network: "blockdag-testnet",
+        currency_type: selectedToken,
+        token_symbol: selectedToken,
+        token_address: TOKEN_ADDRESSES[selectedToken],
+        chain_id: 1043, // BlockDAG Primordial Testnet
         chat_enabled: textChat,
         voice_enabled: voiceChat,
         defi_enabled: defiFeatures,
         interaction_types: [
-          ...(textChat ? ['text_chat'] : []),
-          ...(voiceChat ? ['voice_interface'] : []),
-          ...(videoChat ? ['video_interface'] : [])
+          ...(textChat ? ["text_chat"] : []),
+          ...(voiceChat ? ["voice_interface"] : []),
+          ...(videoChat ? ["video_interface"] : []),
         ],
         mcp_integrations: mcpIntegrations.length > 0 ? mcpIntegrations : null,
         rtk_enhanced: preciseLocation?.correctionApplied || false,
-        rtk_provider: 'GeoNet',
-        is_active: true
+        rtk_provider: "GeoNet",
+        is_active: true,
       };
 
-      console.log('🚀 Deploying agent with data:', deploymentData);
+      console.log("🚀 Deploying agent with data:", deploymentData);
 
       const { data, error } = await supabase
-        .from('deployed_objects')
+        .from("deployed_objects")
         .insert([deploymentData])
         .select()
         .single();
@@ -365,22 +435,23 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         throw error;
       }
 
-      console.log('✅ Agent deployed successfully:', data);
+      console.log("✅ Agent deployed successfully:", data);
       setDeploymentSuccess(true);
-      
+
       // Reset form after successful deployment
       setTimeout(() => {
         setDeploymentSuccess(false);
-        setAgentName('');
-        setAgentDescription('');
+        setAgentName("");
+        setAgentDescription("");
         setMcpIntegrations([]);
         setLocation(null);
         setPreciseLocation(null);
       }, 3000);
-
     } catch (error) {
-      console.error('❌ Deployment failed:', error);
-      setDeploymentError(error instanceof Error ? error.message : 'Deployment failed');
+      console.error("❌ Deployment failed:", error);
+      setDeploymentError(
+        error instanceof Error ? error.message : "Deployment failed"
+      );
     } finally {
       setIsDeploying(false);
     }
@@ -391,7 +462,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     if (address && sdk) {
       fetchBDAGBalance();
     } else {
-      setBdagBalance('0.00');
+      setBdagBalance("0.00");
     }
   }, [address, sdk]);
 
@@ -405,9 +476,13 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         >
           {/* Header */}
           <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-8 py-6">
-            <h1 className="text-3xl font-bold text-white mb-2">Deploy AR Agent</h1>
-            <p className="text-green-100">Create and deploy your AI agent in the real world</p>
-            
+            <h1 className="text-3xl font-bold text-white mb-2">
+              Deploy AR Agent
+            </h1>
+            <p className="text-green-100">
+              Create and deploy your AI agent in the real world
+            </p>
+
             {/* Wallet Connection & BDAG Balance */}
             {address && (
               <div className="mt-4 bg-white bg-opacity-20 rounded-lg p-4">
@@ -423,7 +498,9 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     {loadingBalance ? (
                       <Loader2 className="h-4 w-4 text-white animate-spin" />
                     ) : (
-                      <span className="text-white font-bold">{bdagBalance} BDAG</span>
+                      <span className="text-white font-bold">
+                        {bdagBalance} BDAG
+                      </span>
                     )}
                   </div>
                 </div>
@@ -474,47 +551,52 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   )}
                   Get RTK Enhanced Location
                 </button>
-                
-                <button
-                  onClick={fetchBDAGBalance}
-                  disabled={!address || loadingBalance}
-                  className="flex items-center justify-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {loadingBalance ? (
-                    <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                  ) : (
-                    <DollarSign className="h-5 w-5 mr-2" />
-                  )}
-                  Check BDAG Balance
-                </button>
+
+                {/* Blockchain Connection Display */}
+                <div className="flex items-center justify-center px-6 py-3 bg-blue-100 text-blue-800 rounded-lg border border-blue-200">
+                  <CheckCircle className="h-5 w-5 mr-2" />
+                  Connected to: BlockDAG Primordial Testnet
+                </div>
               </div>
 
               {/* Location Display */}
               {location && (
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-900 mb-2">Current Location</h3>
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    Current Location
+                  </h3>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-gray-600">Latitude:</span>
-                      <span className="ml-2 font-mono">{location.latitude.toFixed(8)}</span>
+                      <span className="ml-2 font-mono">
+                        {location.latitude.toFixed(8)}
+                      </span>
                     </div>
                     <div>
                       <span className="text-gray-600">Longitude:</span>
-                      <span className="ml-2 font-mono">{location.longitude.toFixed(8)}</span>
+                      <span className="ml-2 font-mono">
+                        {location.longitude.toFixed(8)}
+                      </span>
                     </div>
                     <div>
                       <span className="text-gray-600">Accuracy:</span>
-                      <span className="ml-2">±{location.accuracy?.toFixed(0) || '10'}m</span>
+                      <span className="ml-2">
+                        ±{location.accuracy?.toFixed(0) || "10"}m
+                      </span>
                     </div>
                     {preciseLocation && (
                       <div>
                         <span className="text-gray-600">RTK Status:</span>
-                        <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                          preciseLocation.correctionApplied 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {preciseLocation.correctionApplied ? 'Enhanced' : 'Standard'}
+                        <span
+                          className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                            preciseLocation.correctionApplied
+                              ? "bg-green-100 text-green-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
+                          {preciseLocation.correctionApplied
+                            ? "Enhanced"
+                            : "Standard"}
                         </span>
                       </div>
                     )}
@@ -532,13 +614,18 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     onChange={(e) => setTrailingAgent(e.target.checked)}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
-                  <label htmlFor="trailingAgent" className="ml-2 text-sm font-medium text-gray-900">
+                  <label
+                    htmlFor="trailingAgent"
+                    className="ml-2 text-sm font-medium text-gray-900"
+                  >
                     Trailing Agent
                   </label>
                 </div>
                 {trailingAgent && (
                   <p className="text-sm text-blue-800">
-                    When 'Trailing Agent' is enabled, the agent's location will dynamically follow the device's location used for deployment, ensuring it always stays with you.
+                    When 'Trailing Agent' is enabled, the agent's location will
+                    dynamically follow the device's location used for
+                    deployment, ensuring it always stays with you.
                   </p>
                 )}
               </div>
@@ -551,7 +638,9 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   </label>
                   <div className="flex items-center space-x-4">
                     <button
-                      onClick={() => setVisibilityRange(Math.max(5, visibilityRange - 5))}
+                      onClick={() =>
+                        setVisibilityRange(Math.max(5, visibilityRange - 5))
+                      }
                       className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
                     >
                       -
@@ -561,11 +650,15 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                       min="5"
                       max="50"
                       value={visibilityRange}
-                      onChange={(e) => setVisibilityRange(Number(e.target.value))}
+                      onChange={(e) =>
+                        setVisibilityRange(Number(e.target.value))
+                      }
                       className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                     />
                     <button
-                      onClick={() => setVisibilityRange(Math.min(50, visibilityRange + 5))}
+                      onClick={() =>
+                        setVisibilityRange(Math.min(50, visibilityRange + 5))
+                      }
                       className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
                     >
                       +
@@ -584,11 +677,13 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                       min="1"
                       max="25"
                       value={interactionRange}
-                      onChange={(e) => setInteractionRange(Number(e.target.value))}
+                      onChange={(e) =>
+                        setInteractionRange(Number(e.target.value))
+                      }
                       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                     />
                   </div>
-                  
+
                   <div className="flex items-center">
                     <input
                       type="checkbox"
@@ -597,7 +692,10 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                       onChange={(e) => setArNotifications(e.target.checked)}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
-                    <label htmlFor="arNotifications" className="ml-2 text-sm text-gray-700">
+                    <label
+                      htmlFor="arNotifications"
+                      className="ml-2 text-sm text-gray-700"
+                    >
                       AR Notifications
                     </label>
                   </div>
@@ -611,8 +709,10 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   Notification & Discovery
                 </h3>
                 <p className="text-sm text-gray-700">
-                  Users within the interaction range ({interactionRange}m) will receive notifications about your agent. 
-                  The visibility range ({visibilityRange}m) determines how far users can see your agent in AR.
+                  Users within the interaction range ({interactionRange}m) will
+                  receive notifications about your agent. The visibility range (
+                  {visibilityRange}m) determines how far users can see your
+                  agent in AR.
                 </p>
               </div>
             </div>
@@ -648,8 +748,10 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     onChange={(e) => setAgentType(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   >
-                    {agentTypes.map(type => (
-                      <option key={type.value} value={type.value}>{type.label}</option>
+                    {agentTypes.map((type) => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -676,8 +778,10 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     onChange={(e) => setLocationType(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   >
-                    {locationTypes.map(type => (
-                      <option key={type} value={type}>{type}</option>
+                    {locationTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -700,7 +804,10 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     onChange={(e) => setTextChat(e.target.checked)}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
-                  <label htmlFor="textChat" className="ml-2 text-sm font-medium text-gray-900 flex items-center">
+                  <label
+                    htmlFor="textChat"
+                    className="ml-2 text-sm font-medium text-gray-900 flex items-center"
+                  >
                     <MessageCircle className="h-4 w-4 mr-1" />
                     Text Chat
                   </label>
@@ -714,7 +821,10 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     onChange={(e) => setVoiceChat(e.target.checked)}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
-                  <label htmlFor="voiceChat" className="ml-2 text-sm font-medium text-gray-900 flex items-center">
+                  <label
+                    htmlFor="voiceChat"
+                    className="ml-2 text-sm font-medium text-gray-900 flex items-center"
+                  >
                     <Mic className="h-4 w-4 mr-1" />
                     Voice Chat
                   </label>
@@ -728,7 +838,10 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     onChange={(e) => setVideoChat(e.target.checked)}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
-                  <label htmlFor="videoChat" className="ml-2 text-sm font-medium text-gray-900 flex items-center">
+                  <label
+                    htmlFor="videoChat"
+                    className="ml-2 text-sm font-medium text-gray-900 flex items-center"
+                  >
                     <Video className="h-4 w-4 mr-1" />
                     Video Chat
                   </label>
@@ -742,7 +855,10 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     onChange={(e) => setDefiFeatures(e.target.checked)}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
-                  <label htmlFor="defiFeatures" className="ml-2 text-sm font-medium text-gray-900 flex items-center">
+                  <label
+                    htmlFor="defiFeatures"
+                    className="ml-2 text-sm font-medium text-gray-900 flex items-center"
+                  >
                     <TrendingUp className="h-4 w-4 mr-1" />
                     DeFi Features
                   </label>
@@ -758,7 +874,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
               </h2>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {mcpOptions.map(option => (
+                {mcpOptions.map((option) => (
                   <div key={option} className="flex items-center">
                     <input
                       type="checkbox"
@@ -767,7 +883,10 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                       onChange={() => toggleMCPIntegration(option)}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
-                    <label htmlFor={`mcp-${option}`} className="ml-2 text-sm text-gray-700">
+                    <label
+                      htmlFor={`mcp-${option}`}
+                      className="ml-2 text-sm text-gray-700"
+                    >
                       {option}
                     </label>
                   </div>
@@ -786,7 +905,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Agent Wallet (Simulated)
+                      Agent Wallet (Payment Receiver)
                     </label>
                     <div className="bg-white p-3 rounded border font-mono text-sm">
                       {agentWallet}
@@ -798,15 +917,18 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                       Your Connected Wallet
                     </label>
                     <div className="bg-white p-3 rounded border font-mono text-sm">
-                      {address || 'Not connected'}
+                      {address || "Not connected"}
                     </div>
                   </div>
                 </div>
 
                 <div className="bg-blue-50 rounded-lg p-4">
                   <p className="text-sm text-blue-800">
-                    <strong>Purpose:</strong> These wallet addresses (simulated agent wallet and your connected wallet) 
-                    along with the interaction fee will be used for creating the QR code for payment during agent interactions.
+                    <strong>Purpose:</strong> The agent's wallet address is
+                    identical to your connected wallet. This address will be the
+                    receiver of all payments when users interact with your
+                    deployed agent. The interaction fee and token selection
+                    below will be used for generating payment QR codes.
                   </p>
                 </div>
               </div>
@@ -822,14 +944,34 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Interaction Fee (USDC)
+                    Payment Token
+                  </label>
+                  <select
+                    value={selectedToken}
+                    onChange={(e) => setSelectedToken(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    {SUPPORTED_STABLECOINS.map((token) => (
+                      <option key={token} value={token}>
+                        {token}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Interaction Fee
                   </label>
                   <input
                     type="number"
                     value={interactionFee}
-                    onChange={(e) => setInteractionFee(Number(e.target.value))}
-                    min="0"
-                    step="0.01"
+                    onChange={(e) =>
+                      setInteractionFee(parseInt(e.target.value) || 1)
+                    }
+                    min="1"
+                    step="1"
+                    placeholder="Enter fee amount (integer only)"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   />
                 </div>
@@ -858,21 +1000,33 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                   <div>
                     <div className="text-2xl font-bold text-green-600">
-                      {(interactionFee * revenueSharing / 100).toFixed(6)} USDC
+                      {((interactionFee * revenueSharing) / 100).toFixed(6)}{" "}
+                      {selectedToken}
                     </div>
                     <div className="text-sm text-gray-600">Per Interaction</div>
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-green-600">
-                      {(interactionFee * revenueSharing / 100 * 10).toFixed(6)} USDC
+                      {(((interactionFee * revenueSharing) / 100) * 10).toFixed(
+                        6
+                      )}{" "}
+                      {selectedToken}
                     </div>
-                    <div className="text-sm text-gray-600">10 Interactions/Day</div>
+                    <div className="text-sm text-gray-600">
+                      10 Interactions/Day
+                    </div>
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-green-600">
-                      {(interactionFee * revenueSharing / 100 * 300).toFixed(6)} USDC
+                      {(
+                        ((interactionFee * revenueSharing) / 100) *
+                        300
+                      ).toFixed(6)}{" "}
+                      {selectedToken}
                     </div>
-                    <div className="text-sm text-gray-600">Monthly Potential</div>
+                    <div className="text-sm text-gray-600">
+                      Monthly Potential
+                    </div>
                   </div>
                 </div>
               </div>
@@ -893,14 +1047,18 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                 <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
                   <div className="flex items-center">
                     <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
-                    <span className="text-green-800">Agent deployed successfully!</span>
+                    <span className="text-green-800">
+                      Agent deployed successfully!
+                    </span>
                   </div>
                 </div>
               )}
 
               <button
                 onClick={deployAgent}
-                disabled={isDeploying || !address || !agentName.trim() || !location}
+                disabled={
+                  isDeploying || !address || !agentName.trim() || !location
+                }
                 className="w-full flex items-center justify-center px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-lg font-semibold rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
                 {isDeploying ? (
