@@ -7,10 +7,10 @@ import Hero from "./components/Hero";
 import Features from "./components/Features";
 import MapVisualization from "./components/MapVisualization";
 import AuthSection from "./components/AuthSection";
+import FAQSection from "./components/FAQSection";
 import Footer from "./components/Footer";
 import DeployObject from "./components/DeployObject";
 import ARViewer from "./components/ARViewer";
-import SupabaseConnectionTest from "./components/SupabaseConnectionTest";
 
 // Initialize Supabase client only if credentials are available
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -86,12 +86,10 @@ function App() {
             path="/"
             element={
               <>
-                <div className="container mx-auto px-4 py-4">
-                  <SupabaseConnectionTest />
-                </div>
                 <Hero />
                 <Features />
                 <MapVisualization />
+                <FAQSection />
                 <AuthSection
                   waitlistCount={waitlistCount}
                   setWaitlistCount={setWaitlistCount}
