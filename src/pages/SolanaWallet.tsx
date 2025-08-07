@@ -1,5 +1,5 @@
 import React from "react";
-import { SolanaWalletConnect } from "../components/SolanaWalletConnect";
+import SolanaWalletConnect from "../components/SolanaWalletConnect";
 
 const SolanaWallet: React.FC = () => {
   return (

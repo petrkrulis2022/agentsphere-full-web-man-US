@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useSDK } from "@thirdweb-dev/react";
 import {
   MapPin,
   Crosshair,
@@ -19,7 +18,10 @@ import {
   Bell,
   Navigation,
 } from "lucide-react";
-import { useAddress } from "@thirdweb-dev/react";
+import { useWallet } from "@solana/wallet-adapter-react";
+// @ts-ignore - JSX component with TypeScript import issue
+import SolanaWalletConnect from "./SolanaWalletConnect.jsx";
+import { DeployedObject } from "../types/common";
 
 interface DeployObjectProps {
   supabase: any;
@@ -43,11 +45,9 @@ interface PreciseLocationData extends LocationData {
 }
 
 const DeployObject = ({ supabase }: DeployObjectProps) => {
-  const address = useAddress();
-  const sdk = useSDK();
-  const [bdagBalance, setBdagBalance] = useState<string>("0.00");
-  const [loadingBalance, setLoadingBalance] = useState(false);
-  const [balanceError, setBalanceError] = useState<string>("");
+  // Solana wallet hooks (primary focus)
+  const { connected: solanaConnected, publicKey: solanaPublicKey } =
+    useWallet();
 
   // Location states
   const [location, setLocation] = useState<LocationData | null>(null);
@@ -75,21 +75,15 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   // MCP integrations
   const [mcpIntegrations, setMcpIntegrations] = useState<string[]>([]);
 
-  // Economics
-  const [interactionFee, setInteractionFee] = useState(1); // Changed to integer
-  const [selectedToken, setSelectedToken] = useState("USDT"); // New token selection
+  // Economics - Solana focused
+  const [interactionFee, setInteractionFee] = useState(1);
+  const [selectedToken, setSelectedToken] = useState("SOL"); // Default to SOL
   const [revenueSharing, setRevenueSharing] = useState(70);
 
   // Deployment states
   const [isDeploying, setIsDeploying] = useState(false);
   const [deploymentSuccess, setDeploymentSuccess] = useState(false);
   const [deploymentError, setDeploymentError] = useState("");
-
-  // Agent wallet = User connected wallet (same address)
-  const agentWallet = address || "0x000...000";
-
-  // USDC token contract address on Base Sepolia
-  const BDAG_CONTRACT = "0x6533fe2Ebb66CcE28FDdBA9663Fe433A308137e9"; // BDAG Token Contract Address
 
   // Agent type options - Updated with new categories
   const agentTypes = [
@@ -114,37 +108,25 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       : []),
   ];
 
-  // Supported stablecoins for payment
-  const SUPPORTED_STABLECOINS = [
-    "USDT", // Tether USD
-    "USDC", // USD Coin
-    "USDs", // Stablecoin by Stably
-    "USDBG+", // USD Bancor Governance Plus
-    "USDe", // Ethena USD
-    "LSTD+", // Liquid Staked Token Derivative Plus
-    "AIX", // Aigang Token
-    "PYUSD", // PayPal USD
-    "RLUSD", // Ripple USD
-    "USDD", // USDD Stablecoin
-    "GHO", // GHO Stablecoin
-    "USDx", // USDx Stablecoin
+  // Solana supported tokens
+  const SOLANA_TOKENS = [
+    "SOL", // Native Solana token
+    "USDC", // USD Coin on Solana
   ];
 
-  // Token contract addresses for BlockDAG Primordial Testnet (Chain ID 1043)
-  const TOKEN_ADDRESSES: { [key: string]: string } = {
-    USDT: "0x1234567890123456789012345678901234567890", // Placeholder - Replace with actual contract addresses
-    USDC: "0x2345678901234567890123456789012345678901",
-    USDs: "0x3456789012345678901234567890123456789012",
-    "USDBG+": "0x4567890123456789012345678901234567890123",
-    USDe: "0x5678901234567890123456789012345678901234",
-    "LSTD+": "0x6789012345678901234567890123456789012345",
-    AIX: "0x7890123456789012345678901234567890123456",
-    PYUSD: "0x8901234567890123456789012345678901234567",
-    RLUSD: "0x9012345678901234567890123456789012345678",
-    USDD: "0x0123456789012345678901234567890123456789",
-    GHO: "0x1234567890123456789012345678901234567891",
-    USDx: "0x2345678901234567890123456789012345678902",
+  // Get available tokens (Solana only)
+  const getAvailableTokens = () => {
+    return SOLANA_TOKENS;
   };
+
+  // Update token selection when wallet type changes
+  // Update token selection when available tokens change
+  useEffect(() => {
+    const availableTokens = getAvailableTokens();
+    if (!availableTokens.includes(selectedToken)) {
+      setSelectedToken(availableTokens[0] || "SOL");
+    }
+  }, [selectedToken]);
 
   // Location type options - Added Property
   const locationTypes = [
@@ -176,91 +158,6 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     "Puzzles",
     "Entertainment",
   ];
-
-  // Fetch USDC balance
-  const fetchBDAGBalance = async () => {
-    if (!address) return;
-
-    setLoadingBalance(true);
-    setBalanceError("");
-    try {
-      console.log("🔍 Fetching BDAG balance for address:", address);
-      console.log("🌐 Using RPC: https://test-rpc.primordial.bdagscan.com/");
-      console.log("📄 Contract:", BDAG_CONTRACT);
-
-      // Create provider using the correct RPC endpoint
-      const { ethers } = await import("ethers");
-      const provider = new ethers.providers.JsonRpcProvider(
-        "https://test-rpc.primordial.bdagscan.com/"
-      );
-
-      // ERC-20 ABI for balanceOf function
-      const erc20ABI = [
-        "function balanceOf(address owner) view returns (uint256)",
-        "function decimals() view returns (uint8)",
-        "function symbol() view returns (string)",
-        "function name() view returns (string)",
-        "function totalSupply() view returns (uint256)",
-      ];
-
-      const contract = new ethers.Contract(BDAG_CONTRACT, erc20ABI, provider);
-
-      // Get comprehensive token info and balance
-      const [balance, decimals, symbol, name, totalSupply] = await Promise.all([
-        contract.balanceOf(address),
-        contract.decimals(),
-        contract.symbol(),
-        contract.name(),
-        contract.totalSupply(),
-      ]);
-
-      // Convert from raw units to readable format
-      const formattedBalance = ethers.utils.formatUnits(balance, decimals);
-      const balanceNumber = parseFloat(formattedBalance);
-      const formattedTotalSupply = ethers.utils.formatUnits(
-        totalSupply,
-        decimals
-      );
-
-      console.log("✅ BDAG Balance Query Results:");
-      console.log("   Token Name:", name);
-      console.log("   Token Symbol:", symbol);
-      console.log("   Decimals:", decimals.toString());
-      console.log("   Total Supply:", formattedTotalSupply, "BDAG");
-      console.log("   Raw Balance:", balance.toString());
-      console.log("   Formatted Balance:", formattedBalance); // BDAG has 18 decimals
-      console.log("   Final Balance:", balanceNumber.toFixed(2), "BDAG");
-      console.log("   Account Address:", address);
-      console.log("   Contract Address:", BDAG_CONTRACT);
-      console.log("   Network: BlockDAG Primordial Testnet (Chain ID: 1043)");
-
-      setBdagBalance(balanceNumber.toFixed(6)); // Display with 6 decimals for readability
-
-      // Show balance in UI notification
-      if (balanceNumber > 0) {
-        console.log(
-          `🎉 You have ${balanceNumber.toFixed(
-            6
-          )} BDAG in your connected account!`
-        );
-      } else {
-        console.log("⚠️ No BDAG balance found in connected account");
-        setBalanceError(
-          `No BDAG balance found for ${address}. Ensure BDAG tokens are in this account on BlockDAG Primordial Testnet (Chain ID: 1043).`
-        );
-      }
-    } catch (error) {
-      console.error("❌ Error fetching USDC balance:", error);
-      setBalanceError(
-        `Balance fetch failed: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }. Check network connection and RPC endpoint.`
-      );
-      setBdagBalance("0.00");
-    } finally {
-      setLoadingBalance(false);
-    }
-  };
 
   // Get current location
   const getCurrentLocation = () => {
@@ -362,8 +259,12 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       return;
     }
 
-    if (!address) {
-      setDeploymentError("Please connect your wallet first.");
+    // Solana wallet validation
+    const currentWalletAddress = solanaPublicKey?.toString();
+    const isWalletConnected = solanaConnected;
+
+    if (!isWalletConnected || !currentWalletAddress) {
+      setDeploymentError("Please connect your Solana wallet first.");
       return;
     }
 
@@ -381,9 +282,19 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     setDeploymentError("");
 
     try {
+      // Solana network configuration
+      const networkConfig = {
+        network: "solana-devnet",
+        chain_id: null,
+        agent_wallet_type: "solana_wallet",
+        currency_type: selectedToken,
+        token_symbol: selectedToken,
+        token_address: null,
+      };
+
       // Simplified deployment data with only essential fields
-      const deploymentData = {
-        user_id: address,
+      const deploymentData: Partial<DeployedObject> = {
+        user_id: currentWalletAddress,
         name: agentName.trim(),
         description:
           agentDescription.trim() ||
@@ -392,25 +303,21 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         location_type: locationType,
         latitude: preciseLocation?.preciseLatitude || location.latitude,
         longitude: preciseLocation?.preciseLongitude || location.longitude,
-        altitude: preciseLocation?.preciseAltitude || location.altitude || null,
+        altitude:
+          preciseLocation?.preciseAltitude || location.altitude || undefined,
         accuracy: preciseLocation?.correctionApplied
           ? 0.02
           : location.accuracy || 10,
         range_meters: visibilityRange,
-        interaction_fee_usdfc: interactionFee,
-        owner_wallet: address,
-        agent_wallet_address: agentWallet,
-        agent_wallet_type: "evm_wallet",
-        network: "blockdag-testnet",
-        currency_type: selectedToken,
-        token_symbol: selectedToken,
-        token_address: TOKEN_ADDRESSES[selectedToken] || null,
-        chain_id: 1043,
+        interaction_fee: interactionFee,
+        owner_wallet: currentWalletAddress,
+        agent_wallet_address: currentWalletAddress,
+        ...networkConfig,
         chat_enabled: textChat,
         voice_enabled: voiceChat,
         defi_enabled: defiFeatures,
         rtk_enhanced: preciseLocation?.correctionApplied || false,
-        rtk_provider: preciseLocation?.correctionApplied ? "GeoNet" : null,
+        rtk_provider: preciseLocation?.correctionApplied ? "GeoNet" : undefined,
         is_active: true,
         created_at: new Date().toISOString(),
       };
@@ -482,15 +389,6 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     }
   };
 
-  // Load USDC balance when wallet connects
-  useEffect(() => {
-    if (address && sdk) {
-      fetchBDAGBalance();
-    } else {
-      setBdagBalance("0.00");
-    }
-  }, [address, sdk]);
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-emerald-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -508,37 +406,41 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
               Create and deploy your AI agent in the real world
             </p>
 
-            {/* Wallet Connection & BDAG Balance */}
-            {address && (
-              <div className="mt-4 bg-white bg-opacity-20 rounded-lg p-4">
-                <div className="flex items-center justify-between">
+            {/* Dual Wallet Connection System */}
+            {/* Solana Wallet Connection */}
+            <div className="mt-4 space-y-4">
+              <div className="bg-white bg-opacity-20 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-white font-medium">Solana Wallet</h3>
                   <div className="flex items-center">
-                    <Wallet className="h-5 w-5 text-white mr-2" />
-                    <span className="text-white font-medium">
-                      {address.slice(0, 6)}...{address.slice(-4)}
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-white mr-2">BDAG Balance:</span>
-                    {loadingBalance ? (
-                      <Loader2 className="h-4 w-4 text-white animate-spin" />
-                    ) : (
-                      <span className="text-white font-bold">
-                        {bdagBalance} BDAG
-                      </span>
-                    )}
+                    <div className="w-5 h-5 bg-gradient-to-r from-purple-400 to-purple-600 rounded mr-2"></div>
+                    <span className="text-white text-sm">Solana Devnet</span>
                   </div>
                 </div>
-                {balanceError && (
-                  <div className="mt-2 text-red-200 text-sm">
-                    ⚠️ {balanceError}
+
+                {solanaConnected && solanaPublicKey ? (
+                  <div className="bg-white bg-opacity-10 rounded-lg p-3">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <Wallet className="h-5 w-5 text-white mr-2" />
+                          <span className="text-white font-medium">
+                            {solanaPublicKey.toString().slice(0, 6)}...
+                            {solanaPublicKey.toString().slice(-4)}
+                          </span>
+                        </div>
+                        <span className="text-white text-sm">Connected ✓</span>
+                      </div>
+                      <SolanaWalletConnect />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <SolanaWalletConnect />
                   </div>
                 )}
-                <div className="mt-2 text-white text-opacity-80 text-xs">
-                  RPC: https://sepolia.base.org
-                </div>
               </div>
-            )}
+            </div>
           </div>
 
           <div className="p-8 space-y-8">
@@ -578,9 +480,9 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                 </button>
 
                 {/* Blockchain Connection Display */}
-                <div className="flex items-center justify-center px-6 py-3 bg-blue-100 text-blue-800 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-center px-6 py-3 bg-purple-100 text-purple-800 rounded-lg border border-purple-200">
                   <CheckCircle className="h-5 w-5 mr-2" />
-                  Connected to: BlockDAG Primordial Testnet
+                  Connected to: Solana Devnet
                 </div>
               </div>
 
@@ -919,11 +821,11 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
               </div>
             </div>
 
-            {/* Agent Wallet Type */}
+            {/* Agent Wallet Configuration */}
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-gray-900 flex items-center">
                 <Wallet className="h-6 w-6 mr-2 text-green-600" />
-                Agent Wallet Type
+                Agent Wallet Configuration
               </h2>
 
               <div className="bg-gray-50 rounded-lg p-6 space-y-4">
@@ -933,27 +835,32 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                       Agent Wallet (Payment Receiver)
                     </label>
                     <div className="bg-white p-3 rounded border font-mono text-sm">
-                      {agentWallet}
+                      {solanaPublicKey?.toString() ||
+                        "No Solana wallet connected"}
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Your Connected Wallet
+                      Wallet Type & Network
                     </label>
-                    <div className="bg-white p-3 rounded border font-mono text-sm">
-                      {address || "Not connected"}
+                    <div className="bg-white p-3 rounded border text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">Solana Wallet</span>
+                        <span className="px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                          Solana Devnet
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <p className="text-sm text-blue-800">
+                <div className="bg-purple-50 rounded-lg p-4">
+                  <p className="text-sm text-purple-800">
                     <strong>Purpose:</strong> The agent's wallet address is
-                    identical to your connected wallet. This address will be the
-                    receiver of all payments when users interact with your
-                    deployed agent. The interaction fee and token selection
-                    below will be used for generating payment QR codes.
+                    identical to your connected wallet. This address will
+                    receive all payments when users interact with your deployed
+                    agent. Supports SOL and USDC payments on Solana Devnet.
                   </p>
                 </div>
               </div>
@@ -969,19 +876,23 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Payment Token
+                    Payment Token (Solana)
                   </label>
                   <select
                     value={selectedToken}
                     onChange={(e) => setSelectedToken(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   >
-                    {SUPPORTED_STABLECOINS.map((token) => (
+                    {getAvailableTokens().map((token) => (
                       <option key={token} value={token}>
-                        {token}
+                        {token} {token === "SOL" ? "(Native)" : ""}
+                        {token === "USDC" ? "(SPL Token)" : ""}
                       </option>
                     ))}
                   </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Solana devnet compatible tokens
+                  </p>
                 </div>
 
                 <div>
@@ -1082,7 +993,10 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
               <button
                 onClick={deployAgent}
                 disabled={
-                  isDeploying || !address || !agentName.trim() || !location
+                  isDeploying ||
+                  !agentName.trim() ||
+                  !location ||
+                  !solanaConnected
                 }
                 className="w-full flex items-center justify-center px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-lg font-semibold rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >

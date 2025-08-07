@@ -2,6 +2,25 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+
+    <!-- CRITICAL: Buffer polyfill for Solana wallet - MUST BE FIRST -->
+    <script>
+      // AgentSphere Buffer polyfill for browser compatibility
+      if (typeof global === "undefined") {
+        var global = globalThis;
+      }
+      // Initialize Buffer placeholder to prevent immediate errors
+      if (typeof Buffer === "undefined") {
+        window.Buffer = window.Buffer || {};
+        globalThis.Buffer = globalThis.Buffer || {};
+      }
+      // Process polyfill
+      if (typeof process === "undefined") {
+        window.process = window.process || { env: {}, browser: true };
+        globalThis.process = globalThis.process || { env: {}, browser: true };
+      }
+    </script>
+
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
