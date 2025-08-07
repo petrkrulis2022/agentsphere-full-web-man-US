@@ -356,24 +356,24 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   // Deploy agent
   const deployAgent = async () => {
     if (!supabase) {
-      alert(
+      setDeploymentError(
         "Database connection not available. Please connect to Supabase first."
       );
       return;
     }
 
     if (!address) {
-      alert("Please connect your wallet first.");
+      setDeploymentError("Please connect your wallet first.");
       return;
     }
 
     if (!agentName.trim()) {
-      alert("Please enter an agent name.");
+      setDeploymentError("Please enter an agent name.");
       return;
     }
 
     if (!location) {
-      alert("Please get your current location first.");
+      setDeploymentError("Please get your current location first.");
       return;
     }
 
@@ -381,24 +381,21 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     setDeploymentError("");
 
     try {
+      // Simplified deployment data with only essential fields
       const deploymentData = {
         user_id: address,
         name: agentName.trim(),
         description:
           agentDescription.trim() ||
-          `A ${agentType.toLowerCase()} agent deployed via AR`,
+          `A ${agentType.replace("_", " ")} agent deployed via AR`,
         object_type: agentType,
         location_type: locationType,
         latitude: preciseLocation?.preciseLatitude || location.latitude,
         longitude: preciseLocation?.preciseLongitude || location.longitude,
-        altitude: preciseLocation?.preciseAltitude || location.altitude,
-        preciselatitude: preciseLocation?.preciseLatitude,
-        preciselongitude: preciseLocation?.preciseLongitude,
-        precisealtitude: preciseLocation?.preciseAltitude,
+        altitude: preciseLocation?.preciseAltitude || location.altitude || null,
         accuracy: preciseLocation?.correctionApplied
           ? 0.02
           : location.accuracy || 10,
-        correctionapplied: preciseLocation?.correctionApplied || false,
         range_meters: visibilityRange,
         interaction_fee_usdfc: interactionFee,
         owner_wallet: address,
@@ -407,21 +404,46 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         network: "blockdag-testnet",
         currency_type: selectedToken,
         token_symbol: selectedToken,
-        token_address: TOKEN_ADDRESSES[selectedToken],
-        chain_id: 1043, // BlockDAG Primordial Testnet
+        token_address: TOKEN_ADDRESSES[selectedToken] || null,
+        chain_id: 1043,
         chat_enabled: textChat,
         voice_enabled: voiceChat,
         defi_enabled: defiFeatures,
-        interaction_types: [
-          ...(textChat ? ["text_chat"] : []),
-          ...(voiceChat ? ["voice_interface"] : []),
-          ...(videoChat ? ["video_interface"] : []),
-        ],
-        mcp_integrations: mcpIntegrations.length > 0 ? mcpIntegrations : null,
         rtk_enhanced: preciseLocation?.correctionApplied || false,
-        rtk_provider: "GeoNet",
+        rtk_provider: preciseLocation?.correctionApplied ? "GeoNet" : null,
         is_active: true,
+        created_at: new Date().toISOString(),
       };
+
+      // Add optional fields only if they have values
+      if (mcpIntegrations.length > 0) {
+        deploymentData.mcp_integrations = mcpIntegrations;
+      }
+
+      if (preciseLocation?.preciseLatitude) {
+        deploymentData.preciselatitude = preciseLocation.preciseLatitude;
+      }
+
+      if (preciseLocation?.preciseLongitude) {
+        deploymentData.preciselongitude = preciseLocation.preciseLongitude;
+      }
+
+      if (preciseLocation?.preciseAltitude) {
+        deploymentData.precisealtitude = preciseLocation.preciseAltitude;
+      }
+
+      if (preciseLocation?.correctionApplied) {
+        deploymentData.correctionapplied = true;
+      }
+
+      const interactionTypes = [];
+      if (textChat) interactionTypes.push("text_chat");
+      if (voiceChat) interactionTypes.push("voice_interface");
+      if (videoChat) interactionTypes.push("video_interface");
+
+      if (interactionTypes.length > 0) {
+        deploymentData.interaction_types = interactionTypes;
+      }
 
       console.log("🚀 Deploying agent with data:", deploymentData);
 
@@ -432,7 +454,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         .single();
 
       if (error) {
-        throw error;
+        console.error("Supabase error details:", error);
+        throw new Error(`Database error: ${error.message}`);
       }
 
       console.log("✅ Agent deployed successfully:", data);
@@ -449,9 +472,11 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       }, 3000);
     } catch (error) {
       console.error("❌ Deployment failed:", error);
-      setDeploymentError(
-        error instanceof Error ? error.message : "Deployment failed"
-      );
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Deployment failed - please check console for details";
+      setDeploymentError(errorMessage);
     } finally {
       setIsDeploying(false);
     }
