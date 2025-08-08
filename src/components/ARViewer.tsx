@@ -133,21 +133,64 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
 
   const getObjectColor = (objectType: string) => {
     switch (objectType) {
-      case 'ai_agent': return '#4f46e5'; // Indigo
+      // Enhanced 9-Agent Type Color System
+      case 'intelligent_assistant': return '#4f46e5'; // Indigo - AI Intelligence
+      case 'local_services': return '#10b981'; // Green - Local Services
+      case 'payment_terminal': return '#f59e0b'; // Amber - Financial/Payment
+      case 'game_agent': return '#8b5cf6'; // Purple - Gaming/Entertainment  
+      case '3d_world_builder': return '#06b6d4'; // Cyan - 3D/Creative
+      case 'home_security': return '#ef4444'; // Red - Security/Alert
+      case 'content_creator': return '#ec4899'; // Pink - Creative/Media
+      case 'real_estate_broker': return '#84cc16'; // Lime - Real Estate/Property
+      case 'bus_stop_agent': return '#6366f1'; // Indigo-Blue - Transportation
+      // Legacy support
+      case 'ai_agent': return '#4f46e5'; // Indigo (same as intelligent_assistant)
       case 'tutor': return '#7c3aed'; // Purple  
       case 'landmark': return '#ec4899'; // Pink
       case 'building': return '#10b981'; // Green
-      default: return '#6b7280'; // Gray
+      default: return '#6b7280'; // Gray - Unknown types
     }
   };
 
   const getObjectEmoji = (objectType: string) => {
     switch (objectType) {
-      case 'ai_agent': return '🟦';
-      case 'tutor': return '🔵';
-      case 'landmark': return '🔺';
-      case 'building': return '🏢';
-      default: return '📦';
+      // Enhanced 9-Agent Type Emoji System
+      case 'intelligent_assistant': return '🧠'; // Brain - AI Intelligence
+      case 'local_services': return '🏪'; // Store - Local Services
+      case 'payment_terminal': return '💳'; // Credit Card - Payment
+      case 'game_agent': return '🎮'; // Game Controller - Gaming
+      case '3d_world_builder': return '🏗️'; // Construction - 3D Building
+      case 'home_security': return '�'; // Lock - Security
+      case 'content_creator': return '🎨'; // Art Palette - Creative
+      case 'real_estate_broker': return '🏘️'; // Houses - Real Estate
+      case 'bus_stop_agent': return '🚌'; // Bus - Transportation
+      // Legacy support
+      case 'ai_agent': return '🤖'; // Robot - AI Agent
+      case 'tutor': return '�'; // Books - Education
+      case 'landmark': return '�'; // Statue - Landmark
+      case 'building': return '🏢'; // Office Building
+      default: return '📦'; // Package - Unknown
+    }
+  };
+
+  const getShapeMixin = (objectType: string) => {
+    switch (objectType) {
+      // Enhanced 9-Agent Type Shape System
+      case 'intelligent_assistant': return 'intelligent-assistant-mixin'; // Icosahedron
+      case 'local_services': return 'local-services-mixin'; // Cylinder
+      case 'payment_terminal': return 'payment-terminal-mixin'; // Box
+      case 'game_agent': return 'game-agent-mixin'; // Dodecahedron
+      case '3d_world_builder': return '3d-world-builder-mixin'; // Cube
+      case 'home_security': return 'home-security-mixin'; // Octahedron
+      case 'content_creator': return 'content-creator-mixin'; // Torus
+      case 'real_estate_broker': return 'real-estate-broker-mixin'; // Tetrahedron
+      case 'bus_stop_agent': return 'bus-stop-agent-mixin'; // Rounded Cylinder
+      // Legacy support
+      case 'ai_agent': return 'ai-agent-mixin'; // Sphere
+      case 'tutor': return 'ai-agent-mixin'; // Sphere (legacy)
+      case 'landmark': return 'default-mixin'; // Cone (legacy)
+      case 'building': return 'default-mixin'; // Cone (legacy)
+      default: return 'default-mixin'; // Cone - Unknown types
     }
   };
 
@@ -246,20 +289,62 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
         >
           {/* Assets */}
           <a-assets>
+            {/* Unique Shape Mixins for 9 Agent Types */}
             <a-mixin
-              id="cube-mixin"
-              geometry="primitive: box; width: 0.5; height: 0.5; depth: 0.5"
-              animation="property: rotation; to: 360 360 360; loop: true; dur: 8000; easing: linear"
+              id="intelligent-assistant-mixin"
+              geometry="primitive: icosahedron; radius: 0.35"
+              animation="property: rotation; to: 360 360 360; loop: true; dur: 12000; easing: linear"
             />
             <a-mixin
-              id="sphere-mixin"
-              geometry="primitive: sphere; radius: 0.3"
+              id="local-services-mixin"
+              geometry="primitive: cylinder; radius: 0.3; height: 0.6"
+              animation="property: rotation; to: 0 360 0; loop: true; dur: 8000; easing: linear"
+            />
+            <a-mixin
+              id="payment-terminal-mixin"
+              geometry="primitive: box; width: 0.5; height: 0.5; depth: 0.5"
+              animation="property: rotation; to: 360 0 360; loop: true; dur: 10000; easing: linear"
+            />
+            <a-mixin
+              id="game-agent-mixin"
+              geometry="primitive: dodecahedron; radius: 0.35"
+              animation="property: rotation; to: 0 360 360; loop: true; dur: 15000; easing: linear"
+            />
+            <a-mixin
+              id="3d-world-builder-mixin"
+              geometry="primitive: box; width: 0.4; height: 0.4; depth: 0.4"
+              animation="property: rotation; to: 360 360 0; loop: true; dur: 9000; easing: linear"
+            />
+            <a-mixin
+              id="home-security-mixin"
+              geometry="primitive: octahedron; radius: 0.4"
+              animation="property: rotation; to: 360 0 360; loop: true; dur: 11000; easing: linear"
+            />
+            <a-mixin
+              id="content-creator-mixin"
+              geometry="primitive: torus; radius: 0.3; radiusTubular: 0.1"
+              animation="property: rotation; to: 360 360 360; loop: true; dur: 13000; easing: linear"
+            />
+            <a-mixin
+              id="real-estate-broker-mixin"
+              geometry="primitive: tetrahedron; radius: 0.4"
+              animation="property: rotation; to: 0 360 0; loop: true; dur: 7000; easing: linear"
+            />
+            <a-mixin
+              id="bus-stop-agent-mixin"
+              geometry="primitive: cylinder; radius: 0.25; height: 0.8"
+              animation="property: rotation; to: 360 0 0; loop: true; dur: 14000; easing: linear"
+            />
+            {/* Fallback shapes for legacy/unknown types */}
+            <a-mixin
+              id="ai-agent-mixin"
+              geometry="primitive: sphere; radius: 0.35"
               animation="property: rotation; to: 0 360 0; loop: true; dur: 6000; easing: linear"
             />
             <a-mixin
-              id="pyramid-mixin"
+              id="default-mixin"
               geometry="primitive: cone; radiusBottom: 0.3; radiusTop: 0; height: 0.6"
-              animation="property: rotation; to: 0 360 0; loop: true; dur: 7000; easing: linear"
+              animation="property: rotation; to: 0 360 0; loop: true; dur: 8000; easing: linear"
             />
           </a-assets>
 
@@ -289,7 +374,7 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
               <a-entity key={obj.id} position={`${position.x} ${position.y} ${position.z}`}>
                 {/* 3D Object */}
                 <a-entity
-                  mixin={`${obj.object_type === 'ai_agent' ? 'cube' : obj.object_type === 'tutor' ? 'sphere' : 'pyramid'}-mixin`}
+                  mixin={getShapeMixin(obj.object_type)}
                   material={`color: ${color}; metalness: 0.2; roughness: 0.8; transparent: true; opacity: 0.9`}
                   scale="1.2 1.2 1.2"
                   class="clickable-object"
