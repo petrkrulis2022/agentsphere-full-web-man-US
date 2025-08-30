@@ -20,6 +20,8 @@ import {
   Navigation,
 } from "lucide-react";
 import { useAddress } from "@thirdweb-dev/react";
+import PaymentMethodsSelector from "./PaymentMethodsSelector";
+import BankDetailsForm from "./BankDetailsForm";
 
 interface DeployObjectProps {
   supabase: any;
@@ -79,6 +81,12 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   const [interactionFee, setInteractionFee] = useState(1); // Changed to integer
   const [selectedToken, setSelectedToken] = useState("USDT"); // New token selection
   const [revenueSharing, setRevenueSharing] = useState(70);
+
+  // Payment Methods (6-faced cube system)
+  const [paymentMethods, setPaymentMethods] = useState<any>(null);
+  const [showBankForm, setShowBankForm] = useState<
+    "virtual_card" | "bank_qr" | null
+  >(null);
 
   // Deployment states
   const [isDeploying, setIsDeploying] = useState(false);
@@ -344,6 +352,72 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     }
   };
 
+  // Handle payment methods configuration
+  const handlePaymentMethodsChange = (methods: any) => {
+    setPaymentMethods(methods);
+    console.log("💳 Payment methods updated:", methods);
+  };
+
+  // Handle bank details updates
+  const handleBankDetailsChange = (
+    details: any,
+    paymentType: "virtual_card" | "bank_qr"
+  ) => {
+    if (paymentMethods) {
+      const updatedMethods = { ...paymentMethods };
+      if (paymentType === "virtual_card") {
+        updatedMethods.bank_virtual_card.bank_details = details;
+      } else if (paymentType === "bank_qr") {
+        updatedMethods.bank_qr.bank_details = details;
+      }
+      setPaymentMethods(updatedMethods);
+    }
+  };
+
+  // Validate payment methods configuration
+  const validatePaymentMethods = (): string[] => {
+    const errors: string[] = [];
+
+    if (!paymentMethods) {
+      errors.push("Payment methods configuration is required");
+      return errors;
+    }
+
+    const enabledMethods = Object.values(paymentMethods).some(
+      (method: any) => method.enabled
+    );
+    if (!enabledMethods) {
+      errors.push("At least one payment method must be selected");
+    }
+
+    // Validate crypto methods have wallet connection
+    const cryptoMethods = ["crypto_qr", "voice_pay", "sound_pay"];
+    const hasCryptoEnabled = cryptoMethods.some(
+      (method) => paymentMethods[method]?.enabled
+    );
+
+    if (hasCryptoEnabled && !address) {
+      errors.push("Wallet connection required for crypto payment methods");
+    }
+
+    // Validate bank methods have details
+    if (
+      paymentMethods.bank_virtual_card?.enabled &&
+      !paymentMethods.bank_virtual_card?.bank_details?.account_holder
+    ) {
+      errors.push("Bank details required for virtual card payments");
+    }
+
+    if (
+      paymentMethods.bank_qr?.enabled &&
+      !paymentMethods.bank_qr?.bank_details?.account_holder
+    ) {
+      errors.push("Bank details required for bank QR payments");
+    }
+
+    return errors;
+  };
+
   // Handle MCP integration toggle
   const toggleMCPIntegration = (integration: string) => {
     setMcpIntegrations((prev) =>
@@ -374,6 +448,13 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
     if (!location) {
       alert("Please get your current location first.");
+      return;
+    }
+
+    // Validate payment methods
+    const paymentErrors = validatePaymentMethods();
+    if (paymentErrors.length > 0) {
+      alert("Payment configuration errors:\n" + paymentErrors.join("\n"));
       return;
     }
 
@@ -418,6 +499,13 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
           ...(videoChat ? ["video_interface"] : []),
         ],
         mcp_integrations: mcpIntegrations.length > 0 ? mcpIntegrations : null,
+        payment_methods: paymentMethods || {},
+        payment_config: {
+          usd_fee: interactionFee,
+          revenue_sharing: revenueSharing,
+          selected_token: selectedToken,
+          cube_enabled: true, // Flag for AR Viewer to show 3D cube
+        },
         rtk_enhanced: preciseLocation?.correctionApplied || false,
         rtk_provider: "GeoNet",
         is_active: true,
@@ -444,6 +532,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         setAgentName("");
         setAgentDescription("");
         setMcpIntegrations([]);
+        setPaymentMethods(null);
+        setShowBankForm(null);
         setLocation(null);
         setPreciseLocation(null);
       }, 3000);
@@ -1030,6 +1120,36 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Payment Methods Configuration (6-Faced Cube System) */}
+            <div className="space-y-6">
+              <PaymentMethodsSelector
+                onPaymentMethodsChange={handlePaymentMethodsChange}
+                connectedWallet={address}
+                initialMethods={paymentMethods}
+              />
+
+              {/* Conditional Bank Details Forms */}
+              {paymentMethods?.bank_virtual_card?.enabled && (
+                <BankDetailsForm
+                  onBankDetailsChange={(details) =>
+                    handleBankDetailsChange(details, "virtual_card")
+                  }
+                  paymentType="virtual_card"
+                  initialDetails={paymentMethods.bank_virtual_card.bank_details}
+                />
+              )}
+
+              {paymentMethods?.bank_qr?.enabled && (
+                <BankDetailsForm
+                  onBankDetailsChange={(details) =>
+                    handleBankDetailsChange(details, "bank_qr")
+                  }
+                  paymentType="bank_qr"
+                  initialDetails={paymentMethods.bank_qr.bank_details}
+                />
+              )}
             </div>
 
             {/* Deployment Button */}

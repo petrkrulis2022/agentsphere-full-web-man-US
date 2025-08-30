@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hedera QR Payment Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+      .container {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        padding: 30px;
+        backdrop-filter: blur(10px);
+        text-align: center;
+      }
+      .qr-container {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+        display: inline-block;
+      }
+      button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 10px;
+        font-size: 16px;
+        cursor: pointer;
+        margin: 10px;
+        transition: transform 0.2s;
+      }
+      button:hover {
+        transform: scale(1.05);
+      }
+      .payment-details {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+        text-align: left;
+      }
+      .copy-button {
+        background: #28a745;
+        font-size: 12px;
+        padding: 5px 10px;
+        margin-left: 10px;
+      }
+      .instructions {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        border-radius: 10px;
+        margin: 20px 0;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🚀 Hedera QR Payment Test</h1>
+      <p>Test the Hedera HBAR payment system with MetaMask QR scanning</p>
+
+      <button onclick="generateTestQR()">🎯 Generate Test Payment QR</button>
+
+      <div id="qr-display" style="display: none">
+        <h3>📱 Scan with MetaMask Mobile</h3>
+        <div class="qr-container">
+          <canvas id="qrcode"></canvas>
+        </div>
+
+        <div class="payment-details">
+          <h4>Payment Details:</h4>
+          <div><strong>Network:</strong> Hedera Testnet (296)</div>
+          <div><strong>Amount:</strong> <span id="amount">-</span> HBAR</div>
+          <div>
+            <strong>To Address:</strong> <span id="toAddress">-</span>
+            <button class="copy-button" onclick="copyAddress()">Copy</button>
+          </div>
+          <div><strong>Chain ID:</strong> 296</div>
+        </div>
+
+        <div class="instructions">
+          <h4>📋 Instructions:</h4>
+          <ol style="text-align: left">
+            <li>Open MetaMask Mobile app</li>
+            <li>Switch to Hedera Testnet (Chain ID: 296)</li>
+            <li>Tap the scan QR button in MetaMask</li>
+            <li>Scan the QR code above</li>
+            <li>Confirm the transaction</li>
+          </ol>
+        </div>
+
+        <div id="payment-uri" style="display: none">
+          <h4>Payment URI (EIP-681):</h4>
+          <textarea
+            id="uri-text"
+            readonly
+            style="
+              width: 100%;
+              height: 100px;
+              padding: 10px;
+              border-radius: 5px;
+            "
+          ></textarea>
+          <button class="copy-button" onclick="copyURI()">Copy URI</button>
+        </div>
+
+        <button onclick="showPaymentURI()">📋 Show Payment URI</button>
+        <button onclick="testDifferentAmount()">
+          💰 Test Different Amount
+        </button>
+      </div>
+    </div>
+
+    <script>
+      // Test implementation of Hedera QR generation
+      const testAgent = {
+        name: "AI Assistant",
+        id: "test-agent-001",
+        wallet_address: "0x742d35Cc6634C0532925a3b8D400C5E2a3c5B5E8",
+      };
+
+      const testUserAddress = "0x1234567890123456789012345678901234567890";
+      let currentAmount = "5.0";
+
+      function generateTestQR() {
+        const amount = currentAmount;
+        const toAddress = testAgent.wallet_address;
+
+        // Create EIP-681 format URI for Hedera
+        const paymentURI = `ethereum:${toAddress}@296?value=${
+          parseFloat(amount) * Math.pow(10, 18)
+        }`;
+
+        // Generate QR Code
+        const qr = new QRious({
+          element: document.getElementById("qrcode"),
+          value: paymentURI,
+          size: 300,
+          backgroundAlpha: 0.0,
+          foreground: "#4A90E2",
+          level: "M",
+        });
+
+        // Update display
+        document.getElementById("amount").textContent = amount;
+        document.getElementById("toAddress").textContent = toAddress;
+        document.getElementById("uri-text").value = paymentURI;
+        document.getElementById("qr-display").style.display = "block";
+
+        console.log("🎯 Generated Hedera Payment QR:", paymentURI);
+      }
+
+      function showPaymentURI() {
+        const uriSection = document.getElementById("payment-uri");
+        uriSection.style.display =
+          uriSection.style.display === "none" ? "block" : "none";
+      }
+
+      function copyAddress() {
+        const address = document.getElementById("toAddress").textContent;
+        navigator.clipboard.writeText(address).then(() => {
+          alert("✅ Address copied to clipboard!");
+        });
+      }
+
+      function copyURI() {
+        const uri = document.getElementById("uri-text").value;
+        navigator.clipboard.writeText(uri).then(() => {
+          alert("✅ Payment URI copied to clipboard!");
+        });
+      }
+
+      function testDifferentAmount() {
+        const amounts = ["1.0", "2.5", "5.0", "10.0", "25.0"];
+        const currentIndex = amounts.indexOf(currentAmount);
+        const nextIndex = (currentIndex + 1) % amounts.length;
+        currentAmount = amounts[nextIndex];
+
+        if (document.getElementById("qr-display").style.display !== "none") {
+          generateTestQR();
+        }
+      }
+
+      // Test connection to Hedera network
+      window.addEventListener("load", () => {
+        console.log("🚀 Hedera QR Payment Test Loaded");
+        console.log(
+          "📱 Ready to test MetaMask QR scanning for Hedera payments"
+        );
+
+        if (typeof window.ethereum !== "undefined") {
+          console.log("✅ MetaMask detected");
+        } else {
+          console.log("⚠️ MetaMask not detected");
+        }
+      });
+    </script>
+  </body>
+</html>
