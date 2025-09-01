@@ -1,5 +1,7 @@
 /* Import landing page specific styles */
 @import "./styles/landing.css";
+/* Import network modal styles */
+@import "./styles/networkModals.css";
 
 @tailwind base;
 @tailwind components;
