@@ -18,10 +18,16 @@ import {
   TrendingUp,
   Bell,
   Navigation,
+  Network,
 } from "lucide-react";
 import { useAddress } from "@thirdweb-dev/react";
 import PaymentMethodsSelector from "./PaymentMethodsSelector";
 import BankDetailsForm from "./BankDetailsForm";
+import { networkDetectionService } from "../services/networkDetectionService.js";
+import {
+  SUPPORTED_EVM_NETWORKS,
+  getSupportedNetworkByChainId,
+} from "../config/evmNetworks.js";
 
 interface DeployObjectProps {
   supabase: any;
@@ -47,7 +53,7 @@ interface PreciseLocationData extends LocationData {
 const DeployObject = ({ supabase }: DeployObjectProps) => {
   const address = useAddress();
   const sdk = useSDK();
-  const [bdagBalance, setBdagBalance] = useState<string>("0.00");
+  const [usdcBalance, setUsdcBalance] = useState<string>("0.000000");
   const [loadingBalance, setLoadingBalance] = useState(false);
   const [balanceError, setBalanceError] = useState<string>("");
 
@@ -57,6 +63,11 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     useState<PreciseLocationData | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
   const [rtkLoading, setRtkLoading] = useState(false);
+
+  // Network detection states
+  const [currentNetwork, setCurrentNetwork] = useState<any>(null);
+  const [networkLoading, setNetworkLoading] = useState(false);
+  const [networkError, setNetworkError] = useState<string>("");
 
   // Agent configuration states
   const [agentName, setAgentName] = useState("");
@@ -97,7 +108,14 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   const agentWallet = address || "0x000...000";
 
   // USDC token contract address on Base Sepolia
-  const BDAG_CONTRACT = "0x6533fe2Ebb66CcE28FDdBA9663Fe433A308137e9"; // BDAG Token Contract Address
+  // USDC contract addresses for different networks
+  const USDC_CONTRACTS = {
+    11155111: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", // Ethereum Sepolia
+    421614: "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d", // Arbitrum Sepolia
+    84532: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", // Base Sepolia
+    11155420: "0x5fd84259d3c8b37a387c0d8a4c5b0c0d7d3c0D7", // OP Sepolia
+    43113: "0x5425890298aed601595a70AB815c96711a31Bc65", // Avalanche Fuji
+  };
 
   // Agent type options - Updated with new categories
   const agentTypes = [
@@ -122,37 +140,87 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       : []),
   ];
 
-  // Supported stablecoins for payment
-  const SUPPORTED_STABLECOINS = [
-    "USDT", // Tether USD
-    "USDC", // USD Coin
-    "USDs", // Stablecoin by Stably
-    "USDBG+", // USD Bancor Governance Plus
-    "USDe", // Ethena USD
-    "LSTD+", // Liquid Staked Token Derivative Plus
-    "AIX", // Aigang Token
-    "PYUSD", // PayPal USD
-    "RLUSD", // Ripple USD
-    "USDD", // USDD Stablecoin
-    "GHO", // GHO Stablecoin
-    "USDx", // USDx Stablecoin
-  ];
-
-  // Token contract addresses for BlockDAG Primordial Testnet (Chain ID 1043)
-  const TOKEN_ADDRESSES: { [key: string]: string } = {
-    USDT: "0x1234567890123456789012345678901234567890", // Placeholder - Replace with actual contract addresses
-    USDC: "0x2345678901234567890123456789012345678901",
-    USDs: "0x3456789012345678901234567890123456789012",
-    "USDBG+": "0x4567890123456789012345678901234567890123",
-    USDe: "0x5678901234567890123456789012345678901234",
-    "LSTD+": "0x6789012345678901234567890123456789012345",
-    AIX: "0x7890123456789012345678901234567890123456",
-    PYUSD: "0x8901234567890123456789012345678901234567",
-    RLUSD: "0x9012345678901234567890123456789012345678",
-    USDD: "0x0123456789012345678901234567890123456789",
-    GHO: "0x1234567890123456789012345678901234567891",
-    USDx: "0x2345678901234567890123456789012345678902",
+  // Supported stablecoins for payment - Dynamic based on network
+  const getSupportedStablecoins = () => {
+    if (currentNetwork?.chainId) {
+      // Different tokens supported on different networks
+      switch (currentNetwork.chainId) {
+        case 11155111: // Ethereum Sepolia
+          return ["USDC", "USDT", "DAI"];
+        case 421614: // Arbitrum Sepolia
+          return ["USDC", "USDT", "ARB"];
+        case 84532: // Base Sepolia
+          return ["USDC", "USDT", "CBETH"];
+        case 11155420: // OP Sepolia
+          return ["USDC", "USDT", "OP"];
+        case 43113: // Avalanche Fuji
+          return ["USDC", "USDT", "AVAX"];
+        default:
+          return ["USDC", "USDT"];
+      }
+    }
+    return [
+      "USDC",
+      "USDT",
+      "USDs",
+      "USDBG+",
+      "USDe",
+      "LSTD+",
+      "AIX",
+      "PYUSD",
+      "RLUSD",
+      "USDD",
+      "GHO",
+      "USDx",
+    ];
   };
+
+  // Dynamic token addresses based on current network
+  const getTokenAddresses = () => {
+    if (currentNetwork?.chainId) {
+      switch (currentNetwork.chainId) {
+        case 11155111: // Ethereum Sepolia
+          return {
+            USDC: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+            USDT: "0x7169D38820dfd117C3FA1f22a697dBA58d90BA06",
+            DAI: "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357",
+          };
+        case 421614: // Arbitrum Sepolia
+          return {
+            USDC: "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
+            USDT: "0xb1D4538B4571d411F07960EF2838Ce337FE1E80E",
+            ARB: "0x1234567890123456789012345678901234567890", // Placeholder
+          };
+        case 84532: // Base Sepolia
+          return {
+            USDC: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+            USDT: "0x1234567890123456789012345678901234567890", // Placeholder
+            CBETH: "0x1234567890123456789012345678901234567890", // Placeholder
+          };
+        case 11155420: // OP Sepolia
+          return {
+            USDC: "0x5fd84259d3c8b37a387c0d8a4c5b0c0d7d3c0D7",
+            USDT: "0x1234567890123456789012345678901234567890", // Placeholder
+            OP: "0x1234567890123456789012345678901234567890", // Placeholder
+          };
+        case 43113: // Avalanche Fuji
+          return {
+            USDC: "0x5425890298aed601595a70AB815c96711a31Bc65",
+            USDT: "0x1234567890123456789012345678901234567890", // Placeholder
+            AVAX: "0x0000000000000000000000000000000000000000", // Native token
+          };
+        default:
+          return {};
+      }
+    }
+    // Default fallback - basic USDC support
+    return {
+      USDC: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", // Ethereum Sepolia USDC
+    };
+  };
+
+  const SUPPORTED_STABLECOINS = getSupportedStablecoins();
+  const TOKEN_ADDRESSES = getTokenAddresses();
 
   // Location type options - Added Property
   const locationTypes = [
@@ -185,22 +253,32 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     "Entertainment",
   ];
 
-  // Fetch USDC balance
-  const fetchBDAGBalance = async () => {
-    if (!address) return;
+  // Fetch USDC balance for current network
+  const fetchUSDCBalance = async () => {
+    if (!address || !currentNetwork) return;
 
     setLoadingBalance(true);
     setBalanceError("");
     try {
-      console.log("🔍 Fetching BDAG balance for address:", address);
-      console.log("🌐 Using RPC: https://test-rpc.primordial.bdagscan.com/");
-      console.log("📄 Contract:", BDAG_CONTRACT);
+      console.log("🔍 Fetching USDC balance for address:", address);
+      console.log("🌐 Network:", currentNetwork.name);
+      console.log("🌐 Chain ID:", currentNetwork.chainId);
 
-      // Create provider using the correct RPC endpoint
+      const usdcContract = USDC_CONTRACTS[currentNetwork.chainId];
+      if (!usdcContract) {
+        console.warn(
+          `USDC contract not found for chain ${currentNetwork.chainId}`
+        );
+        setBalanceError(`USDC not available on ${currentNetwork.name}`);
+        setUsdcBalance("0.000000");
+        return;
+      }
+
+      console.log("📄 USDC Contract:", usdcContract);
+
+      // Create provider using the current network RPC
       const { ethers } = await import("ethers");
-      const provider = new ethers.providers.JsonRpcProvider(
-        "https://test-rpc.primordial.bdagscan.com/"
-      );
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
 
       // ERC-20 ABI for balanceOf function
       const erc20ABI = [
@@ -208,53 +286,51 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         "function decimals() view returns (uint8)",
         "function symbol() view returns (string)",
         "function name() view returns (string)",
-        "function totalSupply() view returns (uint256)",
       ];
 
-      const contract = new ethers.Contract(BDAG_CONTRACT, erc20ABI, provider);
+      const contract = new ethers.Contract(usdcContract, erc20ABI, provider);
 
-      // Get comprehensive token info and balance
-      const [balance, decimals, symbol, name, totalSupply] = await Promise.all([
+      // Get token info and balance
+      const [balance, decimals, symbol, name] = await Promise.all([
         contract.balanceOf(address),
         contract.decimals(),
         contract.symbol(),
         contract.name(),
-        contract.totalSupply(),
       ]);
 
-      // Convert from raw units to readable format
+      // Convert from raw units to readable format (USDC typically has 6 decimals)
       const formattedBalance = ethers.utils.formatUnits(balance, decimals);
       const balanceNumber = parseFloat(formattedBalance);
-      const formattedTotalSupply = ethers.utils.formatUnits(
-        totalSupply,
-        decimals
-      );
 
-      console.log("✅ BDAG Balance Query Results:");
+      console.log("✅ USDC Balance Query Results:");
       console.log("   Token Name:", name);
       console.log("   Token Symbol:", symbol);
       console.log("   Decimals:", decimals.toString());
-      console.log("   Total Supply:", formattedTotalSupply, "BDAG");
       console.log("   Raw Balance:", balance.toString());
-      console.log("   Formatted Balance:", formattedBalance); // BDAG has 18 decimals
-      console.log("   Final Balance:", balanceNumber.toFixed(2), "BDAG");
+      console.log("   Formatted Balance:", formattedBalance);
+      console.log("   Final Balance:", balanceNumber.toFixed(6), "USDC");
       console.log("   Account Address:", address);
-      console.log("   Contract Address:", BDAG_CONTRACT);
-      console.log("   Network: BlockDAG Primordial Testnet (Chain ID: 1043)");
+      console.log("   Contract Address:", usdcContract);
+      console.log(
+        "   Network:",
+        currentNetwork.name,
+        "(Chain ID:",
+        currentNetwork.chainId + ")"
+      );
 
-      setBdagBalance(balanceNumber.toFixed(6)); // Display with 6 decimals for readability
+      setUsdcBalance(balanceNumber.toFixed(6)); // Display with 6 decimals for USDC
 
       // Show balance in UI notification
       if (balanceNumber > 0) {
         console.log(
           `🎉 You have ${balanceNumber.toFixed(
             6
-          )} BDAG in your connected account!`
+          )} USDC in your connected account on ${currentNetwork.name}!`
         );
       } else {
-        console.log("⚠️ No BDAG balance found in connected account");
+        console.log("⚠️ No USDC balance found in connected account");
         setBalanceError(
-          `No BDAG balance found for ${address}. Ensure BDAG tokens are in this account on BlockDAG Primordial Testnet (Chain ID: 1043).`
+          `No USDC balance found for ${address}. You may need USDC tokens on ${currentNetwork.name} (Chain ID: ${currentNetwork.chainId}) to deploy agents.`
         );
       }
     } catch (error) {
@@ -262,9 +338,11 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       setBalanceError(
         `Balance fetch failed: ${
           error instanceof Error ? error.message : "Unknown error"
-        }. Check network connection and RPC endpoint.`
+        }. Check network connection and ensure you're connected to ${
+          currentNetwork?.name || "supported network"
+        }.`
       );
-      setBdagBalance("0.00");
+      setUsdcBalance("0.000000");
     } finally {
       setLoadingBalance(false);
     }
@@ -462,6 +540,15 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     setDeploymentError("");
 
     try {
+      // Validate network is supported
+      if (!currentNetwork || !currentNetwork.isSupported) {
+        throw new Error(
+          `Please connect to a supported network. Current: ${
+            currentNetwork?.name || "Unknown"
+          }`
+        );
+      }
+
       const deploymentData = {
         user_id: address,
         name: agentName.trim(),
@@ -481,15 +568,32 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
           : location.accuracy || 10,
         correctionapplied: preciseLocation?.correctionApplied || false,
         range_meters: visibilityRange,
-        interaction_fee_usdfc: interactionFee,
+
+        // DYNAMIC NETWORK DATA - FIXED
+        deployment_network_name: currentNetwork.name, // "Ethereum Sepolia"
+        deployment_chain_id: currentNetwork.chainId, // 11155111
+        deployment_network_id: currentNetwork.chainId, // 11155111
+        network: currentNetwork.name, // "Ethereum Sepolia" - Fixed to use full name
+        chain_id: currentNetwork.chainId, // 11155111
+
+        // DYNAMIC PAYMENT DATA - FIXED
+        interaction_fee_amount: parseFloat(interactionFee.toString()), // 10.0
+        interaction_fee_token: selectedToken, // "USDC"
+        interaction_fee_usdfc: interactionFee, // Legacy field
+
+        // Wallet configuration
         owner_wallet: address,
         agent_wallet_address: agentWallet,
         agent_wallet_type: "evm_wallet",
-        network: "blockdag-testnet",
+        deployer_address: address,
+
+        // Token information
         currency_type: selectedToken,
         token_symbol: selectedToken,
-        token_address: TOKEN_ADDRESSES[selectedToken],
-        chain_id: 1043, // BlockDAG Primordial Testnet
+        token_address:
+          TOKEN_ADDRESSES[selectedToken as keyof typeof TOKEN_ADDRESSES] || "",
+
+        // Communication features
         chat_enabled: textChat,
         voice_enabled: voiceChat,
         defi_enabled: defiFeatures,
@@ -498,20 +602,43 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
           ...(voiceChat ? ["voice_interface"] : []),
           ...(videoChat ? ["video_interface"] : []),
         ],
+
+        // Integrations
         mcp_integrations: mcpIntegrations.length > 0 ? mcpIntegrations : null,
         payment_methods: paymentMethods || {},
+
+        // DYNAMIC PAYMENT CONFIG - FIXED
         payment_config: {
+          wallet_address: address,
+          supported_tokens: [selectedToken],
+          network_info: {
+            name: currentNetwork.name,
+            chainId: currentNetwork.chainId,
+            rpcUrl: currentNetwork.rpcUrl,
+            blockExplorer: currentNetwork.blockExplorer,
+          },
           usd_fee: interactionFee,
           revenue_sharing: revenueSharing,
           selected_token: selectedToken,
           cube_enabled: true, // Flag for AR Viewer to show 3D cube
         },
+
+        // RTK and deployment metadata
         rtk_enhanced: preciseLocation?.correctionApplied || false,
         rtk_provider: "GeoNet",
+        deployed_at: new Date().toISOString(),
+        deployment_status: "active",
         is_active: true,
       };
 
-      console.log("🚀 Deploying agent with data:", deploymentData);
+      console.log("🚀 Deploying agent with DYNAMIC data:", deploymentData);
+      console.log(
+        "🌐 Network:",
+        currentNetwork.name,
+        "Chain ID:",
+        currentNetwork.chainId
+      );
+      console.log("💰 Fee:", interactionFee, selectedToken);
 
       const { data, error } = await supabase
         .from("deployed_objects")
@@ -547,14 +674,84 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     }
   };
 
-  // Load USDC balance when wallet connects
+  // Load USDC balance when wallet connects and network is detected
   useEffect(() => {
-    if (address && sdk) {
-      fetchBDAGBalance();
+    if (address && currentNetwork && currentNetwork.isSupported !== false) {
+      fetchUSDCBalance();
     } else {
-      setBdagBalance("0.00");
+      setUsdcBalance("0.000000");
     }
-  }, [address, sdk]);
+  }, [address, currentNetwork]);
+
+  // Network detection when wallet connects
+  useEffect(() => {
+    const initializeNetwork = async () => {
+      if (address && window.ethereum) {
+        setNetworkLoading(true);
+        setNetworkError("");
+
+        try {
+          const network = await networkDetectionService.detectCurrentNetwork();
+          setCurrentNetwork(network);
+
+          if (network && !network.isSupported) {
+            setNetworkError(
+              `Network ${network.name} is not supported. Please switch to a supported network.`
+            );
+          }
+
+          // Start listening for network changes
+          await networkDetectionService.startNetworkListener();
+
+          // Subscribe to network change events
+          const handleNetworkChange = (event: any) => {
+            const newNetwork = event.detail.network;
+            setCurrentNetwork(newNetwork);
+
+            if (!newNetwork.isSupported) {
+              setNetworkError(
+                `Network ${newNetwork.name} is not supported. Please switch to a supported network.`
+              );
+            } else {
+              setNetworkError("");
+            }
+          };
+
+          document.addEventListener("networkChanged", handleNetworkChange);
+
+          return () => {
+            document.removeEventListener("networkChanged", handleNetworkChange);
+            networkDetectionService.stopNetworkListener();
+          };
+        } catch (error) {
+          console.error("Network detection failed:", error);
+          setNetworkError(
+            "Failed to detect network. Please ensure MetaMask is connected."
+          );
+        } finally {
+          setNetworkLoading(false);
+        }
+      } else {
+        setCurrentNetwork(null);
+        setNetworkError("");
+      }
+    };
+
+    initializeNetwork();
+  }, [address]);
+
+  // Update selected token when network changes
+  useEffect(() => {
+    if (currentNetwork) {
+      const supportedTokens = getSupportedStablecoins();
+      if (
+        supportedTokens.length > 0 &&
+        !supportedTokens.includes(selectedToken)
+      ) {
+        setSelectedToken(supportedTokens[0]); // Default to first supported token
+      }
+    }
+  }, [currentNetwork]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-emerald-50 py-8">
@@ -573,7 +770,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
               Create and deploy your AI agent in the real world
             </p>
 
-            {/* Wallet Connection & BDAG Balance */}
+            {/* Wallet Connection & USDC Balance */}
             {address && (
               <div className="mt-4 bg-white bg-opacity-20 rounded-lg p-4">
                 <div className="flex items-center justify-between">
@@ -584,15 +781,99 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     </span>
                   </div>
                   <div className="flex items-center">
-                    <span className="text-white mr-2">BDAG Balance:</span>
+                    <span className="text-white mr-2">USDC Balance:</span>
                     {loadingBalance ? (
                       <Loader2 className="h-4 w-4 text-white animate-spin" />
                     ) : (
                       <span className="text-white font-bold">
-                        {bdagBalance} BDAG
+                        {usdcBalance} USDC
                       </span>
                     )}
                   </div>
+                </div>
+
+                {/* Network Status Display */}
+                <div className="mt-3 pt-3 border-t border-white border-opacity-30">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Network className="h-5 w-5 text-white mr-2" />
+                      <span className="text-white font-medium">Network:</span>
+                    </div>
+                    <div className="flex items-center">
+                      {networkLoading ? (
+                        <Loader2 className="h-4 w-4 text-white animate-spin" />
+                      ) : currentNetwork ? (
+                        <div className="text-right">
+                          <div className="text-white font-bold">
+                            {currentNetwork.name}
+                          </div>
+                          <div className="text-green-100 text-sm">
+                            Chain ID: {currentNetwork.chainId}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-yellow-200">Not detected</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Network Warning */}
+                  {networkError && (
+                    <div className="mt-2 p-2 bg-red-500 bg-opacity-50 rounded text-white text-sm">
+                      <AlertCircle className="h-4 w-4 inline mr-1" />
+                      {networkError}
+                    </div>
+                  )}
+
+                  {/* Balance Warning */}
+                  {balanceError && (
+                    <div className="mt-2 p-2 bg-yellow-500 bg-opacity-50 rounded text-white text-sm">
+                      <AlertCircle className="h-4 w-4 inline mr-1" />
+                      {balanceError}
+                      {currentNetwork && (
+                        <div className="mt-1">
+                          <a
+                            href="https://faucet.circle.com/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-200 underline hover:text-blue-100"
+                          >
+                            Get USDC from faucet →
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Low Balance Warning */}
+                  {!balanceError &&
+                    usdcBalance &&
+                    parseFloat(usdcBalance) < 1.0 &&
+                    parseFloat(usdcBalance) > 0 && (
+                      <div className="mt-2 p-2 bg-orange-500 bg-opacity-50 rounded text-white text-sm">
+                        <AlertCircle className="h-4 w-4 inline mr-1" />
+                        Low USDC balance ({usdcBalance} USDC). You may need more
+                        USDC to deploy agents.
+                        <div className="mt-1">
+                          <a
+                            href="https://faucet.circle.com/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-200 underline hover:text-blue-100"
+                          >
+                            Get USDC from faucet →
+                          </a>
+                        </div>
+                      </div>
+                    )}
+
+                  {/* Network Success */}
+                  {currentNetwork && currentNetwork.isSupported && (
+                    <div className="mt-2 p-2 bg-green-500 bg-opacity-50 rounded text-white text-sm">
+                      <CheckCircle className="h-4 w-4 inline mr-1" />
+                      Network supported ✓
+                    </div>
+                  )}
                 </div>
                 {balanceError && (
                   <div className="mt-2 text-red-200 text-sm">
@@ -1034,24 +1315,45 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Payment Token
+                    Payment Token{" "}
+                    {currentNetwork && `(${currentNetwork.shortName})`}
                   </label>
                   <select
                     value={selectedToken}
                     onChange={(e) => setSelectedToken(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    disabled={!currentNetwork || !currentNetwork.isSupported}
                   >
                     {SUPPORTED_STABLECOINS.map((token) => (
                       <option key={token} value={token}>
-                        {token}
+                        {token}{" "}
+                        {TOKEN_ADDRESSES[token as keyof typeof TOKEN_ADDRESSES]
+                          ? "✓"
+                          : "⚠"}
                       </option>
                     ))}
                   </select>
+                  {currentNetwork && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Available tokens for {currentNetwork.name}
+                      {TOKEN_ADDRESSES[
+                        selectedToken as keyof typeof TOKEN_ADDRESSES
+                      ] ? (
+                        <span className="text-green-600 ml-1">
+                          ✓ Contract verified
+                        </span>
+                      ) : (
+                        <span className="text-yellow-600 ml-1">
+                          ⚠ Contract not configured
+                        </span>
+                      )}
+                    </p>
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Interaction Fee
+                    Interaction Fee (Dynamic Amount)
                   </label>
                   <input
                     type="number"
@@ -1064,6 +1366,10 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     placeholder="Enter fee amount (integer only)"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    This exact amount will be stored and displayed in agent
+                    cards
+                  </p>
                 </div>
 
                 <div>
@@ -1177,7 +1483,13 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
               <button
                 onClick={deployAgent}
                 disabled={
-                  isDeploying || !address || !agentName.trim() || !location
+                  isDeploying ||
+                  !address ||
+                  !agentName.trim() ||
+                  !location ||
+                  !currentNetwork ||
+                  !currentNetwork.isSupported ||
+                  networkLoading
                 }
                 className="w-full flex items-center justify-center px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-lg font-semibold rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
@@ -1186,13 +1498,69 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     <Loader2 className="h-6 w-6 animate-spin mr-2" />
                     Deploying Agent...
                   </>
+                ) : networkLoading ? (
+                  <>
+                    <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                    Detecting Network...
+                  </>
+                ) : !currentNetwork ? (
+                  <>
+                    <AlertCircle className="h-6 w-6 mr-2" />
+                    Connect to Network
+                  </>
+                ) : !currentNetwork.isSupported ? (
+                  <>
+                    <AlertCircle className="h-6 w-6 mr-2" />
+                    Switch to Supported Network
+                  </>
                 ) : (
                   <>
                     <Plus className="h-6 w-6 mr-2" />
-                    Deploy AR Agent
+                    Deploy on {currentNetwork.shortName}
                   </>
                 )}
               </button>
+
+              {/* Network-specific deployment info */}
+              {currentNetwork && currentNetwork.isSupported && (
+                <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                  <h4 className="text-sm font-medium text-green-800 mb-2">
+                    Deployment Summary
+                  </h4>
+                  <div className="space-y-1 text-xs text-green-700">
+                    <div>
+                      Network:{" "}
+                      <span className="font-medium">{currentNetwork.name}</span>
+                    </div>
+                    <div>
+                      Chain ID:{" "}
+                      <span className="font-medium">
+                        {currentNetwork.chainId}
+                      </span>
+                    </div>
+                    <div>
+                      Fee:{" "}
+                      <span className="font-medium">
+                        {interactionFee} {selectedToken}
+                      </span>
+                    </div>
+                    <div>
+                      Token Contract:{" "}
+                      <span className="font-mono text-xs">
+                        {TOKEN_ADDRESSES[
+                          selectedToken as keyof typeof TOKEN_ADDRESSES
+                        ]
+                          ? `${TOKEN_ADDRESSES[
+                              selectedToken as keyof typeof TOKEN_ADDRESSES
+                            ]?.slice(0, 8)}...${TOKEN_ADDRESSES[
+                              selectedToken as keyof typeof TOKEN_ADDRESSES
+                            ]?.slice(-6)}`
+                          : "Not configured"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>

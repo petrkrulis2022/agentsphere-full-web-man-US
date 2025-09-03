@@ -220,109 +220,176 @@ export const MultiChainAgentDashboard: React.FC = () => {
     }
   };
 
-  const AgentCard: React.FC<{ agent: DeployedAgent }> = ({ agent }) => (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow"
-    >
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">{agent.name}</h3>
-          <p className="text-sm text-gray-600 mt-1">{agent.description}</p>
-        </div>
-        <div className="flex space-x-2">
-          <span
-            className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-              agent.status || "active"
-            )}`}
-          >
-            {agent.status || "active"}
-          </span>
-          {agent.deployment_network.cross_chain_enabled && (
-            <span className="px-2 py-1 rounded-full text-xs font-medium text-purple-600 bg-purple-100">
-              Cross-Chain
-            </span>
-          )}
-        </div>
-      </div>
+  const AgentCard: React.FC<{ agent: DeployedAgent }> = ({ agent }) => {
+    // Helper functions for dynamic data display
+    const getInteractionFeeDisplay = () => {
+      // Use new dynamic fields first, fallback to legacy
+      const amount =
+        agent.interaction_fee_amount || agent.interaction_fee_usdfc || 1;
+      const token = agent.interaction_fee_token || agent.token_symbol || "USDC";
+      return `${amount} ${token}`;
+    };
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="flex items-center space-x-2">
-          <MapPin className="w-4 h-4 text-gray-500" />
-          <span className="text-sm text-gray-600">
-            {agent.location.address ||
-              `${agent.location.latitude.toFixed(
-                4
-              )}, ${agent.location.longitude.toFixed(4)}`}
-          </span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <DollarSign className="w-4 h-4 text-gray-500" />
-          <span className="text-sm text-gray-600">
-            ${agent.interaction_fee_usdfc} USDC
-          </span>
-        </div>
-      </div>
+    const getNetworkDisplay = () => {
+      // Use new dynamic fields first, fallback to legacy
+      const networkName =
+        agent.deployment_network_name || agent.network || "Unknown Network";
+      const chainId = agent.deployment_chain_id || agent.chain_id || "Unknown";
+      return { name: networkName, chainId };
+    };
 
-      <div className="flex items-center space-x-4 mb-4">
-        <div className="flex items-center space-x-2">
-          <Network className="w-4 h-4 text-gray-500" />
-          <div className="flex space-x-1">
-            <span className="text-sm text-gray-600">
-              {getNetworkIcon(agent.deployment_network.primary.chainId)}
+    const networkInfo = getNetworkDisplay();
+
+    return (
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow"
+      >
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">
+              {agent.name}
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">{agent.description}</p>
+          </div>
+          <div className="flex space-x-2">
+            <span
+              className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                agent.status || "active"
+              )}`}
+            >
+              {agent.status || "active"}
             </span>
-            {agent.deployment_network.additional.map((network, index) => (
-              <span key={index} className="text-sm">
-                {getNetworkIcon(network.chainId)}
+            {agent.deployment_network?.cross_chain_enabled && (
+              <span className="px-2 py-1 rounded-full text-xs font-medium text-purple-600 bg-purple-100">
+                Cross-Chain
               </span>
-            ))}
+            )}
           </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <Users className="w-4 h-4 text-gray-500" />
-          <span className="text-sm text-gray-600">
-            {agent.interactions_count || 0} interactions
-          </span>
-        </div>
-      </div>
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <TrendingUp className="w-4 h-4 text-green-500" />
-          <span className="text-sm font-medium text-green-600">
-            ${(agent.total_earnings || 0).toFixed(2)} earned
-          </span>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="flex items-center space-x-2">
+            <MapPin className="w-4 h-4 text-gray-500" />
+            <span className="text-sm text-gray-600">
+              {agent.location?.address ||
+                `${agent.latitude?.toFixed(4) || "0"}, ${
+                  agent.longitude?.toFixed(4) || "0"
+                }`}
+            </span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <DollarSign className="w-4 h-4 text-gray-500" />
+            <span className="text-sm text-gray-600 font-medium">
+              {getInteractionFeeDisplay()}
+            </span>
+          </div>
         </div>
-        <div className="flex space-x-2">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setSelectedAgent(agent)}
-            className="p-2 text-gray-500 hover:text-blue-600 transition-colors"
-          >
-            <Eye className="w-4 h-4" />
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            <Settings className="w-4 h-4" />
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="p-2 text-gray-500 hover:text-blue-600 transition-colors"
-          >
-            <ExternalLink className="w-4 h-4" />
-          </motion.button>
+
+        {/* UPDATED NETWORK DISPLAY - Shows actual deployment network */}
+        <div className="flex items-center space-x-4 mb-4">
+          <div className="flex items-center space-x-2">
+            <Network className="w-4 h-4 text-gray-500" />
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-gray-900">
+                {networkInfo.name}
+              </span>
+              <span className="text-xs text-gray-500">
+                Chain ID: {networkInfo.chainId}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Users className="w-4 h-4 text-gray-500" />
+            <span className="text-sm text-gray-600">
+              {agent.interactions_count || 0} interactions
+            </span>
+          </div>
         </div>
-      </div>
-    </motion.div>
-  );
+
+        {/* PAYMENT & WALLET SECTION - Shows dynamic payment config */}
+        <div className="border-t pt-4 mb-4">
+          <h4 className="text-sm font-medium text-gray-900 mb-2">
+            🔗 Blockchain & Payment
+          </h4>
+
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <span className="text-gray-600">Network:</span>
+              <span className="ml-1 font-medium">{networkInfo.name}</span>
+            </div>
+            <div>
+              <span className="text-gray-600">Currency:</span>
+              <span className="ml-1 font-medium">
+                {agent.interaction_fee_token || agent.token_symbol || "USDC"}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-600">Fee:</span>
+              <span className="ml-1 font-medium text-green-600">
+                {getInteractionFeeDisplay()}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-600">Chain:</span>
+              <span className="ml-1 font-medium">{networkInfo.chainId}</span>
+            </div>
+          </div>
+
+          {/* Agent Wallet Address */}
+          {(agent.agent_wallet_address || agent.owner_wallet) && (
+            <div className="mt-2">
+              <span className="text-xs text-gray-600">Agent Wallet:</span>
+              <span className="ml-1 text-xs font-mono text-blue-600">
+                {(agent.agent_wallet_address || agent.owner_wallet)?.slice(
+                  0,
+                  8
+                )}
+                ...
+                {(agent.agent_wallet_address || agent.owner_wallet)?.slice(-6)}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <TrendingUp className="w-4 h-4 text-green-500" />
+            <span className="text-sm font-medium text-green-600">
+              ${(agent.total_earnings || 0).toFixed(2)} earned
+            </span>
+          </div>
+          <div className="flex space-x-2">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setSelectedAgent(agent)}
+              className="p-2 text-gray-500 hover:text-blue-600 transition-colors"
+            >
+              <Eye className="w-4 h-4" />
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <Settings className="w-4 h-4" />
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-2 text-gray-500 hover:text-blue-600 transition-colors"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </motion.button>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
 
   const NetworkStatsCard: React.FC<{ stats: NetworkStats }> = ({ stats }) => (
     <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">

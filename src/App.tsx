@@ -10,7 +10,6 @@ import AuthSection from "./components/AuthSection";
 import FAQSection from "./components/FAQSection";
 import Footer from "./components/Footer";
 import DeployObject from "./components/DeployObject";
-import { EnhancedDeploymentForm } from "./components/EnhancedDeploymentForm";
 import { MultiChainAgentDashboard } from "./components/MultiChainAgentDashboard";
 import ARViewer from "./components/ARViewer";
 
@@ -102,22 +101,7 @@ function App() {
           />
           <Route
             path="/deploy"
-            element={
-              <div className="min-h-screen bg-gradient-to-b from-blue-50 to-purple-50 py-12">
-                <div className="container mx-auto px-4">
-                  <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                      Deploy Your AI Agent
-                    </h1>
-                    <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                      Create and deploy AI agents across multiple blockchain
-                      networks with our enhanced multi-chain deployment system
-                    </p>
-                  </div>
-                  <EnhancedDeploymentForm />
-                </div>
-              </div>
-            }
+            element={<DeployObject supabase={supabase} />}
           />
           <Route path="/dashboard" element={<MultiChainAgentDashboard />} />
           <Route path="/ar" element={<ARViewer supabase={supabase} />} />
