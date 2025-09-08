@@ -89,8 +89,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   const [mcpIntegrations, setMcpIntegrations] = useState<string[]>([]);
 
   // Economics
-  const [interactionFee, setInteractionFee] = useState(1); // Changed to integer
-  const [selectedToken, setSelectedToken] = useState("USDT"); // New token selection
+  const [interactionFee, setInteractionFee] = useState(10); // Default to 10 USDC instead of 1
+  const [selectedToken, setSelectedToken] = useState("USDC"); // Changed to USDC as default
   const [revenueSharing, setRevenueSharing] = useState(70);
 
   // Payment Methods (6-faced cube system)
@@ -148,15 +148,15 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         case 11155111: // Ethereum Sepolia
           return ["USDC", "USDT", "DAI"];
         case 421614: // Arbitrum Sepolia
-          return ["USDC", "USDT", "ARB"];
+          return ["USDC", "USDT", "DAI"];
         case 84532: // Base Sepolia
-          return ["USDC", "USDT", "CBETH"];
+          return ["USDC", "USDT", "DAI"]; // Fixed: Removed CBETH, added DAI
         case 11155420: // OP Sepolia
-          return ["USDC", "USDT", "OP"];
+          return ["USDC", "USDT", "DAI"]; // Fixed: Removed OP, added DAI
         case 43113: // Avalanche Fuji
-          return ["USDC", "USDT", "AVAX"];
+          return ["USDC", "USDT", "DAI"]; // Fixed: Removed AVAX, added DAI
         default:
-          return ["USDC", "USDT"];
+          return ["USDC", "USDT", "DAI"]; // Fixed: Added DAI as default
       }
     }
     return [
@@ -632,13 +632,29 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       };
 
       console.log("🚀 Deploying agent with DYNAMIC data:", deploymentData);
+      console.log("🚀 Starting deployment with data:");
+      console.log("📊 Agent Name:", agentName);
+      console.log(
+        "💰 Interaction Fee Input:",
+        interactionFee,
+        typeof interactionFee
+      );
+      console.log("🪙 Selected Token:", selectedToken);
       console.log(
         "🌐 Network:",
         currentNetwork.name,
         "Chain ID:",
         currentNetwork.chainId
       );
-      console.log("💰 Fee:", interactionFee, selectedToken);
+
+      // Verify the interaction fee amount before storing
+      const feeAmount = parseFloat(interactionFee.toString());
+      console.log("💵 Processed Fee Amount:", feeAmount, typeof feeAmount);
+      console.log("� Deployment Data Fee Fields:", {
+        interaction_fee_amount: feeAmount,
+        interaction_fee_token: selectedToken,
+        interaction_fee_usdfc: interactionFee,
+      });
 
       const { data, error } = await supabase
         .from("deployed_objects")
@@ -651,6 +667,20 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       }
 
       console.log("✅ Agent deployed successfully:", data);
+
+      // Verify what was actually stored in the database
+      console.log("🔍 Database Verification - Stored Data:");
+      console.log("📊 Stored Agent Name:", data.name);
+      console.log(
+        "💰 Stored Fee Amount:",
+        data.interaction_fee_amount,
+        typeof data.interaction_fee_amount
+      );
+      console.log("🪙 Stored Fee Token:", data.interaction_fee_token);
+      console.log("🌐 Stored Network:", data.deployment_network_name);
+      console.log("🔗 Stored Chain ID:", data.deployment_chain_id);
+      console.log("📱 Stored Deployer:", data.deployer_address);
+
       setDeploymentSuccess(true);
 
       // Reset form after successful deployment
@@ -922,12 +952,6 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   )}
                   Get RTK Enhanced Location
                 </button>
-
-                {/* Blockchain Connection Display */}
-                <div className="flex items-center justify-center px-6 py-3 bg-blue-100 text-blue-800 rounded-lg border border-blue-200">
-                  <CheckCircle className="h-5 w-5 mr-2" />
-                  Connected to: BlockDAG Primordial Testnet
-                </div>
               </div>
 
               {/* Location Display */}
@@ -1358,11 +1382,14 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   <input
                     type="number"
                     value={interactionFee}
-                    onChange={(e) =>
-                      setInteractionFee(parseInt(e.target.value) || 1)
-                    }
-                    min="1"
-                    step="1"
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value);
+                      setInteractionFee(
+                        isNaN(value) || value <= 0 ? 10 : value
+                      );
+                    }}
+                    min="0.1"
+                    step="0.1"
                     placeholder="Enter fee amount (integer only)"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   />

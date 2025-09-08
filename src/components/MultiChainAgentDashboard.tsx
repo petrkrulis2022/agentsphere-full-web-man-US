@@ -22,44 +22,25 @@ import {
 import { supabase } from "../lib/supabase";
 import { EVM_NETWORKS } from "../config/multiChainNetworks";
 import { multiChainWalletService } from "../services/multiChainWalletService";
+import {
+  AgentDataService,
+  CompleteAgentData,
+} from "../services/agentDataService";
 
-interface DeployedAgent {
-  id: string;
-  name: string;
-  description: string;
-  agent_type: string;
-  location: {
-    latitude: number;
-    longitude: number;
-    address?: string;
-  };
-  deployment_network: {
-    primary: {
-      chainId: number;
-      name: string;
-      type: string;
-      wallet_address: string;
-      deployment_timestamp: string;
-    };
-    additional: Array<{
-      chainId: number;
-      name: string;
-      type: string;
-      wallet_address: string;
-      deployment_timestamp: string;
-    }>;
-    cross_chain_enabled: boolean;
-  };
-  network_config: Record<string, any>;
-  cross_chain_config: any;
-  supported_networks: string[];
-  interaction_fee_usdfc: number;
-  payment_methods: string[];
-  created_at: string;
-  updated_at: string;
-  interactions_count?: number;
-  total_earnings?: number;
-  status?: "active" | "inactive" | "pending";
+// Expose Supabase and AgentDataService globally for debugging
+(window as any).supabase = supabase;
+(window as any).AgentDataService = AgentDataService;
+console.log("🔧 GLOBAL: Supabase and AgentDataService exposed for debugging");
+
+// Use the CompleteAgentData interface from the service
+interface DeployedAgent extends CompleteAgentData {
+  // Legacy fields for backward compatibility
+  interaction_fee_usdfc?: number;
+  token_symbol?: string;
+  network?: string;
+  chain_id?: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface NetworkStats {
@@ -104,33 +85,86 @@ export const MultiChainAgentDashboard: React.FC = () => {
   );
 
   useEffect(() => {
+    console.log(
+      "🚀 MultiChainAgentDashboard mounted, starting tests and data load..."
+    );
+
+    // Run debug tests first
+    testSupabaseColumns();
+
+    // Then load the actual data
     loadAgents();
-    loadNetworkStats();
+    loadStats();
   }, []);
+
+  // Debug function to test Supabase column access
+  const testSupabaseColumns = async () => {
+    try {
+      console.log("🧪 TESTING: Direct Supabase column access...");
+
+      // Test 1: Basic query
+      const { data: basicData, error: basicError } = await supabase
+        .from("deployed_objects")
+        .select("id, name")
+        .limit(1);
+
+      console.log("🧪 TEST 1 - Basic query:", { basicData, basicError });
+
+      // Test 2: Specific column query
+      const { data: feeData, error: feeError } = await supabase
+        .from("deployed_objects")
+        .select("id, name, interaction_fee_amount, interaction_fee_token")
+        .limit(5);
+
+      console.log("🧪 TEST 2 - Fee columns query:", { feeData, feeError });
+
+      // Test 3: All columns
+      const { data: allData, error: allError } = await supabase
+        .from("deployed_objects")
+        .select("*")
+        .limit(1);
+
+      console.log("🧪 TEST 3 - All columns:", {
+        allData,
+        allError,
+        keys: allData?.[0] ? Object.keys(allData[0]) : "No data",
+      });
+    } catch (error) {
+      console.error("🧪 TESTING ERROR:", error);
+    }
+  };
 
   const loadAgents = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("deployed_objects")
-        .select("*")
-        .not("deployment_network", "eq", "{}")
-        .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      console.log("� NEW AGENT SERVICE: Loading comprehensive agent data...");
 
-      // Simulate additional data that would come from blockchain monitoring
-      const agentsWithStats = data.map((agent) => ({
-        ...agent,
-        interactions_count: Math.floor(Math.random() * 1000),
-        total_earnings: Math.random() * 500,
-        status:
-          Math.random() > 0.1 ? ("active" as const) : ("inactive" as const),
-      }));
+      // Use the new AgentDataService for comprehensive data
+      const agents = await AgentDataService.getAllAgents({
+        network: selectedNetwork !== "all" ? selectedNetwork : undefined,
+        agent_type: selectedFilter !== "all" ? selectedFilter : undefined,
+      });
 
-      setAgents(agentsWithStats);
+      console.log(
+        `✅ NEW AGENT SERVICE: Loaded ${agents.length} comprehensive agents`
+      );
+      console.log("✅ NEW AGENT SERVICE: First agent sample:", {
+        id: agents[0]?.id,
+        name: agents[0]?.name,
+        interaction_fee_amount:
+          agents[0]?.payment_config?.interaction_fee_amount,
+        interaction_fee_token: agents[0]?.payment_config?.interaction_fee_token,
+        deployment_network_name: agents[0]?.deployment_network_name,
+        deployment_chain_id: agents[0]?.deployment_chain_id,
+        payment_methods: agents[0]?.payment_config?.payment_methods,
+        wallet_address: agents[0]?.wallet_config?.agent_wallet?.address,
+        revenue_potential: agents[0]?.payment_config?.revenue_potential,
+      });
+
+      setAgents(agents);
     } catch (error) {
-      console.error("Error loading agents:", error);
+      console.error("❌ NEW AGENT SERVICE: Error loading agents:", error);
     } finally {
       setLoading(false);
     }
@@ -223,11 +257,73 @@ export const MultiChainAgentDashboard: React.FC = () => {
   const AgentCard: React.FC<{ agent: DeployedAgent }> = ({ agent }) => {
     // Helper functions for dynamic data display
     const getInteractionFeeDisplay = () => {
-      // Use new dynamic fields first, fallback to legacy
+      console.log(
+        "🚨 POST-MIGRATION DEBUG: Full agent object:",
+        JSON.stringify(agent, null, 2)
+      );
+      console.log("🚨 POST-MIGRATION DEBUG: Agent keys:", Object.keys(agent));
+      console.log("🚨 POST-MIGRATION DEBUG: Agent id:", agent.id);
+      console.log("🚨 POST-MIGRATION DEBUG: Agent name:", agent.name);
+
+      // Check all possible fee-related fields
+      console.log("🚨 POST-MIGRATION DEBUG: Fee fields check:");
+      console.log(
+        "  - interaction_fee_amount:",
+        agent.interaction_fee_amount,
+        typeof agent.interaction_fee_amount
+      );
+      console.log(
+        "  - interaction_fee_token:",
+        agent.interaction_fee_token,
+        typeof agent.interaction_fee_token
+      );
+      console.log(
+        "  - interaction_fee_usdfc:",
+        agent.interaction_fee_usdfc,
+        typeof agent.interaction_fee_usdfc
+      );
+      console.log(
+        "  - token_symbol:",
+        agent.token_symbol,
+        typeof agent.token_symbol
+      );
+
+      // Use new dynamic fields first, but handle 0 values correctly
       const amount =
-        agent.interaction_fee_amount || agent.interaction_fee_usdfc || 1;
+        agent.interaction_fee_amount !== null &&
+        agent.interaction_fee_amount !== undefined
+          ? agent.interaction_fee_amount
+          : agent.interaction_fee_usdfc !== null &&
+            agent.interaction_fee_usdfc !== undefined
+          ? agent.interaction_fee_usdfc
+          : 10;
+
       const token = agent.interaction_fee_token || agent.token_symbol || "USDC";
-      return `${amount} ${token}`;
+
+      console.log("🚨 POST-MIGRATION DEBUG: Final calculation:", {
+        finalAmount: amount,
+        finalToken: token,
+        condition1:
+          agent.interaction_fee_amount !== null &&
+          agent.interaction_fee_amount !== undefined,
+        condition2:
+          agent.interaction_fee_usdfc !== null &&
+          agent.interaction_fee_usdfc !== undefined,
+      });
+
+      return `💎 ${
+        agent.payment_config?.interaction_fee_amount ||
+        agent.interaction_fee_amount ||
+        agent.interaction_fee_usdfc ||
+        amount ||
+        1
+      } ${
+        agent.payment_config?.interaction_fee_token ||
+        agent.interaction_fee_token ||
+        agent.token_symbol ||
+        token ||
+        "USDC"
+      }`;
     };
 
     const getNetworkDisplay = () => {
