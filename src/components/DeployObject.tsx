@@ -19,15 +19,17 @@ import {
   Bell,
   Navigation,
   Network,
+  RefreshCw,
 } from "lucide-react";
 import { useAddress } from "@thirdweb-dev/react";
 import PaymentMethodsSelector from "./PaymentMethodsSelector";
 import BankDetailsForm from "./BankDetailsForm";
-import { networkDetectionService } from "../services/networkDetectionService.js";
+import { networkDetectionService } from "../services/networkDetectionService";
 import {
-  SUPPORTED_EVM_NETWORKS,
-  getSupportedNetworkByChainId,
-} from "../config/evmNetworks.js";
+  EVM_NETWORKS,
+  NON_EVM_NETWORKS,
+  switchToNetwork,
+} from "../config/multiChainNetworks";
 
 interface DeployObjectProps {
   supabase: any;
@@ -68,6 +70,13 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   const [currentNetwork, setCurrentNetwork] = useState<any>(null);
   const [networkLoading, setNetworkLoading] = useState(false);
   const [networkError, setNetworkError] = useState<string>("");
+  const [showNetworkSelector, setShowNetworkSelector] = useState(false);
+
+  // Wallet states
+  const [solanaWallet, setSolanaWallet] = useState<any>(null);
+  const [walletType, setWalletType] = useState<"metamask" | "solana" | null>(
+    null
+  );
 
   // Agent configuration states
   const [agentName, setAgentName] = useState("");
@@ -113,8 +122,10 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     11155111: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", // Ethereum Sepolia
     421614: "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d", // Arbitrum Sepolia
     84532: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", // Base Sepolia
-    11155420: "0x5fd84259d3c8b37a387c0d8a4c5b0c0d7d3c0D7", // OP Sepolia
+    11155420: "0x5fd84259d66Cd46123540766Be93DFE6D43130D7", // OP Sepolia - Circle Testnet USDC
     43113: "0x5425890298aed601595a70AB815c96711a31Bc65", // Avalanche Fuji
+    80002: "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582", // Polygon Amoy
+    devnet: "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU", // Solana Devnet USDC
   };
 
   // Agent type options - Updated with new categories
@@ -155,6 +166,10 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
           return ["USDC", "USDT", "DAI"]; // Fixed: Removed OP, added DAI
         case 43113: // Avalanche Fuji
           return ["USDC", "USDT", "DAI"]; // Fixed: Removed AVAX, added DAI
+        case 80002: // Polygon Amoy
+          return ["USDC", "USDT", "DAI"]; // Polygon Amoy support
+        case "devnet": // Solana Devnet
+          return ["USDC"];
         default:
           return ["USDC", "USDT", "DAI"]; // Fixed: Added DAI as default
       }
@@ -209,6 +224,16 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
             USDT: "0x1234567890123456789012345678901234567890", // Placeholder
             AVAX: "0x0000000000000000000000000000000000000000", // Native token
           };
+        case 80002: // Polygon Amoy
+          return {
+            USDC: "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582",
+            USDT: "0x1234567890123456789012345678901234567890", // Placeholder
+            DAI: "0x1234567890123456789012345678901234567890", // Placeholder
+          };
+        case "devnet": // Solana Devnet
+          return {
+            USDC: "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+          };
         default:
           return {};
       }
@@ -254,8 +279,130 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   ];
 
   // Fetch USDC balance for current network
+  // Solana wallet detection functions
+  const detectSolanaWallet = async () => {
+    try {
+      // Check for Phantom wallet
+      if (window.solana && window.solana.isPhantom) {
+        console.log("🟣 Phantom wallet detected");
+        return { type: "phantom", wallet: window.solana };
+      }
+
+      // Check for Solflare wallet
+      if (window.solflare && window.solflare.isSolflare) {
+        console.log("🟠 Solflare wallet detected");
+        return { type: "solflare", wallet: window.solflare };
+      }
+
+      // Check for other Solana wallets
+      if (window.solana) {
+        console.log("🟡 Generic Solana wallet detected");
+        return { type: "solana", wallet: window.solana };
+      }
+
+      return null;
+    } catch (error) {
+      console.error("❌ Error detecting Solana wallet:", error);
+      return null;
+    }
+  };
+
+  const connectSolanaWallet = async () => {
+    try {
+      const walletInfo = await detectSolanaWallet();
+      if (!walletInfo) {
+        throw new Error("No Solana wallet detected");
+      }
+
+      const resp = await walletInfo.wallet.connect();
+      console.log("✅ Solana wallet connected:", resp.publicKey.toString());
+
+      setSolanaWallet(walletInfo.wallet);
+      setWalletType("solana");
+
+      // Set the address for Solana
+      // Note: This would need to be integrated with the address state management
+      console.log("🔑 Solana public key:", resp.publicKey.toString());
+
+      return resp.publicKey.toString();
+    } catch (error) {
+      console.error("❌ Failed to connect Solana wallet:", error);
+      throw error;
+    }
+  };
+
+  // Solana USDC balance fetching function
+  const fetchSolanaUSDCBalance = async () => {
+    try {
+      console.log("🔄 Fetching Solana USDC balance...");
+
+      if (!solanaWallet || !address) {
+        console.log("❌ No Solana wallet or address found");
+        setUsdcBalance("0.000000");
+        return;
+      }
+
+      const { Connection, PublicKey } = await import("@solana/web3.js");
+      const { getAssociatedTokenAddress, getAccount } = await import(
+        "@solana/spl-token"
+      );
+
+      const connection = new Connection(
+        "https://api.devnet.solana.com",
+        "confirmed"
+      );
+      const walletPublicKey = new PublicKey(address);
+      const usdcMint = new PublicKey(
+        "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"
+      ); // USDC Devnet
+
+      console.log("🟡 Solana wallet:", solanaWallet);
+      console.log("🟡 Solana address:", address);
+      console.log("🟡 USDC Mint:", usdcMint.toString());
+
+      // Get associated token account address
+      const associatedTokenAddress = await getAssociatedTokenAddress(
+        usdcMint,
+        walletPublicKey
+      );
+
+      console.log(
+        "🟡 Associated Token Address:",
+        associatedTokenAddress.toString()
+      );
+
+      // Try to get the account info
+      const accountInfo = await getAccount(connection, associatedTokenAddress);
+
+      // USDC has 6 decimals on Solana
+      const balance = Number(accountInfo.amount) / Math.pow(10, 6);
+      const formattedBalance = balance.toFixed(6);
+
+      setUsdcBalance(formattedBalance);
+      console.log("✅ Solana USDC balance fetched:", formattedBalance);
+    } catch (error: any) {
+      console.error("❌ Solana USDC balance fetch failed:", error);
+      // If the account doesn't exist, it means the balance is 0
+      if (
+        error.message?.includes("AccountNotFound") ||
+        error.message?.includes("could not find account")
+      ) {
+        console.log("🟡 No USDC token account found - balance is 0");
+        setUsdcBalance("0.000000");
+      } else {
+        setBalanceError("Failed to fetch Solana USDC balance");
+        setUsdcBalance("0.000000");
+      }
+    }
+  };
+
   const fetchUSDCBalance = async () => {
-    if (!address || !currentNetwork) return;
+    if (!address || !currentNetwork) {
+      console.log("❌ Cannot fetch USDC balance: missing address or network");
+      console.log("   Address:", address);
+      console.log("   Current Network:", currentNetwork);
+      return;
+    }
 
     setLoadingBalance(true);
     setBalanceError("");
@@ -263,22 +410,53 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       console.log("🔍 Fetching USDC balance for address:", address);
       console.log("🌐 Network:", currentNetwork.name);
       console.log("🌐 Chain ID:", currentNetwork.chainId);
+      console.log("🗂️ Current Network Object:", currentNetwork);
+      console.log("📋 All USDC Contracts:", USDC_CONTRACTS);
 
-      const usdcContract = USDC_CONTRACTS[currentNetwork.chainId];
+      // Handle Solana Devnet
+      if (
+        currentNetwork.chainId === "devnet" ||
+        currentNetwork.name === "Solana Devnet"
+      ) {
+        await fetchSolanaUSDCBalance();
+        return;
+      }
+
+      // Handle EVM networks
+      const usdcContract =
+        USDC_CONTRACTS[currentNetwork.chainId as keyof typeof USDC_CONTRACTS];
+
       if (!usdcContract) {
         console.warn(
-          `USDC contract not found for chain ${currentNetwork.chainId}`
+          `❌ USDC contract not found for chain ${currentNetwork.chainId}`
         );
+        console.log("📋 Available chains:", Object.keys(USDC_CONTRACTS));
+        console.log("🔍 Chain ID type:", typeof currentNetwork.chainId);
+        console.log("🔍 Chain ID value:", currentNetwork.chainId);
         setBalanceError(`USDC not available on ${currentNetwork.name}`);
         setUsdcBalance("0.000000");
         return;
       }
 
-      console.log("📄 USDC Contract:", usdcContract);
+      console.log(
+        "📄 Official USDC Contract for Chain",
+        currentNetwork.chainId + ":",
+        usdcContract
+      );
 
       // Create provider using the current network RPC
       const { ethers } = await import("ethers");
       const provider = new ethers.providers.Web3Provider(window.ethereum);
+
+      // Ensure we're connected to the right network
+      const network = await provider.getNetwork();
+      console.log("🔗 Provider network:", network.chainId, network.name);
+
+      if (network.chainId !== currentNetwork.chainId) {
+        throw new Error(
+          `Network mismatch: Provider is on chain ${network.chainId}, expected ${currentNetwork.chainId}`
+        );
+      }
 
       // ERC-20 ABI for balanceOf function
       const erc20ABI = [
@@ -288,27 +466,52 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         "function name() view returns (string)",
       ];
 
+      // Validate contract address format and create contract instance
+      if (!ethers.utils.isAddress(usdcContract)) {
+        throw new Error(`Invalid USDC contract address: ${usdcContract}`);
+      }
+
       const contract = new ethers.Contract(usdcContract, erc20ABI, provider);
 
+      console.log("🔄 About to query contract methods...");
+      console.log("   Contract Address:", usdcContract);
+      console.log("   Wallet Address:", address);
+      console.log("   Provider Network:", network.chainId);
+
       // Get token info and balance
+      console.log("🔍 Calling contract methods...");
       const [balance, decimals, symbol, name] = await Promise.all([
-        contract.balanceOf(address),
-        contract.decimals(),
-        contract.symbol(),
-        contract.name(),
+        contract.balanceOf(address).catch((e: any) => {
+          console.error("❌ balanceOf failed:", e);
+          throw e;
+        }),
+        contract.decimals().catch((e: any) => {
+          console.error("❌ decimals failed:", e);
+          throw e;
+        }),
+        contract.symbol().catch((e: any) => {
+          console.error("❌ symbol failed:", e);
+          throw e;
+        }),
+        contract.name().catch((e: any) => {
+          console.error("❌ name failed:", e);
+          throw e;
+        }),
       ]);
+
+      console.log("✅ Contract calls completed successfully!");
 
       // Convert from raw units to readable format (USDC typically has 6 decimals)
       const formattedBalance = ethers.utils.formatUnits(balance, decimals);
       const balanceNumber = parseFloat(formattedBalance);
 
-      console.log("✅ USDC Balance Query Results:");
+      console.log("✅ Official USDC Balance Query Results:");
       console.log("   Token Name:", name);
       console.log("   Token Symbol:", symbol);
       console.log("   Decimals:", decimals.toString());
       console.log("   Raw Balance:", balance.toString());
       console.log("   Formatted Balance:", formattedBalance);
-      console.log("   Final Balance:", balanceNumber.toFixed(6), "USDC");
+      console.log("   Final Balance:", balanceNumber.toFixed(6), symbol);
       console.log("   Account Address:", address);
       console.log("   Contract Address:", usdcContract);
       console.log(
@@ -318,14 +521,14 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         currentNetwork.chainId + ")"
       );
 
-      setUsdcBalance(balanceNumber.toFixed(6)); // Display with 6 decimals for USDC
+      setUsdcBalance(balanceNumber.toFixed(6)); // Display with 6 decimals
 
       // Show balance in UI notification
       if (balanceNumber > 0) {
         console.log(
           `🎉 You have ${balanceNumber.toFixed(
             6
-          )} USDC in your connected account on ${currentNetwork.name}!`
+          )} ${symbol} in your connected account on ${currentNetwork.name}!`
         );
       } else {
         console.log("⚠️ No USDC balance found in connected account");
@@ -346,6 +549,87 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     } finally {
       setLoadingBalance(false);
     }
+  };
+
+  // Network switching functionality
+  const handleNetworkSwitch = async (targetNetwork: any) => {
+    try {
+      console.log(`🔄 Switching to ${targetNetwork.name}...`);
+
+      // Handle non-EVM networks (like Solana)
+      if (targetNetwork.type !== "evm") {
+        console.log(`🟡 Non-EVM network detected: ${targetNetwork.name}`);
+
+        if (targetNetwork.name.toLowerCase().includes("solana")) {
+          // For Solana, we need to connect to a Solana wallet
+          console.log("🔄 Connecting to Solana wallet...");
+          await connectSolanaWallet();
+
+          // Set the current network manually for non-EVM
+          setCurrentNetwork(targetNetwork);
+          setNetworkError("");
+
+          // Fetch balance after "switching"
+          setTimeout(() => {
+            fetchUSDCBalance();
+          }, 1000);
+
+          console.log(`✅ Successfully connected to ${targetNetwork.name}`);
+          return;
+        }
+      }
+
+      // Handle EVM networks
+      const success = await switchToNetwork(targetNetwork);
+
+      if (success) {
+        console.log(`✅ Successfully switched to ${targetNetwork.name}`);
+        // The network detection will automatically update the state
+        setTimeout(() => {
+          fetchUSDCBalance(); // Refresh balance after network switch
+        }, 1000);
+      } else {
+        console.error(`❌ Failed to switch to ${targetNetwork.name}`);
+        setNetworkError(
+          `Failed to switch to ${targetNetwork.name}. Please try manually in your wallet.`
+        );
+      }
+    } catch (error) {
+      console.error("Network switch error:", error);
+      setNetworkError(
+        `Network switch failed: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  };
+
+  // Get supported networks for display
+  const getSupportedNetworks = () => {
+    const evmNetworks = Object.values(EVM_NETWORKS).filter(
+      (network) => network.status === "active"
+    );
+    const nonEvmNetworks = Object.values(NON_EVM_NETWORKS).filter(
+      (network) => network.status === "active"
+    );
+    return [...evmNetworks, ...nonEvmNetworks];
+  };
+
+  // Check if current network is supported
+  const isCurrentNetworkSupported = () => {
+    if (!currentNetwork) return false;
+
+    // Check against all supported networks (EVM and Non-EVM)
+    const allSupportedNetworks = [
+      ...Object.values(EVM_NETWORKS),
+      ...Object.values(NON_EVM_NETWORKS),
+    ];
+    return allSupportedNetworks.some(
+      (network) =>
+        network.chainId === currentNetwork.chainId ||
+        (network.name === currentNetwork.name &&
+          currentNetwork.chainId === "devnet")
+    );
   };
 
   // Get current location
@@ -704,7 +988,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     }
   };
 
-  // Load USDC balance when wallet connects and network is detected
+  // Load USDC balance when wallet connects and network is detected - OFFICIAL CONTRACTS ONLY
   useEffect(() => {
     if (address && currentNetwork && currentNetwork.isSupported !== false) {
       fetchUSDCBalance();
@@ -783,6 +1067,22 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     }
   }, [currentNetwork]);
 
+  // Close network selector when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest(".network-selector-container")) {
+        setShowNetworkSelector(false);
+      }
+    };
+
+    if (showNetworkSelector) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showNetworkSelector]);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-emerald-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -815,9 +1115,18 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     {loadingBalance ? (
                       <Loader2 className="h-4 w-4 text-white animate-spin" />
                     ) : (
-                      <span className="text-white font-bold">
-                        {usdcBalance} USDC
-                      </span>
+                      <div className="flex items-center">
+                        <span className="text-white font-bold mr-2">
+                          {usdcBalance} USDC
+                        </span>
+                        <button
+                          onClick={fetchUSDCBalance}
+                          className="text-white hover:text-green-200 transition-colors"
+                          title="Refresh USDC balance"
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -833,13 +1142,90 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                       {networkLoading ? (
                         <Loader2 className="h-4 w-4 text-white animate-spin" />
                       ) : currentNetwork ? (
-                        <div className="text-right">
-                          <div className="text-white font-bold">
-                            {currentNetwork.name}
-                          </div>
-                          <div className="text-green-100 text-sm">
-                            Chain ID: {currentNetwork.chainId}
-                          </div>
+                        <div className="relative network-selector-container">
+                          <button
+                            onClick={() =>
+                              setShowNetworkSelector(!showNetworkSelector)
+                            }
+                            className="text-right hover:bg-white hover:bg-opacity-10 rounded px-2 py-1 transition-colors"
+                          >
+                            <div className="text-white font-bold flex items-center">
+                              {currentNetwork.name}
+                              <svg
+                                className="ml-1 h-4 w-4"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            </div>
+                            <div className="text-green-100 text-sm">
+                              Chain ID: {currentNetwork.chainId}
+                            </div>
+                            {!isCurrentNetworkSupported() && (
+                              <div className="text-red-200 text-xs">
+                                ⚠️ Unsupported
+                              </div>
+                            )}
+                          </button>
+
+                          {/* Network Selector Dropdown */}
+                          {showNetworkSelector && (
+                            <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border z-50 min-w-64">
+                              <div className="p-3 border-b">
+                                <h3 className="font-medium text-gray-900">
+                                  Switch Network
+                                </h3>
+                                <p className="text-sm text-gray-600">
+                                  Choose from supported EVM testnets
+                                </p>
+                              </div>
+                              <div className="max-h-64 overflow-y-auto">
+                                {getSupportedNetworks().map((network) => (
+                                  <button
+                                    key={network.chainId}
+                                    onClick={() => {
+                                      handleNetworkSwitch(network);
+                                      setShowNetworkSelector(false);
+                                    }}
+                                    className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b last:border-b-0 ${
+                                      currentNetwork?.chainId ===
+                                      network.chainId
+                                        ? "bg-green-50 border-l-4 border-l-green-500"
+                                        : ""
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <div className="font-medium text-gray-900">
+                                          {network.name}
+                                        </div>
+                                        <div className="text-sm text-gray-600">
+                                          Chain ID: {network.chainId}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                          Currency: {network.symbol}
+                                        </div>
+                                      </div>
+                                      {currentNetwork?.chainId ===
+                                        network.chainId && (
+                                        <CheckCircle className="h-5 w-5 text-green-500" />
+                                      )}
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                              <div className="p-3 border-t bg-gray-50">
+                                <p className="text-xs text-gray-600">
+                                  💡 All networks support USDC payments
+                                </p>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <span className="text-yellow-200">Not detected</span>
@@ -861,15 +1247,21 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                       <AlertCircle className="h-4 w-4 inline mr-1" />
                       {balanceError}
                       {currentNetwork && (
-                        <div className="mt-1">
+                        <div className="mt-2 space-y-2">
                           <a
                             href="https://faucet.circle.com/"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-200 underline hover:text-blue-100"
+                            className="block text-blue-200 underline hover:text-blue-100"
                           >
                             Get USDC from faucet →
                           </a>
+                          <button
+                            onClick={fetchUSDCBalance}
+                            className="block text-green-200 underline hover:text-green-100"
+                          >
+                            🔄 Retry USDC balance check
+                          </button>
                         </div>
                       )}
                     </div>
@@ -904,6 +1296,37 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                       Network supported ✓
                     </div>
                   )}
+
+                  {/* Unsupported Network Warning */}
+                  {currentNetwork && !isCurrentNetworkSupported() && (
+                    <div className="mt-2 p-3 bg-red-500 bg-opacity-50 rounded text-white text-sm">
+                      <AlertCircle className="h-4 w-4 inline mr-1" />
+                      <strong>Unsupported Network:</strong>{" "}
+                      {currentNetwork.name}
+                      <div className="mt-2">
+                        <p className="mb-2">Switch to a supported network:</p>
+                        <div className="grid grid-cols-1 gap-1 text-xs">
+                          {getSupportedNetworks()
+                            .slice(0, 3)
+                            .map((network) => (
+                              <button
+                                key={network.chainId}
+                                onClick={() => handleNetworkSwitch(network)}
+                                className="text-left px-2 py-1 bg-white bg-opacity-20 rounded hover:bg-opacity-30 transition-colors"
+                              >
+                                • {network.name} (Chain ID: {network.chainId})
+                              </button>
+                            ))}
+                        </div>
+                        <button
+                          onClick={() => setShowNetworkSelector(true)}
+                          className="mt-2 text-blue-200 underline hover:text-blue-100 text-xs"
+                        >
+                          View all supported networks →
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 {balanceError && (
                   <div className="mt-2 text-red-200 text-sm">
@@ -918,6 +1341,39 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
           </div>
 
           <div className="p-8 space-y-8">
+            {/* Supported Networks Info Panel */}
+            {!address && (
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                  <Network className="h-5 w-5 mr-2 text-blue-600" />
+                  Supported EVM Testnets
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                  {getSupportedNetworks().map((network) => (
+                    <div
+                      key={network.chainId}
+                      className="bg-white rounded-lg p-3 border border-gray-200"
+                    >
+                      <div className="font-medium text-gray-900">
+                        {network.name}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Chain ID: {network.chainId}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {network.symbol} • USDC Support ✓
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-sm text-gray-600">
+                  💡 All networks support USDC payments. Connect your wallet to
+                  automatically detect your network or switch between supported
+                  chains.
+                </div>
+              </div>
+            )}
+
             {/* Location & Deployment Section */}
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-gray-900 flex items-center">

@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@solana/spl-token": "^0.4.14",
+    "@solana/web3.js": "^1.98.4",
     "@supabase/supabase-js": "^2.39.3",
     "@thirdweb-dev/chains": "^0.1.120",
     "@thirdweb-dev/react": "^4.1.10",

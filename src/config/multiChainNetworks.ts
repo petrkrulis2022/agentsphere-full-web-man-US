@@ -4,6 +4,7 @@
 export interface NetworkConfig {
   chainId: number;
   name: string;
+  shortName?: string; // Add shortName for UI compatibility
   rpcUrl: string;
   nativeCurrency: string;
   symbol: string;
@@ -15,6 +16,7 @@ export interface NetworkConfig {
   isTestnet: boolean;
   gasPrice?: string;
   status: "active" | "maintenance" | "deprecated";
+  isSupported?: boolean; // Add for compatibility
 }
 
 // EVM Testnets (Primary Focus)
@@ -22,6 +24,7 @@ export const EVM_NETWORKS: Record<string, NetworkConfig> = {
   ETHEREUM_SEPOLIA: {
     chainId: 11155111,
     name: "Ethereum Sepolia",
+    shortName: "Sepolia",
     rpcUrl: "https://sepolia.infura.io/v3/",
     nativeCurrency: "SepoliaETH",
     symbol: "ETH",
@@ -32,10 +35,12 @@ export const EVM_NETWORKS: Record<string, NetworkConfig> = {
     isTestnet: true,
     gasPrice: "20000000000", // 20 gwei
     status: "active",
+    isSupported: true,
   },
   ARBITRUM_SEPOLIA: {
     chainId: 421614,
     name: "Arbitrum Sepolia",
+    shortName: "Arb Sepolia",
     rpcUrl: "https://api.zan.top/node/v1/arb/sepolia/public",
     nativeCurrency: "ETH",
     symbol: "ETH",
@@ -46,10 +51,12 @@ export const EVM_NETWORKS: Record<string, NetworkConfig> = {
     isTestnet: true,
     gasPrice: "100000000", // 0.1 gwei
     status: "active",
+    isSupported: true,
   },
   BASE_SEPOLIA: {
     chainId: 84532,
     name: "Base Sepolia",
+    shortName: "Base Sepolia",
     rpcUrl: "https://sepolia.base.org",
     nativeCurrency: "ETH",
     symbol: "ETH",
@@ -60,10 +67,12 @@ export const EVM_NETWORKS: Record<string, NetworkConfig> = {
     isTestnet: true,
     gasPrice: "1000000000", // 1 gwei
     status: "active",
+    isSupported: true,
   },
   OP_SEPOLIA: {
     chainId: 11155420,
     name: "OP Sepolia",
+    shortName: "OP Sepolia",
     rpcUrl: "https://sepolia.optimism.io",
     nativeCurrency: "ETH",
     symbol: "ETH",
@@ -74,10 +83,12 @@ export const EVM_NETWORKS: Record<string, NetworkConfig> = {
     isTestnet: true,
     gasPrice: "1000000000", // 1 gwei
     status: "active",
+    isSupported: true,
   },
   AVALANCHE_FUJI: {
     chainId: 43113,
     name: "Avalanche Fuji",
+    shortName: "Avax Fuji",
     rpcUrl: "https://api.avax-test.network/ext/bc/C/rpc",
     nativeCurrency: "AVAX",
     symbol: "AVAX",
@@ -88,14 +99,32 @@ export const EVM_NETWORKS: Record<string, NetworkConfig> = {
     isTestnet: true,
     gasPrice: "25000000000", // 25 gwei
     status: "active",
+    isSupported: true,
+  },
+  POLYGON_AMOY: {
+    chainId: 80002,
+    name: "Polygon Amoy",
+    shortName: "Polygon Amoy",
+    rpcUrl: "https://rpc-amoy.polygon.technology/",
+    nativeCurrency: "MATIC",
+    symbol: "MATIC",
+    blockExplorer: "https://amoy.polygonscan.com",
+    type: "evm",
+    usdcAddress: "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582",
+    icon: "polygon",
+    isTestnet: true,
+    gasPrice: "30000000000", // 30 gwei
+    status: "active",
+    isSupported: true,
   },
 };
 
 // Non-EVM Networks (Future Support)
 export const NON_EVM_NETWORKS: Record<string, NetworkConfig> = {
   SOLANA_DEVNET: {
-    chainId: 0, // Solana doesn't use chainId
+    chainId: 0, // Solana doesn't use chainId, but we'll use "devnet" as identifier
     name: "Solana Devnet",
+    shortName: "Solana Devnet",
     rpcUrl: "https://api.devnet.solana.com",
     nativeCurrency: "SOL",
     symbol: "SOL",
@@ -105,10 +134,12 @@ export const NON_EVM_NETWORKS: Record<string, NetworkConfig> = {
     icon: "solana",
     isTestnet: true,
     status: "active",
+    isSupported: true,
   },
   HEDERA_TESTNET: {
     chainId: 296,
     name: "Hedera Testnet",
+    shortName: "Hedera Testnet",
     rpcUrl: "https://testnet.hashio.io/api",
     nativeCurrency: "HBAR",
     symbol: "HBAR",
@@ -117,10 +148,12 @@ export const NON_EVM_NETWORKS: Record<string, NetworkConfig> = {
     icon: "hedera",
     isTestnet: true,
     status: "active",
+    isSupported: true,
   },
   XRP_TESTNET: {
     chainId: 0,
     name: "XRP Ledger Testnet",
+    shortName: "XRP Testnet",
     rpcUrl: "https://s.altnet.rippletest.net:51234",
     nativeCurrency: "XRP",
     symbol: "XRP",
@@ -129,10 +162,12 @@ export const NON_EVM_NETWORKS: Record<string, NetworkConfig> = {
     icon: "xrp",
     isTestnet: true,
     status: "active",
+    isSupported: true,
   },
   TRON_SHASTA: {
     chainId: 0,
     name: "Tron Shasta Testnet",
+    shortName: "Tron Shasta",
     rpcUrl: "https://api.shasta.trongrid.io",
     nativeCurrency: "TRX",
     symbol: "TRX",
@@ -141,10 +176,12 @@ export const NON_EVM_NETWORKS: Record<string, NetworkConfig> = {
     icon: "tron",
     isTestnet: true,
     status: "active",
+    isSupported: true,
   },
   STARKNET_SEPOLIA: {
     chainId: 0,
     name: "Starknet Sepolia",
+    shortName: "Starknet Sepolia",
     rpcUrl: "https://starknet-sepolia.public.blastapi.io",
     nativeCurrency: "ETH",
     symbol: "ETH",
@@ -153,6 +190,7 @@ export const NON_EVM_NETWORKS: Record<string, NetworkConfig> = {
     icon: "starknet",
     isTestnet: true,
     status: "active",
+    isSupported: true,
   },
 };
 

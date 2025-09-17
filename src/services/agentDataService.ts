@@ -9,6 +9,7 @@
  */
 
 import { supabase } from "../lib/supabase";
+import { getNetworkByChainId } from "../config/multiChainNetworks";
 
 // Complete Agent Data Structure for Cube Payment System
 export interface CompleteAgentData {
@@ -350,6 +351,42 @@ export class AgentDataService {
   }
 
   /**
+   * Get best fallback network based on current context
+   */
+  static getBestFallbackNetwork(): { chainId: number; networkName: string } {
+    // Try to get current network synchronously from localStorage or window context
+    try {
+      if (typeof window !== "undefined") {
+        // Check if MetaMask is available and connected
+        if (window.ethereum?.selectedAddress) {
+          // Try to get cached chainId - MetaMask often caches this
+          const cachedChainId = window.ethereum.chainId;
+          if (cachedChainId) {
+            const chainIdNumber = parseInt(cachedChainId, 16);
+            const network = getNetworkByChainId(chainIdNumber);
+            if (network) {
+              console.log("🌐 Using current connected network:", network.name);
+              return {
+                chainId: chainIdNumber,
+                networkName: network.name,
+              };
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.log("⚠️ Could not get current network context");
+    }
+
+    // Better default: Use Polygon Amoy (more likely what user is testing)
+    console.log("🌐 Using default network: Polygon Amoy");
+    return {
+      chainId: 80002,
+      networkName: "Polygon Amoy",
+    };
+  }
+
+  /**
    * Format raw agent data into complete structure
    */
   static formatCompleteAgentData(rawAgent: RawAgentData): CompleteAgentData {
@@ -384,13 +421,16 @@ export class AgentDataService {
       onboard_education: false,
     });
 
+    // Get better network fallbacks
+    const fallbackNetwork = this.getBestFallbackNetwork();
+
     const networkConfig = this.buildNetworkConfig(
-      rawAgent.deployment_chain_id || 11155111,
-      rawAgent.deployment_network_name || "Ethereum Sepolia"
+      rawAgent.deployment_chain_id || fallbackNetwork.chainId,
+      rawAgent.deployment_network_name || fallbackNetwork.networkName
     );
 
     const tokenContracts = this.getTokenContracts(
-      rawAgent.deployment_chain_id || 11155111
+      rawAgent.deployment_chain_id || fallbackNetwork.chainId
     );
 
     // Calculate revenue potential
@@ -411,9 +451,11 @@ export class AgentDataService {
 
       // Deployment Information
       deployment_network_name:
-        rawAgent.deployment_network_name || "Ethereum Sepolia",
-      deployment_chain_id: rawAgent.deployment_chain_id || 11155111,
-      deployment_network_id: rawAgent.deployment_chain_id || 11155111,
+        rawAgent.deployment_network_name || fallbackNetwork.networkName,
+      deployment_chain_id:
+        rawAgent.deployment_chain_id || fallbackNetwork.chainId,
+      deployment_network_id:
+        rawAgent.deployment_chain_id || fallbackNetwork.chainId,
       deployment_status: rawAgent.deployment_status || "active",
       deployed_at: rawAgent.deployed_at || new Date().toISOString(),
       deployer_address: rawAgent.deployer_address || "",
@@ -580,6 +622,13 @@ export class AgentDataService {
         blockExplorer: "https://testnet.snowtrace.io",
         nativeCurrency: { name: "Avalanche", symbol: "AVAX", decimals: 18 },
       },
+      80002: {
+        name: "Polygon Amoy",
+        chainId: 80002,
+        rpcUrl: "https://rpc-amoy.polygon.technology",
+        blockExplorer: "https://amoy.polygonscan.com",
+        nativeCurrency: { name: "MATIC", symbol: "MATIC", decimals: 18 },
+      },
     };
 
     return (
@@ -625,6 +674,12 @@ export class AgentDataService {
       43113: {
         // Avalanche Fuji
         USDC: "0x5425890298aed601595a70AB815c96711a31Bc65",
+        USDT: "0x7169D38820dfd117C3FA1f22a697dBA58d90BA06",
+        DAI: "0x3e622317f8C93f7328350cF0B56d9eD4C620C5d6",
+      },
+      80002: {
+        // Polygon Amoy
+        USDC: "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582",
         USDT: "0x7169D38820dfd117C3FA1f22a697dBA58d90BA06",
         DAI: "0x3e622317f8C93f7328350cF0B56d9eD4C620C5d6",
       },

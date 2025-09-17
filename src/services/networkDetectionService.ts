@@ -1,7 +1,9 @@
 import {
-  SUPPORTED_EVM_NETWORKS,
-  getSupportedNetworkByChainId,
-} from "../config/evmNetworks.js";
+  EVM_NETWORKS,
+  NON_EVM_NETWORKS,
+  getNetworkByChainId,
+  getActiveNetworks,
+} from "../config/multiChainNetworks";
 
 class NetworkDetectionService {
   constructor() {
@@ -20,7 +22,7 @@ class NetworkDetectionService {
       const numericChainId = parseInt(chainId, 16);
 
       // Find matching supported network
-      const supportedNetwork = getSupportedNetworkByChainId(numericChainId);
+      const supportedNetwork = getNetworkByChainId(numericChainId);
 
       this.currentNetwork = supportedNetwork || {
         chainId: numericChainId,
@@ -28,6 +30,14 @@ class NetworkDetectionService {
         shortName: "Unknown",
         isSupported: false,
       };
+
+      // Add isSupported flag for compatibility
+      if (
+        this.currentNetwork &&
+        !this.currentNetwork.hasOwnProperty("isSupported")
+      ) {
+        this.currentNetwork.isSupported = supportedNetwork ? true : false;
+      }
 
       return this.currentNetwork;
     } catch (error) {
@@ -63,7 +73,7 @@ class NetworkDetectionService {
   }
 
   handleNetworkChange(chainId) {
-    const supportedNetwork = getSupportedNetworkByChainId(chainId);
+    const supportedNetwork = getNetworkByChainId(chainId);
 
     this.currentNetwork = supportedNetwork || {
       chainId: chainId,
@@ -71,6 +81,14 @@ class NetworkDetectionService {
       shortName: "Unknown",
       isSupported: false,
     };
+
+    // Add isSupported flag for compatibility
+    if (
+      this.currentNetwork &&
+      !this.currentNetwork.hasOwnProperty("isSupported")
+    ) {
+      this.currentNetwork.isSupported = supportedNetwork ? true : false;
+    }
 
     // Emit network change event
     const event = new CustomEvent("networkChanged", {
@@ -101,9 +119,11 @@ class NetworkDetectionService {
   }
 
   isNetworkSupported(chainId) {
-    return Object.values(SUPPORTED_EVM_NETWORKS).some(
-      (network) => network.chainId === chainId
-    );
+    const allNetworks = [
+      ...Object.values(EVM_NETWORKS),
+      ...Object.values(NON_EVM_NETWORKS),
+    ];
+    return allNetworks.some((network) => network.chainId === chainId);
   }
 
   async switchToNetwork(targetNetwork) {
@@ -150,7 +170,7 @@ class NetworkDetectionService {
   }
 
   getSupportedNetworks() {
-    return Object.values(SUPPORTED_EVM_NETWORKS);
+    return getActiveNetworks().filter((network) => network.type === "evm");
   }
 }
 
