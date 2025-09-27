@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:quick": "vite build --mode development",
+    "build:mobile": "tsc --project tsconfig.mobile.json --noEmit false && vite build --mode development",
+    "build:netlify": "vite build --mode development",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },

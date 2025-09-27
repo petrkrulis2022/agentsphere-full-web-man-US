@@ -1,21 +1,34 @@
 // Multi-Chain Wallet Service for AgentSphere
-// Manages wallet connections across different blockchain networks
+// Manages wallet connections across different blockchain networks with CCIP support
 
 import {
   NetworkConfig,
-  EVM_NETWORKS,
   ALL_NETWORKS,
   getNetworkByChainId,
+  isCCIPSupported,
+  canSendCrossChainTo,
 } from "../config/multiChainNetworks";
+import {
+  solanaNetworkService,
+  SolanaNetworkConfig,
+} from "./solanaNetworkService";
+import {
+  crossChainPaymentService,
+  CrossChainPaymentRequest,
+  PaymentEstimate,
+} from "./crossChainPaymentService";
+import { paymentTracker } from "./paymentTrackingService";
 
 export interface WalletConnection {
-  networkType: string;
+  networkType: "evm" | "solana";
   walletType: string;
   address: string;
-  chainId: number;
+  chainId: number | string; // number for EVM, string for Solana
   isConnected: boolean;
   balance?: string;
+  usdcBalance?: string; // USDC balance for payment purposes
   lastUpdated: number;
+  network?: NetworkConfig | SolanaNetworkConfig;
 }
 
 export interface WalletProvider {
@@ -83,17 +96,32 @@ export class MultiChainWalletService {
       };
     }
 
-    // Phantom (Solana) detection
-    if (typeof window !== "undefined" && window.solana?.isPhantom) {
-      wallets.phantom = {
-        name: "Phantom",
-        icon: "phantom",
-        isInstalled: true,
-        connect: () => this.connectPhantom(),
-        disconnect: () => this.disconnectPhantom(),
-        getBalance: (address: string) => this.getSolanaBalance(address),
-        switchNetwork: () => Promise.resolve(true),
-      };
+    // Phantom (Solana) detection - Enhanced for Brave browser
+    if (typeof window !== "undefined") {
+      const windowAny = window as any;
+
+      // Multiple detection methods for better Brave browser compatibility
+      const isPhantomAvailable =
+        windowAny.solana?.isPhantom ||
+        windowAny.phantom?.solana?.isPhantom ||
+        solanaNetworkService.isPhantomWalletAvailable();
+
+      if (isPhantomAvailable) {
+        wallets.phantom = {
+          name: "Phantom",
+          icon: "phantom",
+          isInstalled: true,
+          connect: () => this.connectPhantom(),
+          disconnect: () => this.disconnectPhantom(),
+          getBalance: (address: string) => this.getSolanaBalance(address),
+          switchNetwork: () => Promise.resolve(true),
+        };
+
+        console.log(
+          "👻 Phantom wallet detected for browser:",
+          navigator.userAgent.includes("Brave") ? "Brave" : "Other"
+        );
+      }
     }
 
     return wallets;
@@ -207,31 +235,145 @@ export class MultiChainWalletService {
     console.log("🔵 Coinbase Wallet disconnected");
   }
 
-  // Phantom (Solana) Integration
+  // Phantom (Solana) Integration - Enhanced for Brave browser
   private async connectPhantom(): Promise<string> {
-    if (!window.solana?.isPhantom) {
-      throw new Error("Phantom wallet not detected");
+    // Enhanced Phantom detection for Brave browser compatibility
+    const windowAny = window as any;
+    const phantomProvider = windowAny.solana?.isPhantom
+      ? windowAny.solana
+      : windowAny.phantom?.solana?.isPhantom
+      ? windowAny.phantom.solana
+      : windowAny.solana; // Fallback to any Solana provider
+
+    if (!phantomProvider) {
+      throw new Error(
+        "Phantom wallet not detected. Please ensure Phantom is installed and enabled in Brave browser."
+      );
     }
 
     try {
-      const response = await window.solana.connect();
+      console.log(
+        "🎯 Connecting to Phantom in Brave browser with enhanced detection"
+      );
+
+      const response = await phantomProvider.connect();
       const address = response.publicKey.toString();
+
+      // PRIORITIZE SOLANA DEVNET - Always attempt to use Devnet for development
+      const prioritizedNetwork = "devnet";
+      console.log("🎯 Prioritizing Solana Devnet for Phantom connection");
+
+      // Attempt to ensure Phantom is using Devnet
+      await this.ensurePhantomDevnetConnection();
+
+      const networkConfig =
+        solanaNetworkService.getSolanaNetworkInfo(prioritizedNetwork);
+
+      // Get balances from Devnet
+      const solBalance = await solanaNetworkService.getSOLBalance(
+        address,
+        prioritizedNetwork
+      );
+      const usdcBalance = await solanaNetworkService.getUSDCBalance(
+        address,
+        prioritizedNetwork
+      );
 
       const connection: WalletConnection = {
         networkType: "solana",
         walletType: "phantom",
         address,
-        chainId: 0, // Solana doesn't use chainId
+        chainId: prioritizedNetwork, // Always use devnet as chainId
         isConnected: true,
+        balance: solBalance,
+        usdcBalance: usdcBalance,
         lastUpdated: Date.now(),
+        network: networkConfig || undefined,
       };
 
       this.connectedWallets.set("solana_phantom", connection);
-      console.log("👻 Phantom connected:", address);
+      console.log(
+        "👻 Phantom connected to Solana Devnet (prioritized):",
+        address
+      );
+      console.log("🌐 Network:", networkConfig?.name);
+      console.log("💰 SOL Balance:", solBalance, "SOL");
+      console.log("💳 USDC Balance:", usdcBalance, "USDC");
+
       return address;
     } catch (error) {
-      console.error("Phantom connection failed:", error);
-      throw error;
+      console.error("Phantom connection failed in Brave browser:", error);
+      throw new Error(
+        `Phantom wallet connection failed: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }. Please ensure Phantom is properly installed in Brave browser.`
+      );
+    }
+  }
+
+  /**
+   * Ensure Phantom wallet is connected to Devnet
+   * This method attempts to guide users to switch to Devnet if needed
+   */
+  private async ensurePhantomDevnetConnection(): Promise<void> {
+    try {
+      // Note: Phantom wallet doesn't expose direct network switching API
+      // However, we can detect and inform users about network preferences
+
+      console.log("🔍 Checking Phantom network configuration...");
+
+      // Try to detect current network by making a test RPC call
+      const devnetConnection = solanaNetworkService.getConnection("devnet");
+
+      try {
+        // Test Devnet connectivity
+        await devnetConnection.getRecentBlockhash();
+        console.log("✅ Devnet connection verified");
+
+        // Store devnet preference for this session
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(
+            "agentsphere_preferred_solana_network",
+            "devnet"
+          );
+        }
+      } catch (devnetError) {
+        console.warn("⚠️ Devnet connectivity issue:", devnetError);
+
+        // Fallback: Still proceed but log the preference
+        console.log("📝 Devnet preferred but connection issue detected");
+      }
+
+      // Display network guidance to user
+      this.displaySolanaNetworkGuidance();
+    } catch (error) {
+      console.warn("Network priority check failed:", error);
+      // Continue with connection even if network check fails
+    }
+  }
+
+  /**
+   * Display guidance to users about Solana network selection
+   */
+  private displaySolanaNetworkGuidance(): void {
+    // This could be enhanced to show a modal or notification
+    console.log("💡 AgentSphere works best with Solana Devnet");
+    console.log("📖 To switch networks in Phantom:");
+    console.log("   1. Open Phantom wallet");
+    console.log("   2. Click Settings → Change Network");
+    console.log("   3. Select 'Devnet' for development");
+
+    // Optional: Emit an event that the UI can listen to for showing guidance
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("agentsphere:solana-network-guidance", {
+          detail: {
+            preferredNetwork: "devnet",
+            message:
+              "For the best experience, please ensure Phantom is set to Devnet",
+          },
+        })
+      );
     }
   }
 
@@ -325,7 +467,7 @@ export class MultiChainWalletService {
     }
   }
 
-  private async getSolanaBalance(address: string): Promise<string> {
+  private async getSolanaBalance(_address: string): Promise<string> {
     try {
       // Solana balance fetching would require additional setup
       // For now, return placeholder
@@ -440,6 +582,355 @@ export class MultiChainWalletService {
       default:
         this.connectedWallets.delete(key);
     }
+  }
+
+  /**
+   * Get connected Solana wallets only
+   */
+  public getConnectedSolanaWallets(): WalletConnection[] {
+    return Array.from(this.connectedWallets.values()).filter(
+      (wallet) => wallet.networkType === "solana"
+    );
+  }
+
+  /**
+   * Get connected EVM wallets only
+   */
+  public getConnectedEVMWallets(): WalletConnection[] {
+    return Array.from(this.connectedWallets.values()).filter(
+      (wallet) => wallet.networkType === "evm"
+    );
+  }
+
+  /**
+   * Check if any Solana wallet is connected
+   */
+  public isSolanaWalletConnected(): boolean {
+    return this.getConnectedSolanaWallets().length > 0;
+  }
+
+  /**
+   * Get primary Solana wallet connection
+   */
+  public getPrimarySolanaWallet(): WalletConnection | null {
+    const solanaWallets = this.getConnectedSolanaWallets();
+    return solanaWallets.length > 0 ? solanaWallets[0] : null;
+  }
+
+  /**
+   * Refresh Solana wallet balances
+   */
+  public async refreshSolanaBalances(): Promise<void> {
+    const solanaWallets = this.getConnectedSolanaWallets();
+
+    for (const wallet of solanaWallets) {
+      try {
+        const network = wallet.chainId as string;
+        const solBalance = await solanaNetworkService.getSOLBalance(
+          wallet.address,
+          network
+        );
+        const usdcBalance = await solanaNetworkService.getUSDCBalance(
+          wallet.address,
+          network
+        );
+
+        // Update wallet connection
+        wallet.balance = solBalance;
+        wallet.usdcBalance = usdcBalance;
+        wallet.lastUpdated = Date.now();
+
+        console.log(`🔄 Updated ${wallet.walletType} balances:`, {
+          sol: solBalance,
+          usdc: usdcBalance,
+        });
+      } catch (error) {
+        console.error(
+          "Failed to refresh Solana balance for",
+          wallet.address,
+          error
+        );
+      }
+    }
+  }
+
+  // ====== CROSS-CHAIN PAYMENT METHODS ======
+
+  /**
+   * Estimate cross-chain payment to an agent
+   */
+  async estimateAgentPayment(
+    agentWalletAddress: string,
+    agentNetworkChainId: number | string,
+    agentFee: number,
+    userWalletType?: string
+  ): Promise<
+    PaymentEstimate & {
+      availableWallets: Array<{
+        walletType: string;
+        address: string;
+        network: NetworkConfig;
+        balance: string;
+        canAfford: boolean;
+      }>;
+    }
+  > {
+    console.log("💰 Estimating agent payment:", {
+      agentWalletAddress,
+      agentNetworkChainId,
+      agentFee,
+    });
+
+    // Get connected wallets
+    const connectedWallets = Array.from(this.connectedWallets.values());
+    const availableWallets = [];
+
+    for (const wallet of connectedWallets) {
+      if (wallet.isConnected) {
+        const network = getNetworkByChainId(
+          typeof wallet.chainId === "string" ? 0 : wallet.chainId
+        );
+        if (network) {
+          const balance = parseFloat(wallet.usdcBalance || "0");
+
+          // Estimate payment for this wallet
+          const estimate = await crossChainPaymentService.estimatePayment(
+            wallet.chainId,
+            agentNetworkChainId,
+            agentFee
+          );
+
+          availableWallets.push({
+            walletType: wallet.walletType,
+            address: wallet.address,
+            network,
+            balance: wallet.usdcBalance || "0",
+            canAfford: balance >= estimate.totalUserCost,
+          });
+        }
+      }
+    }
+
+    // If user specified a wallet type, use that, otherwise use the first available
+    const selectedWallet = userWalletType
+      ? availableWallets.find((w) => w.walletType === userWalletType)
+      : availableWallets.find((w) => w.canAfford) || availableWallets[0];
+
+    if (!selectedWallet) {
+      return {
+        canProcess: false,
+        agentFee,
+        ccipFee: 0,
+        totalUserCost: agentFee,
+        estimatedTime: "N/A",
+        route: {
+          source: null as any,
+          destination: null as any,
+          isDirect: false,
+        },
+        error: "No connected wallets available",
+        availableWallets,
+      };
+    }
+
+    // Get estimate for selected wallet
+    const estimate = await crossChainPaymentService.estimatePayment(
+      selectedWallet.network.chainId,
+      agentNetworkChainId,
+      agentFee
+    );
+
+    return {
+      ...estimate,
+      availableWallets,
+    };
+  }
+
+  /**
+   * Process payment to an agent (same-chain or cross-chain)
+   */
+  async payAgent(
+    agentId: string,
+    agentName: string,
+    agentWalletAddress: string,
+    agentNetworkChainId: number | string,
+    agentFee: number,
+    fromWalletType?: string
+  ): Promise<{
+    success: boolean;
+    paymentId?: string;
+    transactionHash?: string;
+    ccipMessageId?: string;
+    paymentType: "same_chain" | "cross_chain";
+    totalCost?: number;
+    error?: string;
+  }> {
+    try {
+      console.log("💳 Processing agent payment:", {
+        agentId,
+        agentName,
+        agentWalletAddress,
+        agentNetworkChainId,
+        agentFee,
+      });
+
+      // Get user's wallet
+      const connectedWallets = Array.from(
+        this.connectedWallets.values()
+      ).filter((w) => w.isConnected);
+
+      const userWallet = fromWalletType
+        ? connectedWallets.find((w) => w.walletType === fromWalletType)
+        : connectedWallets[0];
+
+      if (!userWallet) {
+        return {
+          success: false,
+          error: "No connected wallet available",
+          paymentType: "cross_chain",
+        };
+      }
+
+      // Get network configurations
+      const userNetwork = getNetworkByChainId(
+        typeof userWallet.chainId === "string" ? 0 : userWallet.chainId
+      );
+      const agentNetwork = getNetworkByChainId(
+        typeof agentNetworkChainId === "string" ? 0 : agentNetworkChainId
+      );
+
+      if (!userNetwork || !agentNetwork) {
+        return {
+          success: false,
+          error: "Invalid network configuration",
+          paymentType: "cross_chain",
+        };
+      }
+
+      // Create payment request
+      const paymentRequest: CrossChainPaymentRequest = {
+        fromNetwork: userNetwork,
+        toNetwork: agentNetwork,
+        fromAddress: userWallet.address,
+        toAddress: agentWalletAddress,
+        amount: agentFee,
+        agentId,
+        agentName,
+        metadata: {
+          interactionType: "agent_payment",
+          transactionId: `agent_${agentId}_${Date.now()}`,
+          timestamp: Date.now(),
+        },
+      };
+
+      // Process payment
+      const result = await crossChainPaymentService.processPayment(
+        paymentRequest
+      );
+
+      // Track payment if successful
+      if (result.success) {
+        const paymentId = await paymentTracker.recordPayment({
+          agentId,
+          agentName,
+          amount: agentFee,
+          ccipFee: result.estimatedFee || 0,
+          totalCost: result.totalCost || agentFee,
+          sourceNetwork: userNetwork.name,
+          sourceChainId: userNetwork.chainId,
+          destinationNetwork: agentNetwork.name,
+          destinationChainId: agentNetwork.chainId,
+          fromAddress: userWallet.address,
+          toAddress: agentWalletAddress,
+          paymentType: result.paymentType,
+          transactionHash: result.transactionHash,
+          ccipMessageId: result.ccipMessageId,
+          status:
+            result.paymentType === "same_chain" ? "completed" : "ccip_sent",
+          interactionType: "agent_payment",
+          metadata: paymentRequest.metadata,
+        });
+
+        console.log("✅ Agent payment successful:", { paymentId, result });
+
+        return {
+          success: true,
+          paymentId,
+          transactionHash: result.transactionHash,
+          ccipMessageId: result.ccipMessageId,
+          paymentType: result.paymentType,
+          totalCost: result.totalCost,
+        };
+      } else {
+        console.error("❌ Agent payment failed:", result.error);
+        return {
+          success: false,
+          error: result.error,
+          paymentType: result.paymentType,
+        };
+      }
+    } catch (error) {
+      console.error("❌ Agent payment error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Payment failed",
+        paymentType: "cross_chain",
+      };
+    }
+  }
+
+  /**
+   * Get cross-chain payment capabilities for connected wallets
+   */
+  getCrossChainCapabilities(): Array<{
+    wallet: WalletConnection;
+    supportedDestinations: NetworkConfig[];
+    ccipEnabled: boolean;
+  }> {
+    return Array.from(this.connectedWallets.values())
+      .filter((wallet) => wallet.isConnected)
+      .map((wallet) => {
+        const network = getNetworkByChainId(
+          typeof wallet.chainId === "string" ? 0 : wallet.chainId
+        );
+
+        if (!network || !isCCIPSupported(network)) {
+          return {
+            wallet,
+            supportedDestinations: [],
+            ccipEnabled: false,
+          };
+        }
+
+        const supportedDestinations = Object.values(ALL_NETWORKS).filter(
+          (targetNetwork) =>
+            targetNetwork.chainId !== network.chainId &&
+            canSendCrossChainTo(network, targetNetwork.chainId)
+        );
+
+        return {
+          wallet,
+          supportedDestinations,
+          ccipEnabled: true,
+        };
+      });
+  }
+
+  /**
+   * Get payment history for user
+   */
+  async getPaymentHistory(
+    userAddress?: string,
+    limit: number = 10
+  ): Promise<any[]> {
+    if (!userAddress) {
+      // Get from first connected wallet
+      const firstWallet = Array.from(this.connectedWallets.values())[0];
+      if (!firstWallet) return [];
+      userAddress = firstWallet.address;
+    }
+
+    return paymentTracker.getPaymentsByUser(userAddress, limit);
   }
 }
 

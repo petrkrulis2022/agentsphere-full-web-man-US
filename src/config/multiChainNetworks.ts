@@ -1,5 +1,5 @@
 // Multi-Chain Network Configuration for AgentSphere
-// Supports EVM testnets and future non-EVM network integration
+// Supports EVM testnets, Solana, and CCIP cross-chain payments
 
 export interface NetworkConfig {
   chainId: number;
@@ -17,9 +17,14 @@ export interface NetworkConfig {
   gasPrice?: string;
   status: "active" | "maintenance" | "deprecated";
   isSupported?: boolean; // Add for compatibility
+  // CCIP Cross-chain support
+  ccipSupported?: boolean;
+  ccipChainSelector?: string;
+  ccipRouter?: string;
+  ccipLanes?: Record<string, string>;
 }
 
-// EVM Testnets (Primary Focus)
+// EVM Testnets with CCIP Cross-Chain Support
 export const EVM_NETWORKS: Record<string, NetworkConfig> = {
   ETHEREUM_SEPOLIA: {
     chainId: 11155111,
@@ -36,6 +41,18 @@ export const EVM_NETWORKS: Record<string, NetworkConfig> = {
     gasPrice: "20000000000", // 20 gwei
     status: "active",
     isSupported: true,
+    // CCIP Configuration
+    ccipSupported: true,
+    ccipChainSelector: "16015286601757825753",
+    ccipRouter: "0x0BF3dE8c5D3e8A2B34D2BEeB17ABfCeBaf363A59",
+    ccipLanes: {
+      toAvalancheFuji: "0x12492154714fBD28F28219f6fc4315d19de1025B",
+      toArbitrumSepolia: "0xBc09627e58989Ba8F1eDA775e486467d2A00944F",
+      toBaseSepolia: "0x8F35B097022135E0F46831f798a240Cc8c4b0B01",
+      toOPSepolia: "0x54b32C2aCb4451c6cF66bcbd856d8A7Cc2263531",
+      toPolygonAmoy: "0x719Aef2C63376AdeCD62D2b59D54682aFBde914a",
+      toSolanaDevnet: "Ccip842gzYHhvdDkSyi2YVCoAWPbYJoApMFzSxQroE9C",
+    },
   },
   ARBITRUM_SEPOLIA: {
     chainId: 421614,
@@ -52,6 +69,17 @@ export const EVM_NETWORKS: Record<string, NetworkConfig> = {
     gasPrice: "100000000", // 0.1 gwei
     status: "active",
     isSupported: true,
+    // CCIP Configuration
+    ccipSupported: true,
+    ccipChainSelector: "3478487238524512106",
+    ccipRouter: "0x2a9C5afB0d0e4BAb2BCdaE109EC4b0c4Be15a165",
+    ccipLanes: {
+      toAvalancheFuji: "0x20C8C73eEe88bF2ED2F1e37B67E1D45925b8618",
+      toBaseSepolia: "0xF162F1DBF87fb3efea1ec2b1FBA5c75A83f2F065",
+      toEthereumSepolia: "0x64d7F7b8F0c90f91E2A5BB1D8a6eF98d8C663210",
+      toOPSepolia: "0x0B0c12F9B5b4C3D8Fb1FDf8a5B67a8F2da4eaC58",
+      toPolygonAmoy: "0x4127E7FDdB7Bc6F0Ae5b2FB6B5E3c82c7F5C1CD2",
+    },
   },
   BASE_SEPOLIA: {
     chainId: 84532,
@@ -68,6 +96,17 @@ export const EVM_NETWORKS: Record<string, NetworkConfig> = {
     gasPrice: "1000000000", // 1 gwei
     status: "active",
     isSupported: true,
+    // CCIP Configuration
+    ccipSupported: true,
+    ccipChainSelector: "10344971235874465080",
+    ccipRouter: "0xD3b06cEbF099CE7DA4AcCf578aaebFDBd6e88a93",
+    ccipLanes: {
+      toAvalancheFuji: "0x212e8Fd9cCC330ab54E8141FA7d33967eF1eDafF",
+      toArbitrumSepolia: "0xb52eF669d3fCeBee1f31418Facc02a16A6F6B0e5",
+      toOPSepolia: "0x2945D35F428CE564F5455AD0AF28BDFCa67e76Ab",
+      toEthereumSepolia: "0x29A1F4ecE9246F0042A9062FB89803fA8B1830cB",
+      toPolygonAmoy: "0x82e28024D67F1e7BaF0b76FCf05e684f3aA11F96",
+    },
   },
   OP_SEPOLIA: {
     chainId: 11155420,
@@ -78,12 +117,24 @@ export const EVM_NETWORKS: Record<string, NetworkConfig> = {
     symbol: "ETH",
     blockExplorer: "https://sepolia-optimism.etherscan.io",
     type: "evm",
-    usdcAddress: "0x5fd84259d3c8b37a387c0d8a4c5b0c0d7d3c0D7",
+    usdcAddress: "0x5fd84259d66Cd46123540766Be93DFE6D43130D7",
     icon: "optimism",
     isTestnet: true,
     gasPrice: "1000000000", // 1 gwei
     status: "active",
     isSupported: true,
+    // CCIP Configuration
+    ccipSupported: true,
+    ccipChainSelector: "5224473277236331295",
+    ccipRouter: "0x114A20A10b43D4115e5aeef7345a1A71d2a60C57",
+    ccipLanes: {
+      toAvalancheFuji: "0x91a144F570ABA7FB7079Fb187A267390E0cc7367",
+      toArbitrumSepolia: "0x6B36c9CD74E760088817a047C3460dEdFfe9a11A",
+      toBaseSepolia: "0x6D22953cdEf8B0C9F0976Cfa52c33B198fEc5881",
+      toEthereumSepolia: "0x54b32C2aCb4451c6cF66bcbd856d8A7Cc2263531",
+      toPolygonAmoy: "0x9E09C2A7D6B9F88c62f0E2Af4cd62dF3F4c326F1",
+      toSolanaDevnet: "0x8F5bED5F7601025b12A97b01584220C12e343986",
+    },
   },
   AVALANCHE_FUJI: {
     chainId: 43113,
@@ -100,6 +151,18 @@ export const EVM_NETWORKS: Record<string, NetworkConfig> = {
     gasPrice: "25000000000", // 25 gwei
     status: "active",
     isSupported: true,
+    // CCIP Configuration
+    ccipSupported: true,
+    ccipChainSelector: "14767482510784806043",
+    ccipRouter: "0xF694E193200268f9a4868e4Aa017A0118C9a8177",
+    ccipLanes: {
+      toArbitrumSepolia: "0xa9946BA30DAeC98745755e4410d6e8E894Edc53B",
+      toBaseSepolia: "0x0aEc1AC9F6D0c21332d7a66dDF1Fbcb32cF3B0B3",
+      toOPSepolia: "0x2a9EFdc9F93D9b822129038EFCa4B63Adf3f7FB5",
+      toEthereumSepolia: "0x75b9a75Ee1fFef6BE7c4F842a041De7c6153CF4E",
+      toPolygonAmoy: "0xA82b9ACAcFA6FaB1FD721e7a748A30E3001351F9",
+      toSolanaDevnet: "0xA5D5B0B844c8f11B61F28AC98BBA84dEA9b80953",
+    },
   },
   POLYGON_AMOY: {
     chainId: 80002,
@@ -116,10 +179,22 @@ export const EVM_NETWORKS: Record<string, NetworkConfig> = {
     gasPrice: "30000000000", // 30 gwei
     status: "active",
     isSupported: true,
+    // CCIP Configuration
+    ccipSupported: true,
+    ccipChainSelector: "16281711391670634445",
+    ccipRouter: "0x9C32fCB86BF0f4a1A8921a9Fe46de3198bb884B2",
+    ccipLanes: {
+      toAvalancheFuji: "0xad6A94CFB51e7DE30FD21F417E4cBf70D3AdaD30",
+      toArbitrumSepolia: "0x5b4942F603D039650AD0CfF8Bed0C49Fa6827Ed6",
+      toBaseSepolia: "0x82e28024D67F1e7BaF0b76FCf05e684f3aA11F96",
+      toOPSepolia: "0x600f00aef9b8ED8EDBd7284B5F04a1932c3408aF",
+      toEthereumSepolia: "0x719Aef2C63376AdeCD62D2b59D54682aFBde914a",
+      toSolanaDevnet: "0xF4EbCC2c077d3939434C7Ab0572660c5A45e4df5",
+    },
   },
 };
 
-// Non-EVM Networks (Future Support)
+// Non-EVM Networks with CCIP Support
 export const NON_EVM_NETWORKS: Record<string, NetworkConfig> = {
   SOLANA_DEVNET: {
     chainId: 0, // Solana doesn't use chainId, but we'll use "devnet" as identifier
@@ -135,6 +210,18 @@ export const NON_EVM_NETWORKS: Record<string, NetworkConfig> = {
     isTestnet: true,
     status: "active",
     isSupported: true,
+    // CCIP Configuration for Solana
+    ccipSupported: true,
+    ccipChainSelector: "16423721717087811551",
+    ccipRouter: "Ccip842gzYHhvdDkSyi2YVCoAWPbYJoApMFzSxQroE9C",
+    ccipLanes: {
+      toAvalancheFuji: "Ccip842gzYHhvdDkSyi2YVCoAWPbYJoApMFzSxQroE9C",
+      toArbitrumSepolia: "Ccip842gzYHhvdDkSyi2YVCoAWPbYJoApMFzSxQroE9C",
+      toBaseSepolia: "Ccip842gzYHhvdDkSyi2YVCoAWPbYJoApMFzSxQroE9C",
+      toOPSepolia: "Ccip842gzYHhvdDkSyi2YVCoAWPbYJoApMFzSxQroE9C",
+      toEthereumSepolia: "Ccip842gzYHhvdDkSyi2YVCoAWPbYJoApMFzSxQroE9C",
+      toPolygonAmoy: "Ccip842gzYHhvdDkSyi2YVCoAWPbYJoApMFzSxQroE9C",
+    },
   },
   HEDERA_TESTNET: {
     chainId: 296,
@@ -334,6 +421,109 @@ export const estimateGasFee = async (
   }
 };
 
+// CCIP Cross-Chain Support Functions
+export const isCCIPSupported = (network: NetworkConfig): boolean => {
+  return network.ccipSupported === true;
+};
+
+export const getCCIPSupportedNetworks = (): NetworkConfig[] => {
+  return Object.values(ALL_NETWORKS).filter((network) => network.ccipSupported);
+};
+
+export const canSendCrossChainTo = (
+  sourceNetwork: NetworkConfig,
+  targetChainId: number | string
+): boolean => {
+  if (!sourceNetwork.ccipSupported || !sourceNetwork.ccipLanes) {
+    return false;
+  }
+
+  const targetNetwork = getNetworkByChainId(
+    typeof targetChainId === "string" ? 0 : targetChainId
+  );
+  if (!targetNetwork) return false;
+
+  // Check if there's a CCIP lane to the target network
+  const targetKey = `to${targetNetwork.name.replace(/\s+/g, "")}`;
+  return sourceNetwork.ccipLanes.hasOwnProperty(targetKey);
+};
+
+export const getCCIPLaneAddress = (
+  sourceNetwork: NetworkConfig,
+  targetNetwork: NetworkConfig
+): string | null => {
+  if (!sourceNetwork.ccipLanes) return null;
+
+  const targetKey = `to${targetNetwork.name.replace(/\s+/g, "")}`;
+  return sourceNetwork.ccipLanes[targetKey] || null;
+};
+
+export const estimateCrossChainFee = async (
+  sourceNetwork: NetworkConfig,
+  targetNetwork: NetworkConfig,
+  amount: number
+): Promise<{
+  canSend: boolean;
+  estimatedFee?: number;
+  totalCost?: number;
+  error?: string;
+}> => {
+  if (!canSendCrossChainTo(sourceNetwork, targetNetwork.chainId)) {
+    return {
+      canSend: false,
+      error: `Cross-chain transfer not supported from ${sourceNetwork.name} to ${targetNetwork.name}`,
+    };
+  }
+
+  // Base CCIP fee estimation (this would integrate with actual CCIP contracts)
+  const baseFee = 1.5; // Base cross-chain fee in USD
+  const variableFee = amount * 0.001; // 0.1% of amount
+  const totalFee = baseFee + variableFee;
+
+  return {
+    canSend: true,
+    estimatedFee: totalFee,
+    totalCost: amount + totalFee,
+  };
+};
+
+export const getAllCrossChainRoutes = (): Array<{
+  source: NetworkConfig;
+  target: NetworkConfig;
+  laneAddress: string;
+}> => {
+  const routes: Array<{
+    source: NetworkConfig;
+    target: NetworkConfig;
+    laneAddress: string;
+  }> = [];
+
+  const ccipNetworks = getCCIPSupportedNetworks();
+
+  ccipNetworks.forEach((sourceNetwork) => {
+    if (sourceNetwork.ccipLanes) {
+      Object.entries(sourceNetwork.ccipLanes).forEach(
+        ([targetKey, laneAddress]) => {
+          const targetNetwork = Object.values(ALL_NETWORKS).find(
+            (network) =>
+              network.name.replace(/\s+/g, "") === targetKey.replace("to", "")
+          );
+
+          if (targetNetwork) {
+            routes.push({
+              source: sourceNetwork,
+              target: targetNetwork,
+              laneAddress,
+            });
+          }
+        }
+      );
+    }
+  });
+
+  return routes;
+};
+
 export default {
   EVM_NETWORKS,
   NON_EVM_NETWORKS,
@@ -346,4 +536,11 @@ export default {
   checkNetworkStatus,
   switchToNetwork,
   estimateGasFee,
+  // CCIP Cross-Chain Functions
+  isCCIPSupported,
+  getCCIPSupportedNetworks,
+  canSendCrossChainTo,
+  getCCIPLaneAddress,
+  estimateCrossChainFee,
+  getAllCrossChainRoutes,
 };

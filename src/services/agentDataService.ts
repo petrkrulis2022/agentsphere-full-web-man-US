@@ -10,6 +10,10 @@
 
 import { supabase } from "../lib/supabase";
 import { getNetworkByChainId } from "../config/multiChainNetworks";
+import {
+  solanaNetworkService,
+  SolanaNetworkConfig,
+} from "./solanaNetworkService";
 
 // Complete Agent Data Structure for Cube Payment System
 export interface CompleteAgentData {
@@ -19,13 +23,25 @@ export interface CompleteAgentData {
   description: string;
   agent_type: string;
 
-  // Deployment Information
+  // Deployment Information - Extended for Multi-Chain
   deployment_network_name: string;
-  deployment_chain_id: number;
-  deployment_network_id: number;
+  deployment_chain_id: number | string; // number for EVM, string for Solana
+  deployment_network_id: number | string;
   deployment_status: string;
   deployed_at: string;
   deployer_address: string;
+
+  // Multi-Chain Network Support
+  network_type: "evm" | "solana" | "hedera"; // Network type
+
+  // Solana-specific fields
+  solana_network?: "devnet" | "testnet" | "mainnet"; // Solana cluster
+  solana_token_mint?: string; // USDC mint address on Solana
+  solana_decimals?: number; // Token decimals (6 for USDC)
+  agent_solana_wallet?: string; // Agent's Solana wallet for payments
+
+  // Cross-chain compatibility
+  supported_networks?: string[]; // Array of supported networks
 
   // Enhanced Location with Altitude - CRITICAL FOR AR POSITIONING
   location: {
@@ -460,6 +476,19 @@ export class AgentDataService {
       deployed_at: rawAgent.deployed_at || new Date().toISOString(),
       deployer_address: rawAgent.deployer_address || "",
 
+      // Multi-Chain Network Support
+      network_type: this.determineNetworkType(rawAgent),
+
+      // Solana-specific fields (only for Solana agents)
+      solana_network: this.getSolanaNetwork(rawAgent),
+      solana_token_mint: this.getSolanaTokenMint(rawAgent),
+      solana_decimals: rawAgent.solana_decimals || 6,
+      agent_solana_wallet:
+        rawAgent.agent_solana_wallet || rawAgent.agent_wallet_address,
+
+      // Cross-chain compatibility
+      supported_networks: this.getSupportedNetworks(rawAgent),
+
       // Enhanced Location with Altitude
       location: {
         latitude: rawAgent.location_latitude || 0,
@@ -755,6 +784,98 @@ export class AgentDataService {
       console.error("🐛 DEBUG: Debug failed:", error);
       throw error;
     }
+  }
+
+  /**
+   * Determine network type from agent data
+   */
+  static determineNetworkType(rawAgent: any): "evm" | "solana" | "hedera" {
+    // Check if explicitly set
+    if (rawAgent.network_type) {
+      return rawAgent.network_type;
+    }
+
+    // Check for Solana indicators
+    if (
+      rawAgent.solana_network ||
+      rawAgent.solana_token_mint ||
+      rawAgent.agent_solana_wallet ||
+      rawAgent.deployment_network_name?.toLowerCase().includes("solana")
+    ) {
+      return "solana";
+    }
+
+    // Check for Hedera indicators
+    if (rawAgent.deployment_network_name?.toLowerCase().includes("hedera")) {
+      return "hedera";
+    }
+
+    // Default to EVM
+    return "evm";
+  }
+
+  /**
+   * Get Solana network from agent data
+   */
+  static getSolanaNetwork(
+    rawAgent: any
+  ): "devnet" | "testnet" | "mainnet" | undefined {
+    if (rawAgent.solana_network) {
+      return rawAgent.solana_network;
+    }
+
+    // Try to determine from deployment network name
+    const networkName = rawAgent.deployment_network_name?.toLowerCase();
+    if (networkName?.includes("solana")) {
+      if (networkName.includes("devnet")) return "devnet";
+      if (networkName.includes("testnet")) return "testnet";
+      if (networkName.includes("mainnet")) return "mainnet";
+      return "devnet"; // Default to devnet for development
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Get Solana token mint address
+   */
+  static getSolanaTokenMint(rawAgent: any): string | undefined {
+    if (rawAgent.solana_token_mint) {
+      return rawAgent.solana_token_mint;
+    }
+
+    // Get USDC mint for detected Solana network
+    const solanaNetwork = this.getSolanaNetwork(rawAgent);
+    if (solanaNetwork) {
+      return (
+        solanaNetworkService.getUSDCMintForSolana(solanaNetwork) || undefined
+      );
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Get supported networks array
+   */
+  static getSupportedNetworks(rawAgent: any): string[] {
+    if (
+      rawAgent.supported_networks &&
+      Array.isArray(rawAgent.supported_networks)
+    ) {
+      return rawAgent.supported_networks;
+    }
+
+    // Generate from current deployment
+    const networks = [];
+
+    if (rawAgent.deployment_network_name) {
+      networks.push(
+        rawAgent.deployment_network_name.toLowerCase().replace(" ", "-")
+      );
+    }
+
+    return networks;
   }
 }
 

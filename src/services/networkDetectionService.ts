@@ -4,8 +4,41 @@ import {
   getNetworkByChainId,
   getActiveNetworks,
 } from "../config/multiChainNetworks";
+import { solanaNetworkService, SOLANA_NETWORKS } from "./solanaNetworkService";
+
+// Non-EVM Network Detection Types
+export interface NonEVMNetworkDetection {
+  type: "solana" | "hedera";
+  networkId: string;
+  name: string;
+  walletType: string;
+  isConnected: boolean;
+  address?: string;
+}
+
+export const SUPPORTED_NON_EVM_NETWORKS = {
+  SOLANA_DEVNET: {
+    name: "Solana Devnet",
+    networkId: "solana-devnet",
+    type: "solana",
+    wallet: "phantom",
+    chainId: "devnet",
+  },
+  SOLANA_TESTNET: {
+    name: "Solana Testnet",
+    networkId: "solana-testnet",
+    type: "solana",
+    wallet: "phantom",
+    chainId: "testnet",
+  },
+} as const;
 
 class NetworkDetectionService {
+  private currentNetwork: any = null;
+  private isListening: boolean = false;
+  private listeners: Array<(network: any) => void> = [];
+  private ethereumChainListener: ((chainId: string) => void) | null = null;
+
   constructor() {
     this.currentNetwork = null;
     this.isListening = false;
@@ -51,7 +84,7 @@ class NetworkDetectionService {
 
     this.isListening = true;
 
-    const handleChainChanged = (chainId) => {
+    const handleChainChanged = (chainId: string) => {
       const numericChainId = parseInt(chainId, 16);
       this.handleNetworkChange(numericChainId);
     };
@@ -72,7 +105,7 @@ class NetworkDetectionService {
     }
   }
 
-  handleNetworkChange(chainId) {
+  handleNetworkChange(chainId: number) {
     const supportedNetwork = getNetworkByChainId(chainId);
 
     this.currentNetwork = supportedNetwork || {
@@ -106,7 +139,7 @@ class NetworkDetectionService {
     });
   }
 
-  addNetworkChangeListener(callback) {
+  addNetworkChangeListener(callback: (network: any) => void) {
     this.listeners.push(callback);
 
     // Return unsubscribe function
@@ -118,7 +151,7 @@ class NetworkDetectionService {
     };
   }
 
-  isNetworkSupported(chainId) {
+  isNetworkSupported(chainId: number) {
     const allNetworks = [
       ...Object.values(EVM_NETWORKS),
       ...Object.values(NON_EVM_NETWORKS),
@@ -126,7 +159,7 @@ class NetworkDetectionService {
     return allNetworks.some((network) => network.chainId === chainId);
   }
 
-  async switchToNetwork(targetNetwork) {
+  async switchToNetwork(targetNetwork: any) {
     if (!window.ethereum) {
       throw new Error("MetaMask not detected");
     }
@@ -136,7 +169,7 @@ class NetworkDetectionService {
         method: "wallet_switchEthereumChain",
         params: [{ chainId: `0x${targetNetwork.chainId.toString(16)}` }],
       });
-    } catch (switchError) {
+    } catch (switchError: any) {
       // Network not added to wallet, add it first
       if (switchError.code === 4902) {
         await this.addNetworkToWallet(targetNetwork);
@@ -146,7 +179,7 @@ class NetworkDetectionService {
     }
   }
 
-  async addNetworkToWallet(network) {
+  async addNetworkToWallet(network: any) {
     await window.ethereum.request({
       method: "wallet_addEthereumChain",
       params: [
@@ -171,6 +204,162 @@ class NetworkDetectionService {
 
   getSupportedNetworks() {
     return getActiveNetworks().filter((network) => network.type === "evm");
+  }
+
+  // Solana Network Detection Methods
+
+  /**
+   * Detect if Phantom wallet is available and connected
+   * PRIORITIZES SOLANA DEVNET for development
+   */
+  async detectSolanaNetwork(): Promise<NonEVMNetworkDetection | null> {
+    try {
+      if (!solanaNetworkService.isPhantomWalletAvailable()) {
+        return null;
+      }
+
+      const phantom = (window as any).solana;
+
+      // ALWAYS PRIORITIZE DEVNET for AgentSphere
+      const prioritizedNetwork = "devnet";
+      console.log("🎯 Prioritizing Solana Devnet detection");
+
+      if (!phantom.isConnected) {
+        return {
+          type: "solana",
+          networkId: "solana-devnet",
+          name: "Solana Devnet (Prioritized)",
+          walletType: "phantom",
+          isConnected: false,
+        };
+      }
+
+      // Even if connected, always report Devnet as the preferred network
+      const networkConfig = SOLANA_NETWORKS[prioritizedNetwork];
+
+      return {
+        type: "solana",
+        networkId: `solana-${prioritizedNetwork}`,
+        name: networkConfig?.name || "Solana Devnet (Prioritized)",
+        walletType: "phantom",
+        isConnected: true,
+        address: phantom.publicKey?.toString(),
+      };
+    } catch (error) {
+      console.error("Solana network detection failed:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Connect to Phantom wallet with Devnet prioritization
+   */
+  async connectSolanaWallet(): Promise<string | null> {
+    try {
+      if (!solanaNetworkService.isPhantomWalletAvailable()) {
+        throw new Error(
+          "Phantom wallet not found. Please install Phantom wallet."
+        );
+      }
+
+      console.log("🎯 Connecting to Phantom with Devnet prioritization");
+
+      const phantom = (window as any).solana;
+      const response = await phantom.connect();
+
+      const address = response.publicKey.toString();
+
+      console.log(
+        "🔗 Phantom wallet connected to Devnet (prioritized):",
+        address
+      );
+
+      // Store devnet preference
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(
+          "agentsphere_preferred_solana_network",
+          "devnet"
+        );
+
+        // Emit guidance event for UI
+        window.dispatchEvent(
+          new CustomEvent("agentsphere:solana-devnet-priority", {
+            detail: {
+              address: address,
+              network: "devnet",
+              message:
+                "Connected to Phantom - Devnet prioritized for AgentSphere",
+            },
+          })
+        );
+      }
+
+      return address;
+    } catch (error) {
+      console.error("Failed to connect Phantom wallet:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Disconnect from Phantom wallet
+   */
+  async disconnectSolanaWallet(): Promise<void> {
+    try {
+      if (solanaNetworkService.isPhantomWalletAvailable()) {
+        const phantom = (window as any).solana;
+        await phantom.disconnect();
+        console.log("🔌 Phantom wallet disconnected");
+      }
+    } catch (error) {
+      console.error("Failed to disconnect Phantom wallet:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all available non-EVM networks
+   */
+  getSupportedNonEVMNetworks(): Array<{
+    name: string;
+    type: string;
+    networkId: string;
+  }> {
+    return [
+      {
+        name: "Solana Devnet",
+        type: "solana",
+        networkId: "solana-devnet",
+      },
+      {
+        name: "Solana Testnet",
+        type: "solana",
+        networkId: "solana-testnet",
+      },
+      // Future: Hedera networks
+    ];
+  }
+
+  /**
+   * Detect all available wallets (both EVM and non-EVM)
+   */
+  async detectAllWallets(): Promise<{
+    evm: any;
+    nonEvm: NonEVMNetworkDetection[];
+  }> {
+    const evmNetwork = await this.detectCurrentNetwork();
+    const nonEvmNetworks: NonEVMNetworkDetection[] = [];
+
+    // Detect Solana
+    const solanaDetection = await this.detectSolanaNetwork();
+    if (solanaDetection) {
+      nonEvmNetworks.push(solanaDetection);
+    }
+
+    return {
+      evm: evmNetwork,
+      nonEvm: nonEvmNetworks,
+    };
   }
 }
 

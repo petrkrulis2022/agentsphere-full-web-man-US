@@ -1,0 +1,21 @@
+{
+  "sandbox": {
+    "clientId": "96ca6a20-254d-46e7-aad1-46132e087901",
+    "environment": "sandbox",
+    "baseUrl": "https://sandbox-merchant.revolut.com/api/1.0",
+    "certificates": {
+      "privateKeyPath": "./private.key",
+      "csrPath": "./revolut.csr",
+      "status": "uploaded_to_portal"
+    },
+    "setup": {
+      "date": "2025-09-26",
+      "status": "client_id_obtained"
+    }
+  },
+  "endpoints": {
+    "orders": "/orders",
+    "webhooks": "/webhooks",
+    "payments": "/payments"
+  }
+}
