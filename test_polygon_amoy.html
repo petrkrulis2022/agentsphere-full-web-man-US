@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Polygon Amoy Connection</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+      .container {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .status {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+      }
+      button {
+        background: #4caf50;
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        font-size: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        width: 100%;
+        margin: 10px 0;
+        transition: all 0.3s;
+      }
+      button:hover {
+        background: #45a049;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+      button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+      }
+      .info {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 15px;
+        border-radius: 8px;
+        margin: 10px 0;
+        font-family: "Courier New", monospace;
+      }
+      .success {
+        color: #4caf50;
+        font-weight: bold;
+      }
+      .error {
+        color: #ff6b6b;
+        font-weight: bold;
+      }
+      .warning {
+        color: #ffd93d;
+        font-weight: bold;
+      }
+      .code {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 10px;
+        border-radius: 5px;
+        overflow-x: auto;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🔷 Polygon Amoy Network Test</h1>
+
+      <div class="status" id="status">
+        <h3>Connection Status:</h3>
+        <p id="statusText">Not connected</p>
+      </div>
+
+      <button id="connectBtn" onclick="connectWallet()">
+        Connect MetaMask
+      </button>
+      <button id="switchBtn" onclick="switchToAmoy()" style="display: none">
+        Switch to Polygon Amoy
+      </button>
+      <button id="addBtn" onclick="addAmoyNetwork()" style="display: none">
+        Add Polygon Amoy to MetaMask
+      </button>
+      <button id="testBtn" onclick="testNetwork()" style="display: none">
+        Test Network Configuration
+      </button>
+
+      <div class="info" id="networkInfo" style="display: none">
+        <h3>Network Information:</h3>
+        <div id="infoContent"></div>
+      </div>
+
+      <div class="code" id="logs" style="display: none">
+        <h4>Console Logs:</h4>
+        <div id="logContent"></div>
+      </div>
+    </div>
+
+    <script>
+      const POLYGON_AMOY_CONFIG = {
+        chainId: "0x13882", // 80002 in hex
+        chainName: "Polygon Amoy",
+        nativeCurrency: {
+          name: "MATIC",
+          symbol: "MATIC",
+          decimals: 18,
+        },
+        rpcUrls: ["https://rpc-amoy.polygon.technology/"],
+        blockExplorerUrls: ["https://amoy.polygonscan.com/"],
+      };
+
+      const USDC_ADDRESS = "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582";
+
+      function log(message, type = "info") {
+        const logDiv = document.getElementById("logContent");
+        const timestamp = new Date().toLocaleTimeString();
+        const color =
+          type === "success"
+            ? "#4CAF50"
+            : type === "error"
+            ? "#ff6b6b"
+            : "#fff";
+        logDiv.innerHTML += `<div style="color: ${color};">[${timestamp}] ${message}</div>`;
+        document.getElementById("logs").style.display = "block";
+        console.log(message);
+      }
+
+      async function connectWallet() {
+        try {
+          log("🔌 Connecting to MetaMask...");
+
+          if (!window.ethereum) {
+            log("❌ MetaMask not found! Please install MetaMask.", "error");
+            alert("Please install MetaMask to continue.");
+            return;
+          }
+
+          const accounts = await window.ethereum.request({
+            method: "eth_requestAccounts",
+          });
+
+          const account = accounts[0];
+          log(`✅ Connected: ${account}`, "success");
+
+          document.getElementById("statusText").innerHTML = `
+                    <span class="success">✅ Connected</span><br>
+                    <small>${account}</small>
+                `;
+
+          // Check current network
+          const chainId = await window.ethereum.request({
+            method: "eth_chainId",
+          });
+          const numericChainId = parseInt(chainId, 16);
+
+          log(`🌐 Current Chain ID: ${numericChainId} (${chainId})`);
+
+          if (numericChainId === 80002) {
+            log("✅ Already on Polygon Amoy!", "success");
+            document.getElementById("testBtn").style.display = "block";
+            showNetworkInfo(account, numericChainId);
+          } else {
+            log("⚠️ Not on Polygon Amoy", "warning");
+            document.getElementById("switchBtn").style.display = "block";
+            document.getElementById("addBtn").style.display = "block";
+          }
+
+          document.getElementById("connectBtn").style.display = "none";
+        } catch (error) {
+          log(`❌ Connection failed: ${error.message}`, "error");
+          console.error(error);
+        }
+      }
+
+      async function addAmoyNetwork() {
+        try {
+          log("➕ Adding Polygon Amoy to MetaMask...");
+
+          await window.ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [POLYGON_AMOY_CONFIG],
+          });
+
+          log("✅ Polygon Amoy network added!", "success");
+
+          // Try to switch automatically
+          setTimeout(switchToAmoy, 1000);
+        } catch (error) {
+          log(`❌ Failed to add network: ${error.message}`, "error");
+          console.error(error);
+        }
+      }
+
+      async function switchToAmoy() {
+        try {
+          log("🔄 Switching to Polygon Amoy...");
+
+          await window.ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: POLYGON_AMOY_CONFIG.chainId }],
+          });
+
+          log("✅ Switched to Polygon Amoy!", "success");
+
+          // Refresh info
+          const accounts = await window.ethereum.request({
+            method: "eth_accounts",
+          });
+          showNetworkInfo(accounts[0], 80002);
+
+          document.getElementById("switchBtn").style.display = "none";
+          document.getElementById("addBtn").style.display = "none";
+          document.getElementById("testBtn").style.display = "block";
+        } catch (error) {
+          if (error.code === 4902) {
+            log("⚠️ Network not found, please add it first", "warning");
+          } else {
+            log(`❌ Failed to switch: ${error.message}`, "error");
+          }
+          console.error(error);
+        }
+      }
+
+      async function showNetworkInfo(account, chainId) {
+        const infoDiv = document.getElementById("infoContent");
+
+        try {
+          const balance = await window.ethereum.request({
+            method: "eth_getBalance",
+            params: [account, "latest"],
+          });
+
+          const maticBalance = (parseInt(balance, 16) / 1e18).toFixed(4);
+
+          infoDiv.innerHTML = `
+                    <div><strong>Account:</strong> ${account}</div>
+                    <div><strong>Chain ID:</strong> ${chainId}</div>
+                    <div><strong>MATIC Balance:</strong> ${maticBalance} MATIC</div>
+                    <div><strong>RPC URL:</strong> ${POLYGON_AMOY_CONFIG.rpcUrls[0]}</div>
+                    <div><strong>USDC Contract:</strong> ${USDC_ADDRESS}</div>
+                    <div><strong>Block Explorer:</strong> <a href="${POLYGON_AMOY_CONFIG.blockExplorerUrls[0]}/address/${account}" target="_blank" style="color: #4CAF50;">View on PolygonScan</a></div>
+                `;
+
+          document.getElementById("networkInfo").style.display = "block";
+          log(`💰 MATIC Balance: ${maticBalance} MATIC`, "success");
+        } catch (error) {
+          log(`❌ Failed to get network info: ${error.message}`, "error");
+        }
+      }
+
+      async function testNetwork() {
+        try {
+          log("🧪 Testing Polygon Amoy configuration...");
+
+          // Test 1: Check chain ID
+          const chainId = await window.ethereum.request({
+            method: "eth_chainId",
+          });
+          const numericChainId = parseInt(chainId, 16);
+
+          if (numericChainId === 80002) {
+            log("✅ Test 1: Chain ID is correct (80002)", "success");
+          } else {
+            log(
+              `❌ Test 1: Wrong chain ID (${numericChainId} instead of 80002)`,
+              "error"
+            );
+            return;
+          }
+
+          // Test 2: Check RPC connectivity
+          const blockNumber = await window.ethereum.request({
+            method: "eth_blockNumber",
+          });
+          log(
+            `✅ Test 2: RPC is responsive (Block: ${parseInt(
+              blockNumber,
+              16
+            )})`,
+            "success"
+          );
+
+          // Test 3: Check USDC contract
+          const code = await window.ethereum.request({
+            method: "eth_getCode",
+            params: [USDC_ADDRESS, "latest"],
+          });
+
+          if (code && code !== "0x") {
+            log(
+              `✅ Test 3: USDC contract exists at ${USDC_ADDRESS}`,
+              "success"
+            );
+          } else {
+            log(`⚠️ Test 3: No code at USDC address`, "warning");
+          }
+
+          // Test 4: Check gas price
+          const gasPrice = await window.ethereum.request({
+            method: "eth_gasPrice",
+          });
+          const gasPriceGwei = (parseInt(gasPrice, 16) / 1e9).toFixed(2);
+          log(`✅ Test 4: Gas price is ${gasPriceGwei} gwei`, "success");
+
+          log(
+            "🎉 All tests passed! Polygon Amoy is working correctly!",
+            "success"
+          );
+        } catch (error) {
+          log(`❌ Test failed: ${error.message}`, "error");
+          console.error(error);
+        }
+      }
+
+      // Listen for network changes
+      if (window.ethereum) {
+        window.ethereum.on("chainChanged", (chainId) => {
+          const numericChainId = parseInt(chainId, 16);
+          log(`🔄 Network changed to Chain ID: ${numericChainId}`);
+
+          if (numericChainId === 80002) {
+            log("✅ Now on Polygon Amoy!", "success");
+            window.location.reload();
+          } else {
+            log("⚠️ Not on Polygon Amoy", "warning");
+          }
+        });
+
+        window.ethereum.on("accountsChanged", (accounts) => {
+          if (accounts.length === 0) {
+            log("🔌 Wallet disconnected");
+            window.location.reload();
+          } else {
+            log(`🔄 Account changed to ${accounts[0]}`);
+            window.location.reload();
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

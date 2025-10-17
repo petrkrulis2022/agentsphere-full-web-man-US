@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useSDK } from "@thirdweb-dev/react";
 import {
@@ -705,10 +705,10 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   };
 
   // Handle payment methods configuration
-  const handlePaymentMethodsChange = (methods: any) => {
+  const handlePaymentMethodsChange = useCallback((methods: any) => {
     setPaymentMethods(methods);
     console.log("💳 Payment methods updated:", methods);
-  };
+  }, []);
 
   // Handle bank details updates
   const handleBankDetailsChange = (
@@ -859,11 +859,12 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         };
       } else {
         // Process EVM payment
-        if (!primaryEvmWallet || !address) {
+        if (!address) {
           throw new Error("No EVM wallet connected");
         }
 
         console.log("🔷 Processing EVM USDC payment...");
+        console.log("💼 Connected wallet:", address);
 
         // Check USDC balance
         const currentUsdcBalance = parseFloat(usdcBalance || "0");
@@ -898,6 +899,16 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
   // Deploy agent
   const deployAgent = async () => {
+    /**
+     * IMPORTANT: Distinction between deployment cost and interaction fee
+     *
+     * - DEPLOYMENT COST: What the agent creator pays to deploy the agent (currently FREE)
+     * - INTERACTION FEE: What users pay when they interact with the deployed agent
+     *
+     * The deployer's wallet balance is NOT related to the interaction fee they set.
+     * The interaction fee is what future users will pay to interact with the agent.
+     */
+
     if (!supabase) {
       alert(
         "Database connection not available. Please connect to Supabase first."
@@ -1047,20 +1058,38 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         interaction_fee_usdfc: interactionFee,
       });
 
-      // Process deployment payment (10 USDC for agent deployment)
-      const deploymentCost = 10.0; // Fixed cost for agent deployment
-      console.log("💳 Processing deployment payment:", deploymentCost, "USDC");
+      // Process deployment payment
+      // NOTE: Deployment cost is separate from interaction fee
+      // Interaction fee is what users pay when they interact with the agent
+      // Deployment cost is what the agent creator pays to deploy
+      const deploymentCost = 0; // FREE deployment for testing (can be adjusted)
+      console.log(
+        "💳 Deployment cost:",
+        deploymentCost,
+        "USDC (Interaction fee: ",
+        interactionFee,
+        "USDC)"
+      );
 
-      const paymentResult = await processDeploymentPayment(deploymentCost);
+      // Skip payment if deployment is free
+      let paymentResult;
+      if (deploymentCost > 0) {
+        paymentResult = await processDeploymentPayment(deploymentCost);
 
-      if (!paymentResult.success) {
-        throw new Error(`Payment failed: ${paymentResult.error}`);
+        if (!paymentResult.success) {
+          throw new Error(`Payment failed: ${paymentResult.error}`);
+        }
+        console.log("✅ Payment successful, proceeding with deployment...");
+      } else {
+        console.log("✅ Free deployment, skipping payment...");
+        paymentResult = { success: true, transactionHash: null };
       }
 
-      console.log("✅ Payment successful, proceeding with deployment...");
-
       // Add payment transaction hash to deployment data
+      // Note: These fields may need to be added to deployed_objects table schema
       let finalDeploymentData = { ...deploymentData };
+      // Commenting out payment fields until DB schema is updated
+      /*
       if (paymentResult.transactionHash) {
         finalDeploymentData = {
           ...deploymentData,
@@ -1070,6 +1099,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
           deployment_payment_status: "completed",
         };
       }
+      */
 
       const { data, error } = await supabase
         .from("deployed_objects")
@@ -1465,7 +1495,10 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   </div>
                 )}
                 <div className="mt-2 text-white text-opacity-80 text-xs">
-                  RPC: https://sepolia.base.org
+                  RPC:{" "}
+                  {currentNetwork?.rpcUrl ||
+                    currentNetwork?.rpcUrls?.[0] ||
+                    "Not available"}
                 </div>
               </div>
             )}

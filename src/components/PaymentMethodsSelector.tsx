@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Wallet,
   CreditCard,
@@ -69,6 +69,9 @@ const PaymentMethodsSelector: React.FC<PaymentMethodsSelectorProps> = ({
   >(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
+  // Track if this is the initial render
+  const isInitialMount = useRef(true);
+
   // Initialize with provided methods
   useEffect(() => {
     if (initialMethods) {
@@ -76,8 +79,14 @@ const PaymentMethodsSelector: React.FC<PaymentMethodsSelectorProps> = ({
     }
   }, [initialMethods]);
 
-  // Validate payment methods selection
+  // Validate payment methods selection and notify parent
   useEffect(() => {
+    // Skip on initial mount
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
     const errors: string[] = [];
     const enabledMethods = Object.values(paymentMethods).some(
       (method) => method.enabled
@@ -119,8 +128,17 @@ const PaymentMethodsSelector: React.FC<PaymentMethodsSelectorProps> = ({
     }
 
     setValidationErrors(errors);
+  }, [paymentMethods, connectedWallet]);
+
+  // Separate effect to notify parent - only when payment methods change
+  useEffect(() => {
+    // Skip on initial mount
+    if (isInitialMount.current) {
+      return;
+    }
+
     onPaymentMethodsChange(paymentMethods);
-  }, [paymentMethods, connectedWallet, onPaymentMethodsChange]);
+  }, [paymentMethods]); // Deliberately only depend on paymentMethods
 
   const updatePaymentMethod = (
     methodKey: keyof PaymentMethod,
