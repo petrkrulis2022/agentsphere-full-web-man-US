@@ -14,8 +14,9 @@ const PORT = process.env.API_PORT || 3001;
 // CORS configuration
 const allowedOrigins = [
   "http://localhost:5173", // AR Viewer
-  "http://localhost:5174", // AgentSphere
-  "https://78e5bf8d9db0.ngrok-free.app", // Ngrok URL (UPDATED)
+  "http://localhost:5174", // AgentSphere  
+  "https://78e5bf8d9db0.ngrok-free.app", // Ngrok URL (from SANDBOX_URL_FIX_SUMMARY.md)
+  "https://32f83daefe28.ngrok-free.app", // Alternative ngrok URL (from conversation)
 ];
 
 app.use(
@@ -40,6 +41,12 @@ const REVOLUT_API_BASE_URL =
   process.env.REVOLUT_API_BASE_URL || "https://sandbox-merchant.revolut.com";
 const REVOLUT_WEBHOOK_SECRET =
   process.env.REVOLUT_WEBHOOK_SECRET || "wsk_fRlH03El2veJJEIMalmaTMQ06cKP9sSb";
+
+// Mock mode toggle (set via environment variable)
+const USE_MOCK_CARDS = process.env.USE_MOCK_CARDS === "true";
+
+// Mock card storage (in-memory for testing)
+const mockCards = new Map();
 
 // Revolut API Fetch Helper
 async function revolutApiFetch(endpoint, options = {}) {
@@ -262,7 +269,10 @@ app.post("/api/revolut/process-virtual-card-payment", async (req, res) => {
   }
 });
 
-// Check Order Status
+/**
+ * Get payment order status
+ * AR Viewer polls this while waiting for payment
+ */
 app.get("/api/revolut/order-status/:orderId", async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -273,18 +283,26 @@ app.get("/api/revolut/order-status/:orderId", async (req, res) => {
       method: "GET",
     });
 
+    console.log("📦 Order status:", order.state);
+
     const response = {
-      status: order.state || "pending",
-      orderId: order.id,
-      amount: order.amount / 100,
-      currency: order.currency,
+      success: true,
+      order_id: order.id,
+      status: order.state || "PENDING", // PENDING, PROCESSING, COMPLETED, CANCELLED, FAILED
+      amount: order.order_amount?.value
+        ? order.order_amount.value / 100
+        : order.amount / 100,
+      currency: order.order_amount?.currency || order.currency,
+      created_at: order.created_at || new Date().toISOString(),
       updated_at: order.updated_at || new Date().toISOString(),
+      completed_at: order.completed_at || null,
     };
 
     res.status(200).json(response);
   } catch (error) {
     console.error("❌ Error checking order status:", error);
     res.status(500).json({
+      success: false,
       error: "Failed to check order status",
       message: error.message,
     });
@@ -317,6 +335,508 @@ app.post("/api/revolut/cancel-order/:orderId", async (req, res) => {
   }
 });
 
+// ==================== VIRTUAL CARD ENDPOINTS ====================
+
+/**
+ * Mock: Create virtual card
+ */
+app.post("/api/revolut/mock/create-virtual-card", async (req, res) => {
+  try {
+    const { agentId, amount, currency, cardLabel } = req.body;
+
+    console.log("🧪 MOCK: Creating virtual card");
+
+    // Generate mock card
+    const cardId = `mock_card_${Date.now()}`;
+    const mockCard = {
+      card_id: cardId,
+      label: cardLabel || `Agent_${agentId}_Card`,
+      currency: currency,
+      state: "ACTIVE",
+      balance: amount,
+      card_number: "4111 1111 1111 1111",
+      cvv: "123",
+      expiry_date: "12/25",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    // Store in mock storage
+    mockCards.set(cardId, mockCard);
+
+    // Simulate API delay
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    res.json({
+      success: true,
+      card: mockCard,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * Mock: Get virtual card
+ */
+app.get("/api/revolut/mock/virtual-card/:card_id", async (req, res) => {
+  try {
+    const { card_id } = req.params;
+
+    const card = mockCards.get(card_id);
+
+    if (!card) {
+      return res.status(404).json({ success: false, error: "Card not found" });
+    }
+
+    res.json({
+      success: true,
+      card: card,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * Mock: Top up virtual card
+ */
+app.post("/api/revolut/mock/virtual-card/:card_id/topup", async (req, res) => {
+  try {
+    const { card_id } = req.params;
+    const { amount } = req.body;
+
+    const card = mockCards.get(card_id);
+
+    if (!card) {
+      return res.status(404).json({ success: false, error: "Card not found" });
+    }
+
+    // Update balance
+    card.balance += amount;
+    card.updated_at = new Date().toISOString();
+    mockCards.set(card_id, card);
+
+    res.json({
+      success: true,
+      new_balance: card.balance,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * Unified endpoint: Auto-route to mock or real based on USE_MOCK_CARDS
+ */
+app.post("/api/revolut/virtual-card/create", async (req, res) => {
+  if (USE_MOCK_CARDS) {
+    console.log("🧪 Using MOCK mode for virtual cards");
+    // Forward to mock endpoint
+    req.url = "/api/revolut/mock/create-virtual-card";
+    return app._router.handle(req, res);
+  } else {
+    console.log("🌐 Using REAL Revolut API for virtual cards");
+    // Forward to real endpoint
+    req.url = "/api/revolut/create-virtual-card";
+    return app._router.handle(req, res);
+  }
+});
+
+/**
+ * Create and fund a virtual card for an agent
+ * This is the foundation for Agent Virtual Cards (AVC)
+ */
+app.post("/api/revolut/create-virtual-card", async (req, res) => {
+  try {
+    const { agentId, amount, currency, cardLabel } = req.body;
+
+    console.log("💳 Creating virtual card for agent:", agentId);
+    console.log("💰 Initial funding:", amount, currency);
+
+    // Validate input
+    if (!agentId || !amount || !currency) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required fields: agentId, amount, currency",
+      });
+    }
+
+    // Step 1: Create virtual card via Revolut API
+    const cardData = {
+      label: cardLabel || `Agent_${agentId}_Card`,
+      currency: currency,
+      card_type: "VIRTUAL",
+    };
+
+    console.log("🚀 Creating card with Revolut API:", cardData);
+
+    const card = await revolutApiFetch("/api/1.0/cards", {
+      method: "POST",
+      body: JSON.stringify(cardData),
+    });
+
+    console.log("✅ Card created:", card.id);
+    console.log("📋 Card details:", JSON.stringify(card, null, 2));
+
+    // Step 2: Fund the card (if amount > 0)
+    if (amount > 0) {
+      console.log("💰 Funding card with", amount, currency);
+
+      const topupData = {
+        amount: amount,
+        currency: currency,
+        reference: `Initial_funding_agent_${agentId}`,
+      };
+
+      const topup = await revolutApiFetch(`/api/1.0/cards/${card.id}/topup`, {
+        method: "POST",
+        body: JSON.stringify(topupData),
+      });
+
+      console.log("✅ Card funded:", topup);
+    }
+
+    // Step 3: Get full card details (including card number, CVV, etc.)
+    const cardDetails = await revolutApiFetch(`/api/1.0/cards/${card.id}`, {
+      method: "GET",
+    });
+
+    console.log("📋 Full card details retrieved");
+
+    // Step 4: Return card information
+    // IMPORTANT: In production, NEVER return full card details to frontend
+    // Use tokenization or secure display methods
+    res.json({
+      success: true,
+      card: {
+        card_id: cardDetails.id,
+        label: cardDetails.label,
+        currency: cardDetails.currency,
+        state: cardDetails.state, // ACTIVE, INACTIVE, BLOCKED, TERMINATED
+        balance: amount,
+
+        // Card details (mask in production!)
+        card_number: cardDetails.card_number || "XXXX XXXX XXXX XXXX",
+        cvv: cardDetails.cvv || "XXX",
+        expiry_date: cardDetails.expiry_date || "MM/YY",
+
+        // Metadata
+        created_at: cardDetails.created_at,
+        updated_at: cardDetails.updated_at,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Failed to create virtual card:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      details: error.response?.data || "No additional details",
+    });
+  }
+});
+
+/**
+ * Get virtual card details
+ */
+app.get("/api/revolut/virtual-card/:card_id", async (req, res) => {
+  try {
+    const { card_id } = req.params;
+
+    console.log("🔍 Getting card details:", card_id);
+
+    const card = await revolutApiFetch(`/api/1.0/cards/${card_id}`, {
+      method: "GET",
+    });
+
+    res.json({
+      success: true,
+      card: {
+        card_id: card.id,
+        label: card.label,
+        currency: card.currency,
+        state: card.state,
+        balance: card.balance || 0,
+        card_number: card.card_number || "XXXX XXXX XXXX XXXX",
+        cvv: card.cvv || "XXX",
+        expiry_date: card.expiry_date || "MM/YY",
+        created_at: card.created_at,
+        updated_at: card.updated_at,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Failed to get card details:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * Top up virtual card
+ */
+app.post("/api/revolut/virtual-card/:card_id/topup", async (req, res) => {
+  try {
+    const { card_id } = req.params;
+    const { amount, currency } = req.body;
+
+    console.log("💰 Topping up card:", card_id);
+    console.log("💵 Amount:", amount, currency);
+
+    const topupData = {
+      amount: amount,
+      currency: currency,
+      reference: `Topup_${Date.now()}`,
+    };
+
+    const topup = await revolutApiFetch(`/api/1.0/cards/${card_id}/topup`, {
+      method: "POST",
+      body: JSON.stringify(topupData),
+    });
+
+    res.json({
+      success: true,
+      topup: topup,
+      new_balance: topup.balance || amount,
+    });
+  } catch (error) {
+    console.error("❌ Failed to top up card:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * Freeze/unfreeze virtual card
+ */
+app.post("/api/revolut/virtual-card/:card_id/freeze", async (req, res) => {
+  try {
+    const { card_id } = req.params;
+    const { freeze } = req.body; // true to freeze, false to unfreeze
+
+    console.log(freeze ? "❄️ Freezing card:" : "🔥 Unfreezing card:", card_id);
+
+    const action = freeze ? "freeze" : "unfreeze";
+
+    await revolutApiFetch(`/api/1.0/cards/${card_id}/${action}`, {
+      method: "POST",
+    });
+
+    res.json({
+      success: true,
+      card_id: card_id,
+      state: freeze ? "FROZEN" : "ACTIVE",
+      action: action,
+    });
+  } catch (error) {
+    console.error("❌ Failed to freeze/unfreeze card:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * Terminate virtual card (permanent)
+ */
+app.delete("/api/revolut/virtual-card/:card_id", async (req, res) => {
+  try {
+    const { card_id } = req.params;
+
+    console.log("🗑️ Terminating card:", card_id);
+
+    await revolutApiFetch(`/api/1.0/cards/${card_id}/terminate`, {
+      method: "POST",
+    });
+
+    res.json({
+      success: true,
+      card_id: card_id,
+      state: "TERMINATED",
+      message: "Card permanently terminated",
+    });
+  } catch (error) {
+    console.error("❌ Failed to terminate card:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * List all virtual cards for an agent
+ */
+app.get("/api/revolut/virtual-cards/agent/:agentId", async (req, res) => {
+  try {
+    const { agentId } = req.params;
+
+    console.log("📋 Listing cards for agent:", agentId);
+
+    // Get all cards from Revolut
+    const cards = await revolutApiFetch("/api/1.0/cards", {
+      method: "GET",
+    });
+
+    // Filter by agent ID (based on label)
+    const agentCards = cards.filter(
+      (card) => card.label && card.label.includes(`Agent_${agentId}`)
+    );
+
+    res.json({
+      success: true,
+      agent_id: agentId,
+      cards: agentCards.map((card) => ({
+        card_id: card.id,
+        label: card.label,
+        currency: card.currency,
+        state: card.state,
+        balance: card.balance || 0,
+        created_at: card.created_at,
+      })),
+    });
+  } catch (error) {
+    console.error("❌ Failed to list cards:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==================== HELPER FUNCTIONS ====================
+
+/**
+ * Internal webhook handler (extracted for reuse)
+ */
+async function handleRevolutWebhook(event) {
+  console.log("🔔 Processing webhook:", event.event_type || event.event);
+
+  const eventType = event.event_type || event.event;
+  const orderData = event.order || event;
+
+  switch (eventType) {
+    case "ORDER_COMPLETED":
+      console.log("✅ Payment completed:", orderData.id || orderData.order_id);
+      console.log(
+        "💰 Amount:",
+        orderData.order_amount?.value || orderData.amount,
+        orderData.order_amount?.currency || orderData.currency
+      );
+      // TODO: Update database
+      // TODO: Notify AR Viewer via WebSocket
+      // TODO: Update agent balance
+      break;
+
+    case "ORDER_CANCELLED":
+      console.log("❌ Payment cancelled:", orderData.id || orderData.order_id);
+      // TODO: Update database
+      break;
+
+    case "ORDER_FAILED":
+      console.log("⚠️ Payment failed:", orderData.id || orderData.order_id);
+      console.log("Reason:", event.failure_reason || "Unknown");
+      // TODO: Update database
+      break;
+
+    case "ORDER_AUTHORISED":
+      console.log(
+        "🔐 Payment AUTHORISED (pending capture):",
+        orderData.id || orderData.order_id
+      );
+      // TODO: Update database
+      break;
+
+    default:
+      console.log("ℹ️ Unhandled event type:", eventType);
+  }
+}
+
+/**
+ * Test endpoint: Simulate virtual card payment
+ * This simulates using the virtual card at a merchant
+ */
+app.post("/api/revolut/test-card-payment", async (req, res) => {
+  try {
+    const { card_id, amount, currency, merchant } = req.body;
+
+    console.log("🧪 TEST: Simulating card payment");
+    console.log("💳 Card ID:", card_id);
+    console.log("💰 Amount:", amount, currency);
+    console.log("🏪 Merchant:", merchant);
+
+    // Step 1: Get card details
+    const card = await revolutApiFetch(`/api/1.0/cards/${card_id}`, {
+      method: "GET",
+    });
+
+    // Step 2: Check balance
+    const currentBalance = card.balance || 0;
+    if (currentBalance < amount) {
+      return res.status(400).json({
+        success: false,
+        error: "Insufficient balance",
+        current_balance: currentBalance,
+        required: amount,
+      });
+    }
+
+    // Step 3: Simulate payment delay
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // Step 4: Deduct amount (in real implementation, this happens automatically)
+    // For testing, we'll just return success
+
+    res.json({
+      success: true,
+      message: "Payment simulation completed",
+      card_id: card_id,
+      amount: amount,
+      currency: currency,
+      merchant: merchant,
+      remaining_balance: currentBalance - amount,
+      transaction_id: `test_txn_${Date.now()}`,
+      completed_at: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("❌ Test card payment failed:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * Test endpoint: Simulate QR code payment completion
+ * This allows testing the full flow without scanning QR codes
+ */
+app.post("/api/revolut/test-qr-payment", async (req, res) => {
+  try {
+    const { order_id, amount, currency } = req.body;
+
+    console.log("🧪 TEST: Simulating QR payment completion");
+    console.log("📋 Order ID:", order_id);
+    console.log("💰 Amount:", amount, currency);
+
+    // Simulate payment delay (1-3 seconds)
+    const delay = Math.floor(Math.random() * 2000) + 1000;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+
+    // Simulate webhook callback
+    const webhookPayload = {
+      event_type: "ORDER_COMPLETED",
+      order_id: order_id,
+      state: "COMPLETED",
+      order_amount: {
+        value: amount,
+        currency: currency,
+      },
+      completed_at: new Date().toISOString(),
+    };
+
+    // Call internal webhook handler
+    await handleRevolutWebhook(webhookPayload);
+
+    res.json({
+      success: true,
+      message: "Payment simulation completed",
+      order_id: order_id,
+      status: "COMPLETED",
+      completed_at: webhookPayload.completed_at,
+    });
+  } catch (error) {
+    console.error("❌ Test payment simulation failed:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Revolut Webhook Handler
 app.post("/api/revolut/webhook", async (req, res) => {
   try {
@@ -340,31 +860,14 @@ app.post("/api/revolut/webhook", async (req, res) => {
 
     console.log(`📬 Webhook Event: ${event}`, order);
 
-    // Handle webhook events
-    switch (event) {
-      case "ORDER_COMPLETED":
-        console.log("✅ Payment completed:", order.id);
-        // TODO: Update database, unlock agent interaction
-        break;
-
-      case "ORDER_FAILED":
-        console.log("❌ Payment failed:", order.id);
-        // TODO: Update database
-        break;
-
-      case "ORDER_AUTHORISED":
-        console.log("⏳ Payment authorized:", order.id);
-        // TODO: Update database
-        break;
-
-      default:
-        console.log("ℹ️ Unhandled webhook event:", event);
-    }
+    // Process event using extracted handler
+    await handleRevolutWebhook({ event_type: event, order: order });
 
     res.status(200).json({ received: true });
   } catch (error) {
     console.error("❌ Webhook processing error:", error);
-    res.status(500).json({ error: "Webhook processing failed" });
+    // Still return 200 to prevent Revolut from retrying
+    res.status(200).json({ received: true, error: error.message });
   }
 });
 
@@ -376,23 +879,42 @@ app.listen(PORT, () => {
 📍 Server running on: http://localhost:${PORT}
 🔗 Health check: http://localhost:${PORT}/api/health
 
-🌐 Available Endpoints:
+🌐 Bank QR Code Endpoints:
    POST   /api/revolut/create-bank-order
-   POST   /api/revolut/process-virtual-card-payment
    GET    /api/revolut/order-status/:orderId
    POST   /api/revolut/cancel-order/:orderId
+   POST   /api/revolut/test-qr-payment (testing)
+
+💳 Virtual Card Endpoints:
+   POST   /api/revolut/create-virtual-card
+   GET    /api/revolut/virtual-card/:card_id
+   POST   /api/revolut/virtual-card/:card_id/topup
+   POST   /api/revolut/virtual-card/:card_id/freeze
+   DELETE /api/revolut/virtual-card/:card_id
+   GET    /api/revolut/virtual-cards/agent/:agentId
+   POST   /api/revolut/test-card-payment (testing)
+
+🧪 Mock Mode Endpoints:
+   POST   /api/revolut/mock/create-virtual-card
+   GET    /api/revolut/mock/virtual-card/:card_id
+   POST   /api/revolut/mock/virtual-card/:card_id/topup
+   POST   /api/revolut/virtual-card/create (auto-routes)
+
+📞 Other Endpoints:
+   POST   /api/revolut/process-virtual-card-payment
    POST   /api/revolut/webhook
 
 🔧 CORS Enabled for:
    - http://localhost:5173 (AR Viewer)
    - http://localhost:5174 (AgentSphere)
-   - https://8323ecb51478.ngrok-free.app (Ngrok)
+   - https://78e5bf8d9db0.ngrok-free.app (Ngrok - UPDATED)
 
 📊 Revolut Configuration:
    API Base: ${REVOLUT_API_BASE_URL}
    Environment: ${
-     REVOLUT_API_BASE_URL.includes("sandbox") ? "Sandbox" : "Production"
+     REVOLUT_API_BASE_URL.includes("sandbox") ? "Sandbox 🧪" : "Production 🌐"
    }
+   Mock Cards: ${USE_MOCK_CARDS ? "Enabled 🧪" : "Disabled"}
 
 ✅ Ready to accept payments!
   `);
