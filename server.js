@@ -14,7 +14,7 @@ const PORT = process.env.API_PORT || 3001;
 // CORS configuration
 const allowedOrigins = [
   "http://localhost:5173", // AR Viewer
-  "http://localhost:5174", // AgentSphere  
+  "http://localhost:5174", // AgentSphere
   "https://78e5bf8d9db0.ngrok-free.app", // Ngrok URL (from SANDBOX_URL_FIX_SUMMARY.md)
   "https://32f83daefe28.ngrok-free.app", // Alternative ngrok URL (from conversation)
 ];
@@ -339,6 +339,7 @@ app.post("/api/revolut/cancel-order/:orderId", async (req, res) => {
 
 /**
  * Mock: Create virtual card
+ * Single-card-per-agent model: checks for existing active card
  */
 app.post("/api/revolut/mock/create-virtual-card", async (req, res) => {
   try {
@@ -346,10 +347,33 @@ app.post("/api/revolut/mock/create-virtual-card", async (req, res) => {
 
     console.log("🧪 MOCK: Creating virtual card");
 
+    // Check for existing active card (single-card-per-agent enforcement)
+    const existingCard = Array.from(mockCards.values()).find(
+      (card) =>
+        card.label &&
+        card.label.includes(`Agent_${agentId}`) &&
+        card.state === "ACTIVE"
+    );
+
+    if (existingCard) {
+      console.log(
+        "⚠️ MOCK: Agent already has an active card:",
+        existingCard.card_id
+      );
+      return res.status(409).json({
+        success: false,
+        error: "Agent already has an active virtual card",
+        existing_card_id: existingCard.card_id,
+        message:
+          "Use /topup endpoint to add funds or terminate the existing card first",
+      });
+    }
+
     // Generate mock card
     const cardId = `mock_card_${Date.now()}`;
     const mockCard = {
       card_id: cardId,
+      agent_id: agentId,
       label: cardLabel || `Agent_${agentId}_Card`,
       currency: currency,
       state: "ACTIVE",
@@ -427,6 +451,46 @@ app.post("/api/revolut/mock/virtual-card/:card_id/topup", async (req, res) => {
 });
 
 /**
+ * Mock: Get primary card for agent
+ */
+app.get(
+  "/api/revolut/mock/virtual-card/agent/:agentId/primary",
+  async (req, res) => {
+    try {
+      const { agentId } = req.params;
+
+      console.log("🧪 MOCK: Getting primary card for agent:", agentId);
+
+      // Find the agent's active card
+      const primaryCard = Array.from(mockCards.values()).find(
+        (card) =>
+          card.label &&
+          card.label.includes(`Agent_${agentId}`) &&
+          card.state === "ACTIVE"
+      );
+
+      if (primaryCard) {
+        console.log("✅ MOCK: Found primary card:", primaryCard.card_id);
+        res.json({
+          success: true,
+          agent_id: agentId,
+          card: primaryCard,
+        });
+      } else {
+        console.log("⚠️ MOCK: No primary card found for agent:", agentId);
+        res.json({
+          success: true,
+          agent_id: agentId,
+          card: null,
+        });
+      }
+    } catch (error) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  }
+);
+
+/**
  * Unified endpoint: Auto-route to mock or real based on USE_MOCK_CARDS
  */
 app.post("/api/revolut/virtual-card/create", async (req, res) => {
@@ -445,7 +509,7 @@ app.post("/api/revolut/virtual-card/create", async (req, res) => {
 
 /**
  * Create and fund a virtual card for an agent
- * This is the foundation for Agent Virtual Cards (AVC)
+ * Single-card-per-agent model: checks for existing active card first
  */
 app.post("/api/revolut/create-virtual-card", async (req, res) => {
   try {
@@ -459,6 +523,30 @@ app.post("/api/revolut/create-virtual-card", async (req, res) => {
       return res.status(400).json({
         success: false,
         error: "Missing required fields: agentId, amount, currency",
+      });
+    }
+
+    // Check for existing active card (single-card-per-agent enforcement)
+    console.log("🔍 Checking for existing card...");
+    const existingCards = await revolutApiFetch("/api/1.0/cards", {
+      method: "GET",
+    });
+
+    const agentActiveCard = existingCards.find(
+      (card) =>
+        card.label &&
+        card.label.includes(`Agent_${agentId}`) &&
+        card.state === "ACTIVE"
+    );
+
+    if (agentActiveCard) {
+      console.log("⚠️ Agent already has an active card:", agentActiveCard.id);
+      return res.status(409).json({
+        success: false,
+        error: "Agent already has an active virtual card",
+        existing_card_id: agentActiveCard.id,
+        message:
+          "Use /topup endpoint to add funds or terminate the existing card first",
       });
     }
 
@@ -657,7 +745,7 @@ app.delete("/api/revolut/virtual-card/:card_id", async (req, res) => {
 });
 
 /**
- * List all virtual cards for an agent
+ * List all virtual cards for an agent (DEPRECATED - use /primary instead)
  */
 app.get("/api/revolut/virtual-cards/agent/:agentId", async (req, res) => {
   try {
@@ -692,6 +780,63 @@ app.get("/api/revolut/virtual-cards/agent/:agentId", async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
+/**
+ * Get the primary (single) virtual card for an agent
+ * Single-card-per-agent model: returns one ACTIVE card or null
+ */
+app.get(
+  "/api/revolut/virtual-card/agent/:agentId/primary",
+  async (req, res) => {
+    try {
+      const { agentId } = req.params;
+
+      console.log("🔍 Getting primary card for agent:", agentId);
+
+      // Get all cards from Revolut
+      const cards = await revolutApiFetch("/api/1.0/cards", {
+        method: "GET",
+      });
+
+      // Filter by agent ID and ACTIVE state
+      const agentCards = cards.filter(
+        (card) =>
+          card.label &&
+          card.label.includes(`Agent_${agentId}`) &&
+          card.state === "ACTIVE"
+      );
+
+      // Return the first active card (or null if none)
+      const primaryCard = agentCards.length > 0 ? agentCards[0] : null;
+
+      if (primaryCard) {
+        console.log("✅ Found primary card:", primaryCard.id);
+        res.json({
+          success: true,
+          agent_id: agentId,
+          card: {
+            card_id: primaryCard.id,
+            label: primaryCard.label,
+            currency: primaryCard.currency,
+            state: primaryCard.state,
+            balance: primaryCard.balance || 0,
+            created_at: primaryCard.created_at,
+          },
+        });
+      } else {
+        console.log("⚠️ No primary card found for agent:", agentId);
+        res.json({
+          success: true,
+          agent_id: agentId,
+          card: null,
+        });
+      }
+    } catch (error) {
+      console.error("❌ Failed to get primary card:", error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  }
+);
 
 // ==================== HELPER FUNCTIONS ====================
 
@@ -885,17 +1030,19 @@ app.listen(PORT, () => {
    POST   /api/revolut/cancel-order/:orderId
    POST   /api/revolut/test-qr-payment (testing)
 
-💳 Virtual Card Endpoints:
-   POST   /api/revolut/create-virtual-card
+💳 Virtual Card Endpoints (Single-Card-Per-Agent Model):
+   POST   /api/revolut/create-virtual-card (enforces 1 card/agent)
+   GET    /api/revolut/virtual-card/agent/:agentId/primary ⭐ NEW
    GET    /api/revolut/virtual-card/:card_id
    POST   /api/revolut/virtual-card/:card_id/topup
    POST   /api/revolut/virtual-card/:card_id/freeze
    DELETE /api/revolut/virtual-card/:card_id
-   GET    /api/revolut/virtual-cards/agent/:agentId
+   GET    /api/revolut/virtual-cards/agent/:agentId (deprecated)
    POST   /api/revolut/test-card-payment (testing)
 
 🧪 Mock Mode Endpoints:
    POST   /api/revolut/mock/create-virtual-card
+   GET    /api/revolut/mock/virtual-card/agent/:agentId/primary ⭐ NEW
    GET    /api/revolut/mock/virtual-card/:card_id
    POST   /api/revolut/mock/virtual-card/:card_id/topup
    POST   /api/revolut/virtual-card/create (auto-routes)
