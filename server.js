@@ -48,6 +48,100 @@ const USE_MOCK_CARDS = process.env.USE_MOCK_CARDS === "true";
 // Mock card storage (in-memory for testing)
 const mockCards = new Map();
 
+// ==================== DYNAMIC PAYMENT SYSTEM ====================
+
+// Mock agent storage (in-memory for testing)
+const mockAgents = new Map();
+
+// Payment session storage (in-memory for testing)
+const paymentSessions = new Map();
+
+// Helper: Check if agent is a terminal type
+function isTerminalAgent(agentType) {
+  return ["payment_terminal", "trailing_payment_terminal"].includes(agentType);
+}
+
+// Helper: Generate payment session ID
+function generatePaymentSessionId() {
+  return `ps_${Date.now()}_${crypto.randomBytes(6).toString("hex")}`;
+}
+
+// Helper: Store payment session
+function storePaymentSession(session) {
+  paymentSessions.set(session.id, session);
+
+  // Auto-expire after 15 minutes
+  setTimeout(() => {
+    const currentSession = paymentSessions.get(session.id);
+    if (currentSession && currentSession.status === "pending") {
+      currentSession.status = "expired";
+      paymentSessions.set(session.id, currentSession);
+      console.log(`⏰ Payment session ${session.id} expired`);
+    }
+  }, 15 * 60 * 1000);
+
+  return session;
+}
+
+// Helper: Get payment session
+function getPaymentSession(sessionId) {
+  return paymentSessions.get(sessionId);
+}
+
+// Helper: Update payment session
+function updatePaymentSession(sessionId, updates) {
+  const session = paymentSessions.get(sessionId);
+  if (session) {
+    const updatedSession = { ...session, ...updates };
+    paymentSessions.set(sessionId, updatedSession);
+    return updatedSession;
+  }
+  return null;
+}
+
+// Helper: Verify blockchain transaction (simulated)
+async function verifyBlockchainTransaction(txHash, amount, token) {
+  console.log(`🔍 Verifying blockchain transaction: ${txHash}`);
+  console.log(`   Amount: ${amount} ${token}`);
+
+  // Simulate verification delay
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  // In simulation mode, always return true
+  // In production, this would check on-chain
+  return true;
+}
+
+// Helper: Verify Revolut payment (simulated)
+async function verifyRevolutPayment(paymentId, amount, currency) {
+  console.log(`🔍 Verifying Revolut payment: ${paymentId}`);
+  console.log(`   Amount: ${amount} ${currency}`);
+
+  // Simulate verification delay
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  // In simulation mode, always return true
+  // In production, this would call Revolut API
+  return true;
+}
+
+// Helper: Notify merchant webhook (simulated)
+async function notifyMerchant(webhookUrl, data) {
+  try {
+    console.log(`📤 Sending webhook to merchant: ${webhookUrl}`);
+    console.log(`   Data:`, data);
+
+    // In simulation mode, just log
+    // In production, this would make HTTP request
+    console.log(`✅ Webhook notification sent (simulated)`);
+
+    return true;
+  } catch (error) {
+    console.error("❌ Webhook notification failed:", error);
+    return false;
+  }
+}
+
 // Revolut API Fetch Helper
 async function revolutApiFetch(endpoint, options = {}) {
   const url = `${REVOLUT_API_BASE_URL}${endpoint}`;
@@ -982,6 +1076,562 @@ app.post("/api/revolut/test-qr-payment", async (req, res) => {
   }
 });
 
+// ==================== AGENT DEPLOYMENT ====================
+
+/**
+ * Deploy a new agent with economics configuration
+ * Supports regular agents and payment terminals
+ */
+app.post("/api/agents/deploy", async (req, res) => {
+  try {
+    console.log("📥 Agent Deployment Request:", req.body);
+
+    const {
+      agentType,
+      name,
+      description,
+      interactionMethods,
+      mcpInteractions,
+      paymentToken,
+      interactionFee,
+      paymentMethods,
+      revenueSharing,
+      walletAddress,
+    } = req.body;
+
+    // Validate agent type
+    const validTypes = [
+      "text_chat",
+      "voice_chat",
+      "video_chat",
+      "defi_features",
+      "payment_terminal",
+      "trailing_payment_terminal",
+    ];
+
+    if (!validTypes.includes(agentType)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid agent type",
+        validTypes,
+      });
+    }
+
+    const isTerminal = isTerminalAgent(agentType);
+
+    // Validate interaction fee for non-terminal agents
+    if (!isTerminal && (!interactionFee || interactionFee <= 0)) {
+      return res.status(400).json({
+        success: false,
+        error: "Interaction fee is required for non-terminal agents",
+      });
+    }
+
+    // Generate agent ID
+    const agentId = `agent_${Date.now()}_${crypto
+      .randomBytes(4)
+      .toString("hex")}`;
+
+    // Create agent object
+    const agent = {
+      id: agentId,
+      agentType,
+      name,
+      description,
+      interactionMethods: interactionMethods || [],
+      mcpInteractions: mcpInteractions || [],
+      walletAddress:
+        walletAddress || `0x${crypto.randomBytes(20).toString("hex")}`,
+      economics: {
+        paymentToken: paymentToken || "USDC",
+        interactionFee: {
+          amount: isTerminal ? 0 : interactionFee,
+          isDynamic: isTerminal,
+        },
+        paymentMethods: paymentMethods || {
+          crypto: {
+            enabled: true,
+            tokens: [paymentToken || "USDC"],
+          },
+          revolut: {
+            qr: false,
+            virtualCard: false,
+          },
+        },
+        revenueSharing: {
+          userPercentage: isTerminal
+            ? 100
+            : revenueSharing?.userPercentage || 70,
+          platformPercentage: isTerminal
+            ? 0
+            : revenueSharing?.platformPercentage || 30,
+        },
+      },
+      status: "active",
+      deployedAt: new Date().toISOString(),
+    };
+
+    // Store agent in memory
+    mockAgents.set(agentId, agent);
+
+    console.log(`✅ Agent deployed successfully: ${agentId}`);
+    console.log(`   Type: ${agentType}`);
+    console.log(`   Dynamic Payment: ${isTerminal}`);
+    console.log(
+      `   Revenue Split: ${agent.economics.revenueSharing.userPercentage}% user`
+    );
+
+    res.json({
+      success: true,
+      agent: {
+        id: agent.id,
+        agentType: agent.agentType,
+        name: agent.name,
+        walletAddress: agent.walletAddress,
+        economics: agent.economics,
+        isDynamicPayment: isTerminal,
+        status: agent.status,
+        deployedAt: agent.deployedAt,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Agent deployment error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to deploy agent",
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * Get agent details by ID
+ */
+app.get("/api/agents/:agentId", async (req, res) => {
+  try {
+    const { agentId } = req.params;
+
+    const agent = mockAgents.get(agentId);
+
+    if (!agent) {
+      return res.status(404).json({
+        success: false,
+        error: "Agent not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      agent,
+    });
+  } catch (error) {
+    console.error("❌ Get agent error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to retrieve agent",
+    });
+  }
+});
+
+/**
+ * List all agents
+ */
+app.get("/api/agents", async (req, res) => {
+  try {
+    const { type, status } = req.query;
+
+    let agents = Array.from(mockAgents.values());
+
+    // Filter by type
+    if (type) {
+      agents = agents.filter((a) => a.agentType === type);
+    }
+
+    // Filter by status
+    if (status) {
+      agents = agents.filter((a) => a.status === status);
+    }
+
+    res.json({
+      success: true,
+      count: agents.length,
+      agents,
+    });
+  } catch (error) {
+    console.error("❌ List agents error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to list agents",
+    });
+  }
+});
+
+// ==================== DYNAMIC PAYMENT ENDPOINTS ====================
+
+/**
+ * Create payment session for virtual terminal
+ * Used by e-shop, on-ramp, and other merchants
+ */
+app.post("/api/payments/terminal/create-session", async (req, res) => {
+  try {
+    console.log("📥 Create Payment Session Request:", req.body);
+
+    const {
+      terminalAgentId,
+      merchantId,
+      merchantName,
+      amount,
+      currency,
+      paymentMethod,
+      token,
+      cartData,
+      redirectUrl,
+      metadata,
+    } = req.body;
+
+    // Validate required fields
+    if (!terminalAgentId || !merchantId || !amount || !paymentMethod) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required fields",
+        required: ["terminalAgentId", "merchantId", "amount", "paymentMethod"],
+      });
+    }
+
+    // Get terminal agent
+    const agent = mockAgents.get(terminalAgentId);
+
+    if (!agent) {
+      return res.status(404).json({
+        success: false,
+        error: "Terminal agent not found",
+      });
+    }
+
+    // Verify it's a terminal agent
+    if (!isTerminalAgent(agent.agentType)) {
+      return res.status(400).json({
+        success: false,
+        error: "Agent is not a payment terminal",
+        agentType: agent.agentType,
+      });
+    }
+
+    // Verify agent is active
+    if (agent.status !== "active") {
+      return res.status(400).json({
+        success: false,
+        error: "Terminal agent is not active",
+        status: agent.status,
+      });
+    }
+
+    // Validate payment method is enabled
+    const paymentMethodsConfig = agent.economics.paymentMethods;
+
+    if (paymentMethod === "crypto" && !paymentMethodsConfig.crypto.enabled) {
+      return res.status(400).json({
+        success: false,
+        error: "Crypto payments not enabled for this terminal",
+      });
+    }
+
+    if (paymentMethod === "revolut_qr" && !paymentMethodsConfig.revolut.qr) {
+      return res.status(400).json({
+        success: false,
+        error: "Revolut QR not enabled for this terminal",
+      });
+    }
+
+    if (
+      paymentMethod === "revolut_card" &&
+      !paymentMethodsConfig.revolut.virtualCard
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: "Revolut Virtual Card not enabled for this terminal",
+      });
+    }
+
+    // Create payment session
+    const session = {
+      id: generatePaymentSessionId(),
+      terminalAgentId,
+      terminalOwner: agent.walletAddress,
+      merchantId,
+      merchantName: merchantName || "Online Merchant",
+      amount: parseFloat(amount),
+      currency: currency || "USD",
+      paymentMethod,
+      token: token || "USDC",
+      cartData: cartData || null,
+      redirectUrl: redirectUrl || null,
+      metadata: metadata || {},
+      status: "pending",
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+    };
+
+    // Store session
+    storePaymentSession(session);
+
+    console.log(`✅ Payment session created: ${session.id}`);
+    console.log(`   Terminal: ${terminalAgentId}`);
+    console.log(`   Merchant: ${merchantName}`);
+    console.log(`   Amount: ${amount} ${currency || "USD"}`);
+    console.log(`   Method: ${paymentMethod}`);
+
+    // Return session for AR Viewer
+    res.json({
+      success: true,
+      session: {
+        id: session.id,
+        terminalAgentId,
+        terminalOwner: agent.walletAddress,
+        merchantName: session.merchantName,
+        amount: session.amount,
+        currency: session.currency,
+        paymentMethod: session.paymentMethod,
+        token: session.token,
+        expiresAt: session.expiresAt,
+        paymentUrl: `http://localhost:5173/virtual-terminal?session=${session.id}`,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Create session error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to create payment session",
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * Get payment session details
+ * Used by AR Viewer to retrieve payment information
+ */
+app.get("/api/payments/terminal/session/:sessionId", async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    console.log(`📥 Get Payment Session: ${sessionId}`);
+
+    const session = getPaymentSession(sessionId);
+
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: "Payment session not found or expired",
+      });
+    }
+
+    // Check if expired
+    if (new Date() > new Date(session.expiresAt)) {
+      session.status = "expired";
+      updatePaymentSession(sessionId, { status: "expired" });
+
+      return res.status(410).json({
+        success: false,
+        error: "Payment session has expired",
+      });
+    }
+
+    res.json({
+      success: true,
+      session: {
+        id: session.id,
+        terminalAgentId: session.terminalAgentId,
+        merchantName: session.merchantName,
+        amount: session.amount,
+        currency: session.currency,
+        paymentMethod: session.paymentMethod,
+        token: session.token,
+        cartData: session.cartData,
+        status: session.status,
+        createdAt: session.createdAt,
+        expiresAt: session.expiresAt,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Get session error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to retrieve payment session",
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * Complete payment
+ * Called by AR Viewer after user confirms payment
+ */
+app.post("/api/payments/terminal/complete", async (req, res) => {
+  try {
+    console.log("📥 Complete Payment Request:", req.body);
+
+    const {
+      sessionId,
+      transactionHash,
+      revolutPaymentId,
+      paymentProof,
+      userWallet,
+    } = req.body;
+
+    const session = getPaymentSession(sessionId);
+
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: "Payment session not found",
+      });
+    }
+
+    if (session.status !== "pending") {
+      return res.status(400).json({
+        success: false,
+        error: "Payment session already processed",
+        status: session.status,
+      });
+    }
+
+    // Check if expired
+    if (new Date() > new Date(session.expiresAt)) {
+      updatePaymentSession(sessionId, { status: "expired" });
+
+      return res.status(410).json({
+        success: false,
+        error: "Payment session has expired",
+      });
+    }
+
+    // Verify payment based on method
+    let verified = false;
+
+    if (session.paymentMethod === "crypto") {
+      verified = await verifyBlockchainTransaction(
+        transactionHash,
+        session.amount,
+        session.token
+      );
+    } else if (session.paymentMethod.startsWith("revolut_")) {
+      verified = await verifyRevolutPayment(
+        revolutPaymentId,
+        session.amount,
+        session.currency
+      );
+    }
+
+    if (!verified) {
+      return res.status(400).json({
+        success: false,
+        error: "Payment verification failed",
+      });
+    }
+
+    // Update session
+    const updatedSession = updatePaymentSession(sessionId, {
+      status: "completed",
+      completedAt: new Date().toISOString(),
+      transactionHash,
+      revolutPaymentId,
+      userWallet,
+      paymentProof,
+    });
+
+    console.log(`✅ Payment completed: ${sessionId}`);
+    console.log(`   Amount: ${session.amount} ${session.currency}`);
+    console.log(`   Method: ${session.paymentMethod}`);
+    console.log(`   TX Hash: ${transactionHash || revolutPaymentId}`);
+
+    // Notify merchant (if webhook URL provided)
+    if (session.metadata?.webhookUrl) {
+      await notifyMerchant(session.metadata.webhookUrl, {
+        sessionId,
+        status: "completed",
+        amount: session.amount,
+        currency: session.currency,
+        transactionHash,
+        revolutPaymentId,
+        completedAt: updatedSession.completedAt,
+      });
+    }
+
+    res.json({
+      success: true,
+      payment: {
+        sessionId,
+        status: "completed",
+        amount: session.amount,
+        currency: session.currency,
+        transactionHash,
+        revolutPaymentId,
+        redirectUrl: session.redirectUrl,
+        completedAt: updatedSession.completedAt,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Complete payment error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to complete payment",
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * Cancel payment session
+ */
+app.post("/api/payments/terminal/cancel/:sessionId", async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const { reason } = req.body;
+
+    console.log(`📥 Cancel Payment Session: ${sessionId}`);
+
+    const session = getPaymentSession(sessionId);
+
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: "Payment session not found",
+      });
+    }
+
+    if (session.status !== "pending") {
+      return res.status(400).json({
+        success: false,
+        error: "Cannot cancel completed or expired session",
+        status: session.status,
+      });
+    }
+
+    // Update session
+    updatePaymentSession(sessionId, {
+      status: "cancelled",
+      cancelledAt: new Date().toISOString(),
+      cancelReason: reason || "User cancelled",
+    });
+
+    console.log(`✅ Payment session cancelled: ${sessionId}`);
+
+    res.json({
+      success: true,
+      message: "Payment session cancelled",
+      sessionId,
+    });
+  } catch (error) {
+    console.error("❌ Cancel session error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to cancel payment session",
+      message: error.message,
+    });
+  }
+});
+
 // Revolut Webhook Handler
 app.post("/api/revolut/webhook", async (req, res) => {
   try {
@@ -1046,6 +1696,17 @@ app.listen(PORT, () => {
    GET    /api/revolut/mock/virtual-card/:card_id
    POST   /api/revolut/mock/virtual-card/:card_id/topup
    POST   /api/revolut/virtual-card/create (auto-routes)
+
+🤖 Agent Deployment Endpoints:
+   POST   /api/agents/deploy (deploy regular or terminal agents)
+   GET    /api/agents/:agentId (get agent details)
+   GET    /api/agents (list all agents)
+
+💰 Dynamic Payment Endpoints (Terminal Agents):
+   POST   /api/payments/terminal/create-session (create payment session)
+   GET    /api/payments/terminal/session/:sessionId (get session details)
+   POST   /api/payments/terminal/complete (complete payment)
+   POST   /api/payments/terminal/cancel/:sessionId (cancel session)
 
 📞 Other Endpoints:
    POST   /api/revolut/process-virtual-card-payment

@@ -1997,40 +1997,80 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Interaction Fee (Dynamic Amount)
+                    Interaction Fee{" "}
+                    {agentType === "payment_terminal" ||
+                    agentType === "trailing_payment_terminal"
+                      ? "(Dynamic Amount)"
+                      : ""}
                   </label>
-                  <input
-                    type="number"
-                    value={interactionFee}
-                    onChange={(e) => {
-                      const value = parseFloat(e.target.value);
-                      setInteractionFee(
-                        isNaN(value) || value <= 0 ? 10 : value
-                      );
-                    }}
-                    min="0.1"
-                    step="0.1"
-                    placeholder="Enter fee amount (integer only)"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    This exact amount will be stored and displayed in agent
-                    cards
-                  </p>
+                  {agentType === "payment_terminal" ||
+                  agentType === "trailing_payment_terminal" ? (
+                    <div className="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-800 font-medium">
+                        💰 Dynamic Amount from Merchant
+                      </p>
+                      <p className="text-xs text-blue-600 mt-1">
+                        Payment terminals accept variable amounts from merchants
+                        (e-shops, on-ramps, etc.). The amount is set per
+                        transaction, not fixed.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <input
+                        type="number"
+                        value={interactionFee}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          setInteractionFee(
+                            isNaN(value) || value <= 0 ? 10 : value
+                          );
+                        }}
+                        min="0.1"
+                        step="0.1"
+                        placeholder="Enter fee amount (integer only)"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        This exact amount will be stored and displayed in agent
+                        cards
+                      </p>
+                    </>
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Revenue Sharing ({revenueSharing}% to you)
+                    Revenue Sharing{" "}
+                    {agentType === "payment_terminal" ||
+                    agentType === "trailing_payment_terminal"
+                      ? "(100% to you)"
+                      : `(${revenueSharing}% to you)`}
                   </label>
-                  <input
-                    type="range"
-                    min="50"
-                    max="90"
-                    value={revenueSharing}
-                    onChange={(e) => setRevenueSharing(Number(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                  />
+                  {agentType === "payment_terminal" ||
+                  agentType === "trailing_payment_terminal" ? (
+                    <div className="w-full px-4 py-3 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-sm text-green-800 font-medium">
+                        ✓ 100% Revenue - No Platform Fee
+                      </p>
+                      <p className="text-xs text-green-600 mt-1">
+                        Payment terminal agents receive 100% of payment amounts.
+                        AgentSphere does not take a platform fee on terminal
+                        transactions.
+                      </p>
+                    </div>
+                  ) : (
+                    <input
+                      type="range"
+                      min="50"
+                      max="90"
+                      value={revenueSharing}
+                      onChange={(e) =>
+                        setRevenueSharing(Number(e.target.value))
+                      }
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                  )}
                 </div>
               </div>
 
