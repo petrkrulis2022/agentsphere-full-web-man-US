@@ -4,6 +4,23 @@ import react from "@vitejs/plugin-react";
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  server: {
+    proxy: {
+      // Proxy API requests to avoid CORS issues
+      "/api": {
+        target: "http://localhost:5174", // Same server
+        changeOrigin: true,
+      },
+    },
+    cors: {
+      origin: [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "https://8323ecb51478.ngrok-free.app",
+      ],
+      credentials: true,
+    },
+  },
   build: {
     // Skip TypeScript checking for mobile testing build
     rollupOptions: {
