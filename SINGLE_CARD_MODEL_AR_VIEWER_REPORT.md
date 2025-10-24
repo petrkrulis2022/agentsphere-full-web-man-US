@@ -24,6 +24,7 @@ GET /api/revolut/virtual-card/agent/:agentId/primary
 **Purpose**: Retrieve the single active virtual card for a specific agent.
 
 **Response** (Success):
+
 ```json
 {
   "success": true,
@@ -45,6 +46,7 @@ GET /api/revolut/virtual-card/agent/:agentId/primary
 ```
 
 **Response** (No Card):
+
 ```json
 {
   "success": true,
@@ -62,6 +64,7 @@ POST /api/revolut/create-virtual-card
 **New Behavior**: If an agent already has an active card, the endpoint returns `409 Conflict` instead of creating a duplicate.
 
 **Response** (Duplicate Attempt):
+
 ```json
 {
   "success": false,
@@ -123,13 +126,13 @@ if (!data.card) {
       body: JSON.stringify({
         agentId: agentId,
         amount: 100,
-        currency: "USD"
-      })
+        currency: "USD",
+      }),
     }
   );
-  
+
   const result = await createResponse.json();
-  
+
   if (createResponse.status === 409) {
     console.log("Card already exists:", result.existing_card_id);
     // Fetch the existing card using /primary endpoint
@@ -151,8 +154,8 @@ const topupResponse = await fetch(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       amount: 50,
-      currency: "USD"
-    })
+      currency: "USD",
+    }),
   }
 );
 
@@ -172,9 +175,9 @@ const paymentResponse = await fetch(
     body: JSON.stringify({
       agentId: agentId,
       orderId: "order_abc123",
-      amount: 25.00,
-      currency: "USD"
-    })
+      amount: 25.0,
+      currency: "USD",
+    }),
   }
 );
 
@@ -214,11 +217,13 @@ curl -X POST http://localhost:3001/api/revolut/mock/virtual-card/mock_card_XXX/t
 ### **Automated Test Suite**
 
 Run the comprehensive test suite:
+
 ```bash
 ./test-single-card-model.sh
 ```
 
 **Test Results** (Verified ✅):
+
 - ✅ Create first card succeeds
 - ✅ Duplicate creation fails with 409
 - ✅ Primary endpoint returns correct card
@@ -230,26 +235,31 @@ Run the comprehensive test suite:
 ## 📊 Benefits for AR Viewer
 
 ### **1. Simplified Card Management**
+
 - No need to track multiple cards per agent
 - Single source of truth: one card per agent
 - Easier balance tracking and reconciliation
 
 ### **2. Clearer User Experience**
+
 - Users see one card per agent, not a list
 - No confusion about which card to use
 - Simpler UI: just show/hide card details
 
 ### **3. Reduced Complexity**
+
 - Frontend doesn't need to implement card selection logic
 - No pagination or filtering required
 - Straightforward "check → create → use" workflow
 
 ### **4. Better Error Handling**
+
 - Clear 409 error when trying to create duplicate
 - Helpful message directs users to topup instead
 - Prevents accidental card proliferation
 
 ### **5. Cost Efficiency**
+
 - One card per agent = lower transaction fees
 - Easier to monitor and audit spending
 - Simplified accounting and reporting
@@ -261,16 +271,16 @@ Run the comprehensive test suite:
 ### **If You Were Using the Old List Endpoint**
 
 **Before** (Multi-Card Model):
+
 ```javascript
 // Old way - had to filter and pick primary card
-const response = await fetch(
-  `/api/revolut/virtual-cards/agent/${agentId}`
-);
+const response = await fetch(`/api/revolut/virtual-cards/agent/${agentId}`);
 const data = await response.json();
 const primaryCard = data.cards[0]; // Manually pick first one
 ```
 
 **After** (Single-Card Model):
+
 ```javascript
 // New way - directly get the one card
 const response = await fetch(
@@ -283,11 +293,13 @@ const card = data.card; // Either card object or null
 ### **Backward Compatibility**
 
 The old list endpoint still works:
+
 ```
 GET /api/revolut/virtual-cards/agent/:agentId
 ```
 
 But it's **deprecated**. Please migrate to the new `/primary` endpoint for:
+
 - Clearer semantics (primary vs. list)
 - Better performance (no array filtering)
 - Future-proof code (old endpoint may be removed)
@@ -332,7 +344,9 @@ function AgentCardDisplay({ agentId }) {
   return (
     <div className="card-display">
       <h3>Agent Virtual Card</h3>
-      <p>Balance: {card.balance} {card.currency}</p>
+      <p>
+        Balance: {card.balance} {card.currency}
+      </p>
       <p>Card: •••• {card.card_number.slice(-4)}</p>
       <p>Status: {card.state}</p>
       <button onClick={topupCard}>Add Funds</button>
@@ -345,15 +359,18 @@ function AgentCardDisplay({ agentId }) {
 ### **Visual States**
 
 1. **No Card State**
+
    - Show "Create Card" button
    - Display expected benefits (instant payments, QR codes, etc.)
 
 2. **Active Card State**
+
    - Show balance prominently
    - Display last 4 digits of card number
    - Provide "Top Up" and "Pay" actions
 
 3. **Low Balance Warning**
+
    - Alert when balance < threshold (e.g., $10)
    - Suggest topping up before next payment
 
@@ -367,20 +384,23 @@ function AgentCardDisplay({ agentId }) {
 ## 🔐 Security Considerations
 
 ### **Agent ID Validation**
+
 - Always validate `agentId` on backend
 - Ensure user has permission to access agent's card
 - Use JWT tokens or session authentication
 
 ### **Balance Protection**
+
 - Check balance before processing payments
 - Implement rate limiting on card creation
 - Monitor for suspicious topup patterns
 
 ### **Mock Mode Warning**
+
 ```javascript
 // In AR Viewer, warn if using mock mode in production
-if (API_URL.includes('mock')) {
-  console.warn('⚠️ Using MOCK mode - for testing only!');
+if (API_URL.includes("mock")) {
+  console.warn("⚠️ Using MOCK mode - for testing only!");
 }
 ```
 
@@ -410,30 +430,35 @@ console.log(`💳 Payment processed: ${amount} ${currency} from card ${cardId}`)
 ## 🚀 Next Steps for AR Viewer Integration
 
 ### **Phase 1: Basic Integration** (1-2 hours)
+
 - [ ] Update AR Viewer to use new `/primary` endpoint
 - [ ] Replace old list endpoint calls
 - [ ] Test card creation flow
 - [ ] Test topup functionality
 
 ### **Phase 2: UI Enhancement** (2-3 hours)
+
 - [ ] Design single-card display component
 - [ ] Add "Create Card" flow for new agents
 - [ ] Implement topup modal/form
 - [ ] Add balance warnings
 
 ### **Phase 3: QR Payment Integration** (2-3 hours)
+
 - [ ] Connect QR scanner to payment endpoint
 - [ ] Handle payment success/failure states
 - [ ] Update card balance after payment
 - [ ] Add payment history display
 
 ### **Phase 4: Error Handling** (1 hour)
+
 - [ ] Handle 409 errors gracefully
 - [ ] Add retry logic for network errors
 - [ ] Display user-friendly error messages
 - [ ] Implement fallback UI states
 
 ### **Phase 5: Testing & Polish** (1-2 hours)
+
 - [ ] Test with mock mode endpoints
 - [ ] Verify all edge cases (no card, low balance, etc.)
 - [ ] Add loading states and animations
@@ -445,20 +470,22 @@ console.log(`💳 Payment processed: ${amount} ${currency} from card ${cardId}`)
 
 ### **Endpoints Reference**
 
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/revolut/virtual-card/agent/:agentId/primary` | GET | Get agent's single card |
-| `/api/revolut/create-virtual-card` | POST | Create card (enforces single) |
-| `/api/revolut/virtual-card/:cardId/topup` | POST | Add funds to card |
-| `/api/revolut/process-virtual-card-payment` | POST | Process QR payment |
-| `/api/revolut/mock/*` | Various | Mock endpoints for testing |
+| Endpoint                                           | Method  | Purpose                       |
+| -------------------------------------------------- | ------- | ----------------------------- |
+| `/api/revolut/virtual-card/agent/:agentId/primary` | GET     | Get agent's single card       |
+| `/api/revolut/create-virtual-card`                 | POST    | Create card (enforces single) |
+| `/api/revolut/virtual-card/:cardId/topup`          | POST    | Add funds to card             |
+| `/api/revolut/process-virtual-card-payment`        | POST    | Process QR payment            |
+| `/api/revolut/mock/*`                              | Various | Mock endpoints for testing    |
 
 ### **Documentation Files**
+
 - `REVOLUT_API_DOCUMENTATION.md` - Complete API reference
 - `test-single-card-model.sh` - Automated test suite
 - `server.js` - Implementation (lines 340-710)
 
 ### **Testing**
+
 ```bash
 # Start server
 node server.js
@@ -497,7 +524,7 @@ The single-card-per-agent model simplifies Revolut virtual card management for t
 ✅ **New `/primary` endpoint** - Direct access to agent's card  
 ✅ **Duplicate prevention** - Automatic 409 error handling  
 ✅ **Mock mode support** - Full testing without API calls  
-✅ **Backward compatible** - Old endpoint still works  
+✅ **Backward compatible** - Old endpoint still works
 
 **Ready for AR Viewer integration!** 🚀
 
