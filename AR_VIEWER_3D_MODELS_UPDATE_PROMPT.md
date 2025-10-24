@@ -16,22 +16,21 @@ Previously, agent types were mapped to primitive geometric shapes (cubes, sphere
 
 ### New Model Assignment:
 
-- **All regular agents** (intelligent_assistant, local_services, game_agent, 3d_world_builder, home_security, content_creator, real_estate_broker, etc.) → **Humanoid Robot Face model**
+- **All regular agents** (intelligent_assistant, local_services, game_agent, 3d_world_builder, home_security, content_creator, real_estate_broker, bus_stop_agent, etc.) → **Humanoid Robot Face model**
 - **Payment-related agents** (payment_terminal, trailing_payment_terminal) → **Payment Terminal Device model**
-- **Bus stop agents** (bus_stop_agent) → **Human Head model**
 
 ## Task: Update AR Viewer to Use 3D Models
 
 ### Step 1: Download and Add 3D Model Files
 
-Download these three GLB files from Sketchfab and add them to your AR Viewer's `/public/models/` folder:
+Download these two GLB files from Sketchfab and add them to your AR Viewer's `/public/models/` folder:
 
 **Model 1: Humanoid Robot Face**
 
 - **URL**: https://sketchfab.com/3d-models/humanoid-robot-face
 - **File Format**: GLB (glTF Binary)
 - **File Name**: `humanoid_robot_face.glb`
-- **Use For**: All regular agent types (intelligent_assistant, local_services, game_agent, etc.)
+- **Use For**: All agent types except payment terminals
 - **Suggested Scale**: 0.3 to 1.0 (depends on actual model size)
 
 **Model 2: Payment Terminal Device (PAX A920)**
@@ -42,20 +41,13 @@ Download these three GLB files from Sketchfab and add them to your AR Viewer's `
 - **Use For**: Payment terminal agents only
 - **Suggested Scale**: 0.4 to 1.0 (depends on actual model size)
 
-**Model 3: Human Head**
-
-- **File Format**: GLB (glTF Binary)
-- **File Name**: `human_head.glb`
-- **Use For**: Bus stop agents (bus_stop_agent)
-- **Suggested Scale**: 0.5 to 1.0 (depends on actual model size)
-
 ### Step 2: Update Your Shape/Geometry Mapping Logic
 
 Find the code in your AR Viewer that maps `object_type` to 3D shapes. This is likely in a component that renders agents using React Three Fiber.
 
 **Replace the current primitive geometry logic with GLB model loading:**
 
-```typescript
+````typescript
 // Example using React Three Fiber + useGLTF hook
 
 import { useGLTF } from "@react-three/drei";
@@ -71,65 +63,49 @@ const PaymentTerminal = () => {
   return <primitive object={scene.clone()} scale={0.6} />;
 };
 
-const HumanHead = () => {
-  const { scene } = useGLTF("/models/human_head.glb");
-  return <primitive object={scene.clone()} scale={0.5} />;
-};
-
 // In your agent rendering component:
 const AgentModel = ({ objectType }: { objectType: string }) => {
   const isPaymentTerminal =
     objectType === "payment_terminal" ||
     objectType === "trailing_payment_terminal";
-  const isBusStop = objectType === "bus_stop_agent";
 
-  if (isPaymentTerminal) return <PaymentTerminal />;
-  if (isBusStop) return <HumanHead />;
-  return <RoboticFace />;
+  return isPaymentTerminal ? <PaymentTerminal /> : <RoboticFace />;
 };
 
-// Preload models for better performance
-useGLTF.preload("/models/humanoid_robot_face.glb");
-useGLTF.preload("/models/pax-a920_highpoly.glb");
-useGLTF.preload("/models/human_head.glb");
-```
+### Step 6: Implement Model Preloading (Optional but Recommended)
 
-### Step 3: Object Type Mapping Reference
-
-Update your shape mapping to use these models for each agent type:
+For better performance and smoother UX:
 
 ```typescript
-const getAgentModel = (
-  objectType: string
-): "3d-robot" | "3d-terminal" | "3d-human-head" => {
-  switch (objectType) {
-    // Payment Terminal Models
-    case "payment_terminal":
-    case "trailing_payment_terminal":
-      return "3d-terminal";
+import { useGLTF } from "@react-three/drei";
 
-    // Bus Stop Agent - Human Head
-    case "bus_stop_agent":
-      return "3d-human-head";
-
-    // All Other Agents - Robot Face
-    case "intelligent_assistant":
-    case "local_services":
-    case "game_agent":
-    case "3d_world_builder":
-    case "home_security":
-    case "content_creator":
-    case "real_estate_broker":
-    // Legacy types
-    case "ai_agent":
-    case "tutor":
-    case "landmark":
-    case "building":
-    default:
-      return "3d-robot";
-  }
+// Preload all models at app initialization
+export const preloadModels = () => {
+  useGLTF.preload("/models/humanoid_robot_face.glb");
+  useGLTF.preload("/models/pax-a920_highpoly.glb");
 };
-```
+
+// Call this in your main AR component's useEffect
+useEffect(() => {
+  preloadModels();
+}, []);
+````
+
+````
+
+### Step 3: Update AR Model Mapping
+
+The backend workspace already maps these object types in the database:
+
+- **Standard agents** (default) → `humanoid_robot_face.glb`
+- **Payment terminals** → `pax-a920_highpoly.glb`
+
+Payment terminal object types:
+
+- `payment_terminal`
+- `trailing_payment_terminal`
+
+**All other agent types use the robotic face model by default.**
 
 ### Step 4: Add Animations (Optional)
 
@@ -150,23 +126,21 @@ const RotatingAgent = ({ children }: { children: React.ReactNode }) => {
 
   return <group ref={groupRef}>{children}</group>;
 };
-```
+````
 
-### Step 5: Scale Adjustment
+### Step 5: Adjust Model Scales (If Needed)
 
-The models may appear too large or too small. Recommended starting scales:
+The Sketchfab models may need scale adjustments:
 
 ```typescript
-// Adjust these values based on how models appear in your AR view
-const MODEL_SCALES = {
-  roboticFace: 0.5, // Start with 0.5, adjust as needed
-  paymentTerminal: 0.6, // Start with 0.6, adjust as needed
-  humanHead: 0.5, // Start with 0.5, adjust as needed
-};
+// Initial scales from backend workspace testing:
+const roboticFace = { scale: 0.5 }; // Robotic face model
+const paymentTerminal = { scale: 0.6 }; // Payment terminal model
 
-// If models are too large, use smaller values (0.1, 0.05, 0.01)
-// If models are too small, use larger values (1.0, 2.0, 5.0)
+// You may need to adjust based on your AR viewer's camera/scene setup
 ```
+
+Test and adjust scales for your specific AR implementation.
 
 ### Step 6: Performance Optimization
 
@@ -180,7 +154,6 @@ import { Instances, Instance } from "@react-three/drei";
 useEffect(() => {
   useGLTF.preload("/models/humanoid_robot_face.glb");
   useGLTF.preload("/models/pax-a920_highpoly.glb");
-  useGLTF.preload("/models/human_head.glb");
 }, []);
 
 // Use LOD (Level of Detail) for distant objects if needed
@@ -189,17 +162,29 @@ import { Detailed } from "@react-three/drei";
 
 ## Testing Checklist
 
-After implementing:
+After implementation, verify:
 
-- [ ] Models load without errors in browser console
-- [ ] Robotic face appears for regular agents (intelligent_assistant, etc.)
-- [ ] Payment terminal device appears for payment_terminal agents
-- [ ] Human head appears for bus_stop_agent agents
-- [ ] Models are scaled appropriately (not too big/small)
-- [ ] Models rotate smoothly (if animation added)
-- [ ] Agent interactions still work (clicking/tapping agents)
-- [ ] Performance is acceptable with multiple agents
-- [ ] Models appear correctly in AR mode on mobile devices
+### Model Loading
+
+- [ ] Robotic face model loads without errors
+- [ ] Payment terminal model loads without errors
+- [ ] Check browser console for GLB loading errors
+- [ ] Verify model file sizes are reasonable (both ~2-5MB)
+
+### Visual Verification
+
+- [ ] Robotic face appears for standard agents
+- [ ] Payment terminal appears for `payment_terminal` type
+- [ ] Payment terminal appears for `trailing_payment_terminal` type
+- [ ] Models are properly scaled and visible in AR view
+- [ ] Models maintain proper orientation
+
+### Performance
+
+- [ ] Initial load time is acceptable
+- [ ] No frame rate drops when multiple models visible
+- [ ] Models render smoothly in AR camera view
+- [ ] Preloading works (no loading delays during AR session)
 
 ## File Structure
 
@@ -210,7 +195,6 @@ Your AR Viewer should have:
   /models/
     humanoid_robot_face.glb     # 2.9 MB
     pax-a920_highpoly.glb       # 4.7 MB
-    human_head.glb              # Size varies
 
 /src/
   /components/
@@ -295,13 +279,12 @@ Before implementing, confirm:
 ## Next Steps
 
 1. Download the two GLB files from Sketchfab (humanoid_robot_face.glb and pax-a920_highpoly.glb)
-2. Copy the human_head.glb file from the backend workspace
-3. Add all three models to `/public/models/` in your AR Viewer workspace
-4. Find your agent rendering component
-5. Replace primitive geometry code with GLB model loading
-6. Test with a few agents first
-7. Adjust scales as needed
-8. Deploy and test in actual AR on mobile devices
+2. Add both models to `/public/models/` in your AR Viewer workspace
+3. Find your agent rendering component
+4. Replace primitive geometry code with GLB model loading
+5. Test with a few agents first
+6. Adjust scales as needed
+7. Deploy and test in actual AR on mobile devices
 
 ---
 
