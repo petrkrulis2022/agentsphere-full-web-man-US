@@ -1,10 +1,19 @@
 // Get deployed agents with Revolut payment details
 import { createClient } from "@supabase/supabase-js";
+import dotenv from "dotenv";
+
+// Load environment variables
+dotenv.config();
 
 // Use environment variables from .env
-const supabaseUrl = "https://ncjbwzibnqrbrvicdmec.supabase.co";
-const supabaseAnonKey =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jamJ3emlibnFyYnJ2aWNkbWVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2ODAxNTksImV4cCI6MjA2NjI1NjE1OX0.R7rx4jOPt9oOafcyJr3x-nEvGk5-e4DP7MbfCVOCHHI";
+const supabaseUrl =
+  process.env.VITE_SUPABASE_URL || "https://ncjbwzibnqrbrvicdmec.supabase.co";
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseAnonKey) {
+  console.error("❌ VITE_SUPABASE_ANON_KEY environment variable is required");
+  process.exit(1);
+}
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 

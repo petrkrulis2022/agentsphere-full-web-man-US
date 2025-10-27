@@ -363,12 +363,6 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
               obj.object_type === "payment_terminal" ||
               obj.object_type === "trailing_payment_terminal";
 
-            // Determine which model to use
-            const modelId = isPaymentTerminal
-              ? "#payment-terminal-model"
-              : "#robotic-face-model";
-            const modelScale = "0.01 0.01 0.01";
-
             return (
               <a-entity
                 key={obj.id}
@@ -376,15 +370,20 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
               >
                 {/* 3D Model */}
                 <a-entity
-                  gltf-model={modelId}
-                  scale={modelScale}
+                  gltf-model={
+                    isPaymentTerminal
+                      ? "#payment-terminal-model"
+                      : "#robotic-face-model"
+                  }
+                  scale={
+                    isPaymentTerminal ? "0.01 0.01 0.01" : "0.01 0.01 0.01"
+                  }
                   animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear"
                   class="clickable-object"
                   data-object-id={obj.id}
                   data-agent-id={obj.id}
                   onClick={() => handleAgentInteraction(obj)}
-                />
-
+                />{" "}
                 {/* Object Name Label */}
                 <a-text
                   value={obj.name}
@@ -394,7 +393,6 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
                   font="kelsonsans"
                   width="6"
                 />
-
                 {/* Distance/Accuracy Info */}
                 <a-text
                   value={
@@ -408,7 +406,6 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
                   font="kelsonsans"
                   width="4"
                 />
-
                 {/* Interaction Indicators */}
                 {obj.chat_enabled && (
                   <a-text

@@ -1,10 +1,21 @@
 import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
+import dotenv from "dotenv";
 
-// Initialize Supabase client with service role key
-const supabaseUrl = "https://ncjbwzibnqrbrvicdmec.supabase.co";
-const supabaseServiceKey =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jamJ3emlibnFyYnJ2aWNkbWVjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDY4MDE1OSwiZXhwIjoyMDY2MjU2MTU5fQ.OimR1FKKf2kcQ1c0WO7MvuuB85wRMV6vhbH5DnC8G8E";
+// Load environment variables
+dotenv.config();
+
+// Initialize Supabase client with service role key from environment
+const supabaseUrl =
+  process.env.VITE_SUPABASE_URL || "https://ncjbwzibnqrbrvicdmec.supabase.co";
+const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseServiceKey) {
+  console.error(
+    "❌ VITE_SUPABASE_SERVICE_ROLE_KEY environment variable is required"
+  );
+  process.exit(1);
+}
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
