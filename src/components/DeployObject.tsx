@@ -670,7 +670,10 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            Authorization: `Bearer ${
+              import.meta.env.VITE_SUPABASE_ANON_JWT ||
+              import.meta.env.VITE_SUPABASE_ANON_KEY
+            }`,
           },
           body: JSON.stringify({
             latitude: location.latitude,
@@ -680,7 +683,11 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       );
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        console.warn(
+          `⚠️ RTK service unavailable (${response.status}). Continuing with standard GPS.`
+        );
+        setRtkLoading(false);
+        return; // Continue without RTK
       }
 
       const data = await response.json();
@@ -697,8 +704,10 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
       console.log("🎯 RTK enhanced location:", data);
     } catch (error) {
-      console.error("❌ RTK correction failed:", error);
-      alert("RTK correction failed. Using standard GPS location.");
+      console.warn(
+        "⚠️ RTK correction unavailable, using standard GPS location"
+      );
+      // Don't show alert - RTK is optional enhancement
     } finally {
       setRtkLoading(false);
     }
