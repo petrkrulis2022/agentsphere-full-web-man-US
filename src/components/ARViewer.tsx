@@ -332,10 +332,6 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
               id="payment-terminal-model"
               src="/models/pax-a920_highpoly.glb"
             ></a-asset-item>
-            <a-asset-item
-              id="human-head-model"
-              src="/models/human_head.glb"
-            ></a-asset-item>
           </a-assets>
 
           {/* Camera */}
@@ -366,19 +362,12 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
             const isPaymentTerminal =
               obj.object_type === "payment_terminal" ||
               obj.object_type === "trailing_payment_terminal";
-            const isBusStop = obj.object_type === "bus_stop_agent";
 
             // Determine which model to use
-            let modelId = "#robotic-face-model"; // Default
-            let modelScale = "0.01 0.01 0.01";
-
-            if (isPaymentTerminal) {
-              modelId = "#payment-terminal-model";
-              modelScale = "0.01 0.01 0.01";
-            } else if (isBusStop) {
-              modelId = "#human-head-model";
-              modelScale = "0.5 0.5 0.5"; // Human head might need different scale
-            }
+            const modelId = isPaymentTerminal
+              ? "#payment-terminal-model"
+              : "#robotic-face-model";
+            const modelScale = "0.01 0.01 0.01";
 
             return (
               <a-entity
