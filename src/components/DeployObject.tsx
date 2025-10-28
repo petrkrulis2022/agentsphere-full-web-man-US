@@ -2176,6 +2176,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                 </div>
               )}
 
+              {/* Green Deploy Button - MAIN DEPLOYMENT */}
               <button
                 onClick={deployAgent}
                 disabled={
@@ -2215,6 +2216,17 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     Deploy on {currentNetwork.shortName}
                   </>
                 )}
+              </button>
+
+              {/* AR Viewer Button - Opens AR Viewer in HMR PLACEMENT MODE for tap-to-place */}
+              <button
+                onClick={() => {
+                  window.location.href = `http://localhost:5180/hmr`;
+                }}
+                className="w-full mt-4 flex items-center justify-center px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-lg font-semibold rounded-xl hover:shadow-lg transition-all duration-200"
+              >
+                <Crosshair className="h-6 w-6 mr-2" />
+                Preview in AR Camera
               </button>
 
               {/* Network-specific deployment info */}
