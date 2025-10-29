@@ -132,7 +132,9 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   const [deploymentError, setDeploymentError] = useState("");
 
   // Agent wallet = User connected wallet (same address)
-  const agentWallet = address || "0x000...000";
+  // Use Solana wallet address if connected, otherwise use EVM address
+  const agentWallet =
+    solanaWallet?.publicKey?.toString() || address || "0x000...000";
 
   // USDC token contract address on Base Sepolia
   // USDC contract addresses for different networks
@@ -757,7 +759,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       (method) => paymentMethods[method]?.enabled
     );
 
-    if (hasCryptoEnabled && !address) {
+    // Check for either EVM or Solana wallet
+    if (hasCryptoEnabled && !address && !solanaWallet?.publicKey) {
       errors.push("Wallet connection required for crypto payment methods");
     }
 
@@ -925,7 +928,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       return;
     }
 
-    if (!address) {
+    // Check for either EVM or Solana wallet
+    if (!address && !solanaWallet?.publicKey) {
       alert("Please connect your wallet first.");
       return;
     }
@@ -961,7 +965,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       }
 
       const deploymentData = {
-        user_id: address,
+        user_id: solanaWallet?.publicKey?.toString() || address,
         name: agentName.trim(),
         description:
           agentDescription.trim() ||
@@ -981,11 +985,20 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         range_meters: visibilityRange,
 
         // DYNAMIC NETWORK DATA - FIXED
-        deployment_network_name: currentNetwork.name, // "Ethereum Sepolia"
-        deployment_chain_id: currentNetwork.chainId, // 11155111
-        deployment_network_id: currentNetwork.chainId, // 11155111
-        network: currentNetwork.name, // "Ethereum Sepolia" - Fixed to use full name
-        chain_id: currentNetwork.chainId, // 11155111
+        deployment_network_name: currentNetwork.name, // "Ethereum Sepolia" or "Solana Devnet"
+        deployment_chain_id:
+          typeof currentNetwork.chainId === "number"
+            ? currentNetwork.chainId
+            : null, // 11155111 or null for Solana
+        deployment_network_id:
+          typeof currentNetwork.chainId === "number"
+            ? currentNetwork.chainId
+            : null, // 11155111 or null for Solana (changed from string)
+        network: currentNetwork.name, // "Ethereum Sepolia" or "Solana Devnet"
+        chain_id:
+          typeof currentNetwork.chainId === "number"
+            ? currentNetwork.chainId
+            : null, // 11155111 or null for Solana
 
         // DYNAMIC PAYMENT DATA - FIXED
         interaction_fee_amount: parseFloat(interactionFee.toString()), // 10.0
@@ -993,16 +1006,20 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         interaction_fee_usdfc: interactionFee, // Legacy field
 
         // Wallet configuration
-        owner_wallet: address,
+        owner_wallet: solanaWallet?.publicKey?.toString() || address,
         agent_wallet_address: agentWallet,
-        agent_wallet_type: "evm_wallet",
-        deployer_address: address,
+        agent_wallet_type: solanaWallet?.publicKey
+          ? "solana_wallet"
+          : "evm_wallet",
+        deployer_address: solanaWallet?.publicKey?.toString() || address,
 
         // Token information
         currency_type: selectedToken,
         token_symbol: selectedToken,
-        token_address:
-          TOKEN_ADDRESSES[selectedToken as keyof typeof TOKEN_ADDRESSES] || "",
+        token_address: solanaWallet?.publicKey
+          ? "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU" // Solana USDC Devnet mint
+          : TOKEN_ADDRESSES[selectedToken as keyof typeof TOKEN_ADDRESSES] ||
+            "",
 
         // Communication features
         chat_enabled: textChat,
@@ -1020,7 +1037,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
         // DYNAMIC PAYMENT CONFIG - FIXED
         payment_config: {
-          wallet_address: address,
+          wallet_address: solanaWallet?.publicKey?.toString() || address,
           supported_tokens: [selectedToken],
           network_info: {
             name: currentNetwork.name,
@@ -1150,9 +1167,18 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       }, 3000);
     } catch (error) {
       console.error("❌ Deployment failed:", error);
-      setDeploymentError(
-        error instanceof Error ? error.message : "Deployment failed"
-      );
+      console.error("❌ Full error details:", JSON.stringify(error, null, 2));
+
+      // Extract detailed error message
+      let errorMessage = "Deployment failed";
+      if (error && typeof error === "object") {
+        if ("message" in error) errorMessage = (error as any).message;
+        if ("details" in error)
+          console.error("Error details:", (error as any).details);
+        if ("hint" in error) console.error("Error hint:", (error as any).hint);
+      }
+
+      setDeploymentError(errorMessage);
     } finally {
       setIsDeploying(false);
     }
@@ -1167,9 +1193,35 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     }
   }, [address, currentNetwork]);
 
+  // Detect and connect to Phantom wallet if already connected
+  useEffect(() => {
+    const checkPhantomWallet = () => {
+      if (typeof window !== "undefined" && (window as any).solana) {
+        const phantom = (window as any).solana;
+        if (phantom.isPhantom && phantom.isConnected && phantom.publicKey) {
+          console.log(
+            "✅ Phantom wallet detected and connected:",
+            phantom.publicKey.toString()
+          );
+          setSolanaWallet(phantom);
+          setWalletType("phantom");
+        }
+      }
+    };
+
+    // Check immediately
+    checkPhantomWallet();
+
+    // Also check periodically in case wallet connects after page load
+    const interval = setInterval(checkPhantomWallet, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   // Network detection when wallet connects
   useEffect(() => {
     const initializeNetwork = async () => {
+      // Check for EVM wallet
       if (address && window.ethereum) {
         setNetworkLoading(true);
         setNetworkError("");
@@ -1215,6 +1267,32 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         } finally {
           setNetworkLoading(false);
         }
+      }
+      // Check for Solana wallet
+      else if (solanaWallet && solanaWallet.publicKey) {
+        setNetworkLoading(true);
+        setNetworkError("");
+
+        try {
+          // Set Solana Devnet as current network
+          const solanaNetwork = {
+            name: "Solana Devnet",
+            shortName: "Solana",
+            chainId: "devnet",
+            type: "Solana",
+            isSupported: true,
+            rpcUrl: "https://api.devnet.solana.com",
+            explorerUrl: "https://explorer.solana.com/?cluster=devnet",
+          };
+
+          setCurrentNetwork(solanaNetwork);
+          console.log("✅ Solana Devnet network set as current network");
+        } catch (error) {
+          console.error("Solana network detection failed:", error);
+          setNetworkError("Failed to detect Solana network.");
+        } finally {
+          setNetworkLoading(false);
+        }
       } else {
         setCurrentNetwork(null);
         setNetworkError("");
@@ -1222,7 +1300,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     };
 
     initializeNetwork();
-  }, [address]);
+  }, [address, solanaWallet]);
 
   // Update selected token when network changes
   useEffect(() => {
@@ -1941,7 +2019,9 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                       Your Connected Wallet
                     </label>
                     <div className="bg-white p-3 rounded border font-mono text-sm">
-                      {address || "Not connected"}
+                      {solanaWallet?.publicKey?.toString() ||
+                        address ||
+                        "Not connected"}
                     </div>
                   </div>
                 </div>
@@ -2128,7 +2208,9 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
             <div className="space-y-6">
               <PaymentMethodsSelector
                 onPaymentMethodsChange={handlePaymentMethodsChange}
-                connectedWallet={address}
+                connectedWallet={
+                  agentWallet !== "0x000...000" ? agentWallet : null
+                }
                 initialMethods={paymentMethods}
               />
 
@@ -2180,7 +2262,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                 onClick={deployAgent}
                 disabled={
                   isDeploying ||
-                  !address ||
+                  (!address && !solanaWallet?.publicKey) || // Allow either EVM or Solana wallet
                   !agentName.trim() ||
                   !location ||
                   !currentNetwork ||

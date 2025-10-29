@@ -14,6 +14,7 @@ import { Link, useLocation } from "react-router-dom";
 import { networkDetectionService } from "../services/networkDetectionService.js";
 import UnsupportedNetworkModal from "./UnsupportedNetworkModal.jsx";
 import NetworkSelectionModal from "./NetworkSelectionModal.jsx";
+import WalletConnectionDisplay from "./WalletConnectionDisplay";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -191,76 +192,27 @@ const Navbar = () => {
                   : "Connect Database"}
               </button>
 
-              {/* Wallet Connection */}
-              <div className="flex items-center space-x-2">
-                {address ? (
-                  <div className="flex items-center space-x-2">
-                    {/* Network Status */}
-                    {currentNetwork && (
-                      <div
-                        className={`flex items-center space-x-1 px-2 py-1 rounded-md cursor-pointer transition-colors ${
-                          currentNetwork.isSupported === false
-                            ? "bg-orange-50 text-orange-700 hover:bg-orange-100"
-                            : "bg-blue-50 text-blue-700 hover:bg-blue-100"
-                        }`}
-                        onClick={() => setShowNetworkModal(true)}
-                        title={`Connected to ${currentNetwork.name}. Click to switch networks.`}
-                      >
-                        <Globe className="h-3 w-3" />
-                        <span className="text-xs font-medium">
-                          {currentNetwork.shortName}
-                        </span>
-                        {currentNetwork.isSupported === false && (
-                          <AlertTriangle className="h-3 w-3" />
-                        )}
-                      </div>
-                    )}
+              {/* Unified Wallet Connection - Both Solana and EVM */}
+              <WalletConnectionDisplay />
 
-                    {/* Wallet Address */}
-                    <div className="flex items-center space-x-2 bg-green-50 px-3 py-2 rounded-md">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm text-green-700 font-medium">
-                        {address.slice(0, 6)}...{address.slice(-4)}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => disconnect()}
-                      className="text-gray-700 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                    >
-                      Disconnect
-                    </button>
+              {/* Legacy Network Modal triggers - keeping for now */}
+              {address && currentNetwork && (
+                <div className="hidden">
+                  <div
+                    className={`flex items-center space-x-1 px-2 py-1 rounded-md cursor-pointer transition-colors ${
+                      currentNetwork.isSupported === false
+                        ? "bg-orange-50 text-orange-700 hover:bg-orange-100"
+                        : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                    }`}
+                    onClick={() => setShowNetworkModal(true)}
+                  >
+                    <Globe className="h-3 w-3" />
+                    <span className="text-xs font-medium">
+                      {currentNetwork.shortName}
+                    </span>
                   </div>
-                ) : (
-                  <ConnectWallet
-                    theme="light"
-                    btnTitle="Connect Wallet"
-                    modalTitle="Connect Wallet to AgentSphere"
-                    modalSize="compact"
-                    welcomeScreen={{
-                      title: "Connect Wallet",
-                      subtitle:
-                        "Connect your wallet to deploy and manage agents",
-                    }}
-                    detailsBtn={() => {
-                      return (
-                        <div style={{ display: "none" }} aria-hidden="true">
-                          Details
-                        </div>
-                      );
-                    }}
-                    className="!bg-gradient-to-r !from-green-500 !to-emerald-600 !text-white !rounded-lg !font-medium !shadow-md hover:!shadow-lg !transition-all !duration-200 !px-4 !py-2"
-                    style={{
-                      background: "linear-gradient(to right, #10b981, #059669)",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "8px",
-                      fontWeight: "500",
-                      padding: "8px 16px",
-                      fontSize: "14px",
-                    }}
-                  />
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             <div className="md:hidden flex items-center">
