@@ -88,31 +88,31 @@ const FAQSection = () => {
   };
 
   return (
-    <section className="py-20 bg-white relative overflow-hidden">
+    <section className="py-20 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden">
       {/* Background decoration */}
-      <div className="absolute inset-0 opacity-30">
-        <div className="absolute top-20 left-20 w-64 h-64 bg-green-200 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-64 h-64 bg-emerald-200 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000"></div>
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute top-20 left-20 w-64 h-64 bg-green-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-64 h-64 bg-emerald-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000"></div>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         {/* Header */}
         <div className="text-center mb-16">
-          <div className="inline-flex items-center bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+          <div className="inline-flex items-center bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-2 rounded-full text-sm font-semibold mb-4 backdrop-blur-sm">
             💡 Everything You Need to Know
           </div>
 
-          <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+          <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">
             Frequently Asked{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-600">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">
               Questions
             </span>
           </h2>
 
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
             Get instant answers to common questions about AgentSphere. Can't
             find what you're looking for?
-            <span className="text-green-600 font-semibold">
+            <span className="text-green-400 font-semibold">
               {" "}
               Contact our support team
             </span>
@@ -132,7 +132,7 @@ const FAQSection = () => {
               className={`flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
                 activeCategory === category.id
                   ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  : "bg-slate-700/50 backdrop-blur-sm text-slate-300 hover:bg-slate-600/50 border border-slate-600"
               }`}
             >
               <span>{category.icon}</span>
@@ -154,29 +154,29 @@ const FAQSection = () => {
           {filteredFaqs.map((faq, index) => (
             <motion.div
               key={`${activeCategory}-${index}`}
-              className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden"
+              className="bg-slate-800/90 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-700 overflow-hidden"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
               <button
                 onClick={() => toggleFAQ(index)}
-                className="w-full px-8 py-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors group"
+                className="w-full px-8 py-6 text-left flex items-center justify-between hover:bg-slate-700/50 transition-colors group"
               >
-                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-green-700 transition-colors pr-4">
+                <h3 className="text-lg font-semibold text-white group-hover:text-green-400 transition-colors pr-4">
                   {faq.question}
                 </h3>
 
                 <div
-                  className={`flex-shrink-0 w-8 h-8 rounded-full bg-green-100 flex items-center justify-center transition-all duration-300 ${
+                  className={`flex-shrink-0 w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center transition-all duration-300 border ${
                     activeIndex === index
-                      ? "bg-green-500 rotate-180"
-                      : "group-hover:bg-green-200"
+                      ? "bg-green-500 rotate-180 border-green-500"
+                      : "group-hover:bg-green-500/20 border-green-500/30"
                   }`}
                 >
                   <svg
                     className={`w-4 h-4 transition-colors duration-300 ${
-                      activeIndex === index ? "text-white" : "text-green-600"
+                      activeIndex === index ? "text-white" : "text-green-400"
                     }`}
                     fill="none"
                     stroke="currentColor"
@@ -201,18 +201,18 @@ const FAQSection = () => {
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                     className="overflow-hidden"
                   >
-                    <div className="px-8 pb-6 border-t border-gray-100">
-                      <p className="text-gray-700 leading-relaxed pt-6">
+                    <div className="px-8 pb-6 border-t border-slate-700">
+                      <p className="text-slate-300 leading-relaxed pt-6">
                         {faq.answer}
                       </p>
 
                       {/* Helpful actions */}
-                      <div className="flex items-center gap-4 mt-6 pt-4 border-t border-gray-100">
-                        <span className="text-sm text-gray-500">
+                      <div className="flex items-center gap-4 mt-6 pt-4 border-t border-slate-700">
+                        <span className="text-sm text-slate-400">
                           Was this helpful?
                         </span>
                         <div className="flex gap-2">
-                          <button className="flex items-center gap-1 text-sm text-green-600 hover:text-green-700 transition-colors">
+                          <button className="flex items-center gap-1 text-sm text-green-400 hover:text-green-300 transition-colors">
                             <svg
                               className="w-4 h-4"
                               fill="none"
@@ -228,7 +228,7 @@ const FAQSection = () => {
                             </svg>
                             <span>Yes</span>
                           </button>
-                          <button className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 transition-colors">
+                          <button className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-300 transition-colors">
                             <svg
                               className="w-4 h-4"
                               fill="none"
@@ -259,12 +259,12 @@ const FAQSection = () => {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="mt-16 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-8 text-center"
+          className="mt-16 bg-gradient-to-r from-slate-800/50 to-blue-900/50 backdrop-blur-sm rounded-2xl p-8 text-center border border-slate-700"
         >
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">
+          <h3 className="text-2xl font-bold text-white mb-4">
             Still have questions?
           </h3>
-          <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+          <p className="text-slate-300 mb-6 max-w-2xl mx-auto">
             Our team of AR and AI experts is here to help. Get personalized
             answers to your specific use case and technical requirements.
           </p>
@@ -274,7 +274,7 @@ const FAQSection = () => {
               Contact Support Team
             </button>
 
-            <div className="flex items-center gap-6 text-sm text-gray-500">
+            <div className="flex items-center gap-6 text-sm text-slate-400">
               <div className="flex items-center gap-2">
                 <svg
                   className="w-4 h-4 text-green-500"

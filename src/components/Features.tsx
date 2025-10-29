@@ -45,21 +45,24 @@ const Features = () => {
   ];
 
   return (
-    <section id="features" className="py-16 bg-white relative overflow-hidden">
+    <section
+      id="features"
+      className="py-16 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden"
+    >
       {/* Background decoration */}
-      <div className="absolute inset-0 opacity-30">
-        <div className="absolute top-20 left-10 w-64 h-64 bg-green-200 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-64 h-64 bg-emerald-200 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000"></div>
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute top-20 left-10 w-64 h-64 bg-green-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-10 w-64 h-64 bg-emerald-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000"></div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         {/* Enhanced header with social proof */}
         <div className="text-center mb-16">
-          <div className="inline-flex items-center bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+          <div className="inline-flex items-center bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-2 rounded-full text-sm font-semibold mb-4 backdrop-blur-sm">
             ⚡ Trusted by 2,847+ Early Adopters
           </div>
           <motion.h2
-            className="text-3xl md:text-4xl font-bold text-gray-900"
+            className="text-3xl md:text-4xl font-bold text-white"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -68,7 +71,7 @@ const Features = () => {
             How AgentSphere Works
           </motion.h2>
           <motion.p
-            className="mt-4 text-xl text-gray-600 max-w-3xl mx-auto"
+            className="mt-4 text-xl text-slate-300 max-w-3xl mx-auto"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -78,7 +81,7 @@ const Features = () => {
           </motion.p>
 
           {/* Live stats ticker */}
-          <div className="flex flex-wrap justify-center gap-6 mt-6 text-sm text-gray-500">
+          <div className="flex flex-wrap justify-center gap-6 mt-6 text-sm text-slate-400">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
               <span>423 agents deployed today</span>
@@ -109,19 +112,19 @@ const Features = () => {
                 {feature.benefit}
               </div>
 
-              <div className="mb-4 inline-block p-3 bg-green-100 rounded-2xl group-hover:bg-green-200 transition-colors">
+              <div className="mb-4 inline-block p-3 bg-green-500/10 backdrop-blur-sm rounded-2xl group-hover:bg-green-500/20 transition-colors">
                 {feature.icon}
               </div>
 
-              <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-green-700 transition-colors">
+              <h3 className="text-xl font-bold text-white mb-2 group-hover:text-green-400 transition-colors">
                 {feature.title}
               </h3>
 
-              <p className="text-gray-600 mb-4">{feature.description}</p>
+              <p className="text-slate-300 mb-4">{feature.description}</p>
 
               {/* Metric display */}
               <div className="mb-4">
-                <div className="bg-green-50 text-green-700 px-3 py-2 rounded-lg text-sm font-semibold inline-block">
+                <div className="bg-green-500/10 border border-green-500/30 text-green-400 px-3 py-2 rounded-lg text-sm font-semibold inline-block backdrop-blur-sm">
                   {feature.metric}
                 </div>
               </div>
@@ -132,9 +135,9 @@ const Features = () => {
                   alt={feature.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-green-900/60 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent"></div>
                 <div className="absolute bottom-4 left-4 right-4">
-                  <div className="bg-white/90 backdrop-blur-sm rounded-lg p-2 text-xs text-center font-semibold text-gray-800">
+                  <div className="bg-slate-800/90 backdrop-blur-sm rounded-lg p-2 text-xs text-center font-semibold text-white border border-green-500/30">
                     Live Demo Available
                   </div>
                 </div>
@@ -144,7 +147,7 @@ const Features = () => {
         </div>
 
         <motion.div
-          className="mt-16 bg-gradient-to-r from-green-100 to-emerald-100 rounded-2xl p-8 relative overflow-hidden"
+          className="mt-16 bg-gradient-to-r from-slate-800/50 to-blue-900/50 backdrop-blur-sm rounded-2xl p-8 relative overflow-hidden border border-slate-700"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -155,82 +158,86 @@ const Features = () => {
             Limited Alpha Access
           </div>
 
-          <h3 className="text-2xl font-bold text-center mb-6">
+          <h3 className="text-2xl font-bold text-center mb-6 text-white">
             Three-Repository Architecture
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white rounded-xl shadow-md p-6 text-center hover:shadow-xl transition-shadow group">
+            <div className="bg-slate-800/90 backdrop-blur-sm rounded-xl shadow-md p-6 text-center hover:shadow-xl transition-shadow group border border-slate-700">
               <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                 <span className="text-white text-2xl">🏠</span>
               </div>
-              <h4 className="font-bold text-lg mb-2">Main Repository</h4>
-              <p className="text-gray-600 text-sm mb-4">
+              <h4 className="font-bold text-lg mb-2 text-white">
+                Main Repository
+              </h4>
+              <p className="text-slate-300 text-sm mb-4">
                 AgentSphere landing page and core UI components
               </p>
               <a
                 href="https://github.com/BeerSlothAgent/Agent-Sphere-1"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center text-green-600 hover:text-green-700 font-medium text-sm hover:underline"
+                className="inline-flex items-center text-green-400 hover:text-green-300 font-medium text-sm hover:underline"
               >
                 View Repository →
               </a>
             </div>
 
-            <div className="bg-white rounded-xl shadow-md p-6 text-center hover:shadow-xl transition-shadow group">
+            <div className="bg-slate-800/90 backdrop-blur-sm rounded-xl shadow-md p-6 text-center hover:shadow-xl transition-shadow group border border-slate-700">
               <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                 <span className="text-white text-2xl">🔗</span>
               </div>
-              <h4 className="font-bold text-lg mb-2">NEAR + Filecoin + USDC</h4>
-              <p className="text-gray-600 text-sm mb-4">
+              <h4 className="font-bold text-lg mb-2 text-white">
+                NEAR + Filecoin + USDC
+              </h4>
+              <p className="text-slate-300 text-sm mb-4">
                 Blockchain integrations and smart contracts
               </p>
               <a
                 href="https://github.com/BeerSlothAgent/geospatila-agent-near-shade-integrations"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium text-sm hover:underline"
+                className="inline-flex items-center text-blue-400 hover:text-blue-300 font-medium text-sm hover:underline"
               >
                 View Repository →
               </a>
             </div>
 
-            <div className="bg-white rounded-xl shadow-md p-6 text-center hover:shadow-xl transition-shadow group">
+            <div className="bg-slate-800/90 backdrop-blur-sm rounded-xl shadow-md p-6 text-center hover:shadow-xl transition-shadow group border border-slate-700">
               <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                 <span className="text-white text-2xl">👁️</span>
               </div>
-              <h4 className="font-bold text-lg mb-2">AR Viewer</h4>
-              <p className="text-gray-600 text-sm mb-4">
+              <h4 className="font-bold text-lg mb-2 text-white">AR Viewer</h4>
+              <p className="text-slate-300 text-sm mb-4">
                 Augmented reality viewer and camera integration
               </p>
               <a
                 href="https://github.com/BeerSlothAgent/geospatial-agent-ar-viewer"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium text-sm hover:underline"
+                className="inline-flex items-center text-purple-400 hover:text-purple-300 font-medium text-sm hover:underline"
               >
                 View Repository →
               </a>
             </div>
           </div>
 
-          <h3 className="text-2xl font-bold text-center mb-6">
+          <h3 className="text-2xl font-bold text-center mb-6 text-white">
             Popular NEAR Agent Types
           </h3>
           <div className="flex flex-wrap justify-center gap-4">
             {agentTypes.map((agent, index) => (
               <div
                 key={index}
-                className="bg-white rounded-xl shadow-md px-6 py-4 flex items-center space-x-3 hover:shadow-lg transition-shadow group"
+                className="bg-slate-800/90 backdrop-blur-sm rounded-xl shadow-md px-6 py-4 flex items-center space-x-3 hover:shadow-lg transition-shadow group border border-slate-700"
               >
                 <span className="text-2xl group-hover:scale-110 transition-transform">
                   {agent.emoji}
                 </span>
                 <div>
-                  <span className="font-medium text-gray-800 block">
+                  <span className="font-medium text-white block">
                     {agent.name}
                   </span>
-                  <span className="text-xs text-green-600 font-semibold">
+                  <span className="text-xs text-green-400 font-semibold">
                     {agent.users} active users
                   </span>
                 </div>
@@ -238,8 +245,8 @@ const Features = () => {
             ))}
           </div>
           <div className="mt-6 text-center">
-            <div className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-full text-sm font-medium">
-              <span className="w-2 h-2 bg-green-300 rounded-full mr-2 animate-pulse"></span>
+            <div className="inline-flex items-center px-4 py-2 bg-green-500/10 border border-green-500/30 text-green-400 rounded-full text-sm font-medium backdrop-blur-sm">
+              <span className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
               Powered by Blockchain Technology
             </div>
           </div>
@@ -253,11 +260,11 @@ const Features = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.6 }}
         >
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-green-100/50 max-w-2xl mx-auto">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+          <div className="bg-slate-800/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-slate-700 max-w-2xl mx-auto">
+            <h3 className="text-2xl font-bold text-white mb-4">
               Ready to Experience the Future?
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-slate-300 mb-6">
               Join 2,847+ innovators already building with AgentSphere. Your
               first agent deployment is free.
             </p>
@@ -265,7 +272,7 @@ const Features = () => {
               <button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-4 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                 Deploy Your First Agent
               </button>
-              <div className="flex items-center gap-2 text-sm text-gray-500">
+              <div className="flex items-center gap-2 text-sm text-slate-400">
                 <svg
                   className="w-4 h-4 text-green-500"
                   fill="currentColor"
