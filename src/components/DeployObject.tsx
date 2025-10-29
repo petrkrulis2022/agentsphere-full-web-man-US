@@ -1254,25 +1254,25 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   }, [showNetworkSelector]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-emerald-50 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl shadow-xl overflow-hidden"
+          className="bg-slate-800/90 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden border border-slate-700/50"
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-8 py-6">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-700 px-8 py-6">
             <h1 className="text-3xl font-bold text-white mb-2">
               Deploy AR Agent
             </h1>
-            <p className="text-green-100">
+            <p className="text-blue-100">
               Create and deploy your AI agent in the real world
             </p>
 
             {/* Wallet Connection & USDC Balance */}
             {address && (
-              <div className="mt-4 bg-white bg-opacity-20 rounded-lg p-4">
+              <div className="mt-4 bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <Wallet className="h-5 w-5 text-white mr-2" />
@@ -1549,8 +1549,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
             {/* Location & Deployment Section */}
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-                <MapPin className="h-6 w-6 mr-2 text-green-600" />
+              <h2 className="text-2xl font-bold text-white flex items-center">
+                <MapPin className="h-6 w-6 mr-2 text-blue-400" />
                 Location & Deployment
               </h2>
 
@@ -1585,37 +1585,37 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
               {/* Location Display */}
               {location && (
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-900 mb-2">
+                <div className="bg-slate-700/50 backdrop-blur-sm rounded-lg p-4 border border-slate-600">
+                  <h3 className="font-semibold text-white mb-2">
                     Current Location
                   </h3>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="text-gray-600">Latitude:</span>
+                      <span className="text-slate-300">Latitude:</span>
                       <span className="ml-2 font-mono">
                         {location.latitude.toFixed(8)}
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Longitude:</span>
+                      <span className="text-slate-300">Longitude:</span>
                       <span className="ml-2 font-mono">
                         {location.longitude.toFixed(8)}
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Accuracy:</span>
+                      <span className="text-slate-300">Accuracy:</span>
                       <span className="ml-2">
                         ±{location.accuracy?.toFixed(0) || "10"}m
                       </span>
                     </div>
                     {preciseLocation && (
                       <div>
-                        <span className="text-gray-600">RTK Status:</span>
+                        <span className="text-slate-300">RTK Status:</span>
                         <span
                           className={`ml-2 px-2 py-1 rounded-full text-xs ${
                             preciseLocation.correctionApplied
-                              ? "bg-green-100 text-green-800"
-                              : "bg-yellow-100 text-yellow-800"
+                              ? "bg-green-500/20 text-green-300 border border-green-500/30"
+                              : "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
                           }`}
                         >
                           {preciseLocation.correctionApplied
@@ -1743,14 +1743,14 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
             {/* Agent Details Section */}
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-                <Settings className="h-6 w-6 mr-2 text-green-600" />
+              <h2 className="text-2xl font-bold text-white flex items-center">
+                <Settings className="h-6 w-6 mr-2 text-blue-400" />
                 Agent Details
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
                     Agent Name *
                   </label>
                   <input
@@ -1758,19 +1758,19 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     value={agentName}
                     onChange={(e) => setAgentName(e.target.value)}
                     placeholder="Enter agent name"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-slate-400"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
                     Agent Type
                   </label>
                   <select
                     value={agentType}
                     onChange={(e) => setAgentType(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     {agentTypes.map((type) => (
                       <option key={type.value} value={type.value}>
@@ -1789,18 +1789,18 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     onChange={(e) => setAgentDescription(e.target.value)}
                     placeholder="Describe your agent's purpose and capabilities"
                     rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-slate-400"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
                     Location Type
                   </label>
                   <select
                     value={locationType}
                     onChange={(e) => setLocationType(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     {locationTypes.map((type) => (
                       <option key={type} value={type}>
@@ -1814,74 +1814,74 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
             {/* Agent Interaction Methods */}
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-                <MessageCircle className="h-6 w-6 mr-2 text-green-600" />
+              <h2 className="text-2xl font-bold text-white flex items-center">
+                <MessageCircle className="h-6 w-6 mr-2 text-blue-400" />
                 Agent Interaction Methods
               </h2>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="flex items-center p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center p-4 border border-slate-600 bg-slate-700/30 rounded-lg">
                   <input
                     type="checkbox"
                     id="textChat"
                     checked={textChat}
                     onChange={(e) => setTextChat(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-400 focus:ring-blue-500 border-slate-500 rounded bg-slate-600"
                   />
                   <label
                     htmlFor="textChat"
-                    className="ml-2 text-sm font-medium text-gray-900 flex items-center"
+                    className="ml-2 text-sm font-medium text-white flex items-center"
                   >
                     <MessageCircle className="h-4 w-4 mr-1" />
                     Text Chat
                   </label>
                 </div>
 
-                <div className="flex items-center p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center p-4 border border-slate-600 bg-slate-700/30 rounded-lg">
                   <input
                     type="checkbox"
                     id="voiceChat"
                     checked={voiceChat}
                     onChange={(e) => setVoiceChat(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-400 focus:ring-blue-500 border-slate-500 rounded bg-slate-600"
                   />
                   <label
                     htmlFor="voiceChat"
-                    className="ml-2 text-sm font-medium text-gray-900 flex items-center"
+                    className="ml-2 text-sm font-medium text-white flex items-center"
                   >
                     <Mic className="h-4 w-4 mr-1" />
                     Voice Chat
                   </label>
                 </div>
 
-                <div className="flex items-center p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center p-4 border border-slate-600 bg-slate-700/30 rounded-lg">
                   <input
                     type="checkbox"
                     id="videoChat"
                     checked={videoChat}
                     onChange={(e) => setVideoChat(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-400 focus:ring-blue-500 border-slate-500 rounded bg-slate-600"
                   />
                   <label
                     htmlFor="videoChat"
-                    className="ml-2 text-sm font-medium text-gray-900 flex items-center"
+                    className="ml-2 text-sm font-medium text-white flex items-center"
                   >
                     <Video className="h-4 w-4 mr-1" />
                     Video Chat
                   </label>
                 </div>
 
-                <div className="flex items-center p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center p-4 border border-slate-600 bg-slate-700/30 rounded-lg">
                   <input
                     type="checkbox"
                     id="defiFeatures"
                     checked={defiFeatures}
                     onChange={(e) => setDefiFeatures(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-400 focus:ring-blue-500 border-slate-500 rounded bg-slate-600"
                   />
                   <label
                     htmlFor="defiFeatures"
-                    className="ml-2 text-sm font-medium text-gray-900 flex items-center"
+                    className="ml-2 text-sm font-medium text-white flex items-center"
                   >
                     <TrendingUp className="h-4 w-4 mr-1" />
                     DeFi Features
@@ -1920,34 +1920,34 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
             {/* Agent Wallet Type */}
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-                <Wallet className="h-6 w-6 mr-2 text-green-600" />
+              <h2 className="text-2xl font-bold text-white flex items-center">
+                <Wallet className="h-6 w-6 mr-2 text-blue-400" />
                 Agent Wallet Type
               </h2>
 
-              <div className="bg-gray-50 rounded-lg p-6 space-y-4">
+              <div className="bg-slate-700/50 backdrop-blur-sm rounded-lg p-6 space-y-4 border border-slate-600">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
                       Agent Wallet (Payment Receiver)
                     </label>
-                    <div className="bg-white p-3 rounded border font-mono text-sm">
+                    <div className="bg-slate-800/70 p-3 rounded border border-slate-600 font-mono text-sm text-white">
                       {agentWallet}
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
                       Your Connected Wallet
                     </label>
-                    <div className="bg-white p-3 rounded border font-mono text-sm">
+                    <div className="bg-slate-800/70 p-3 rounded border border-slate-600 font-mono text-sm text-white">
                       {address || "Not connected"}
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <p className="text-sm text-blue-800">
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                  <p className="text-sm text-blue-200">
                     <strong>Purpose:</strong> The agent's wallet address is
                     identical to your connected wallet. This address will be the
                     receiver of all payments when users interact with your
@@ -1960,21 +1960,21 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
             {/* Economics & Ownership */}
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-                <DollarSign className="h-6 w-6 mr-2 text-green-600" />
+              <h2 className="text-2xl font-bold text-white flex items-center">
+                <DollarSign className="h-6 w-6 mr-2 text-blue-400" />
                 Economics & Ownership
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
                     Payment Token{" "}
                     {currentNetwork && `(${currentNetwork.shortName})`}
                   </label>
                   <select
                     value={selectedToken}
                     onChange={(e) => setSelectedToken(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     disabled={!currentNetwork || !currentNetwork.isSupported}
                   >
                     {SUPPORTED_STABLECOINS.map((token) => (
@@ -1987,16 +1987,16 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     ))}
                   </select>
                   {currentNetwork && (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-slate-400 mt-1">
                       Available tokens for {currentNetwork.name}
                       {TOKEN_ADDRESSES[
                         selectedToken as keyof typeof TOKEN_ADDRESSES
                       ] ? (
-                        <span className="text-green-600 ml-1">
+                        <span className="text-green-400 ml-1">
                           ✓ Contract verified
                         </span>
                       ) : (
-                        <span className="text-yellow-600 ml-1">
+                        <span className="text-yellow-400 ml-1">
                           ⚠ Contract not configured
                         </span>
                       )}
@@ -2005,7 +2005,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
                     Interaction Fee{" "}
                     {agentType === "payment_terminal" ||
                     agentType === "trailing_payment_terminal"
@@ -2014,11 +2014,11 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   </label>
                   {agentType === "payment_terminal" ||
                   agentType === "trailing_payment_terminal" ? (
-                    <div className="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-sm text-blue-800 font-medium">
+                    <div className="w-full px-4 py-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                      <p className="text-sm text-blue-300 font-medium">
                         💰 Dynamic Amount from Merchant
                       </p>
-                      <p className="text-xs text-blue-600 mt-1">
+                      <p className="text-xs text-blue-200 mt-1">
                         Payment terminals accept variable amounts from merchants
                         (e-shops, on-ramps, etc.). The amount is set per
                         transaction, not fixed.
@@ -2038,9 +2038,9 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                         min="0.1"
                         step="0.1"
                         placeholder="Enter fee amount (integer only)"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-slate-400"
                       />
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-slate-400 mt-1">
                         This exact amount will be stored and displayed in agent
                         cards
                       </p>
@@ -2049,7 +2049,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
                     Revenue Sharing{" "}
                     {agentType === "payment_terminal" ||
                     agentType === "trailing_payment_terminal"
@@ -2058,11 +2058,11 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   </label>
                   {agentType === "payment_terminal" ||
                   agentType === "trailing_payment_terminal" ? (
-                    <div className="w-full px-4 py-3 bg-green-50 border border-green-200 rounded-lg">
-                      <p className="text-sm text-green-800 font-medium">
+                    <div className="w-full px-4 py-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                      <p className="text-sm text-green-300 font-medium">
                         ✓ 100% Revenue - No Platform Fee
                       </p>
-                      <p className="text-xs text-green-600 mt-1">
+                      <p className="text-xs text-green-200 mt-1">
                         Payment terminal agents receive 100% of payment amounts.
                         AgentSphere does not take a platform fee on terminal
                         transactions.
@@ -2084,39 +2084,41 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
               </div>
 
               {/* Revenue Potential */}
-              <div className="bg-green-50 rounded-lg p-6">
-                <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
-                  <TrendingUp className="h-5 w-5 mr-2 text-green-600" />
+              <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-lg p-6">
+                <h3 className="font-semibold text-white mb-4 flex items-center">
+                  <TrendingUp className="h-5 w-5 mr-2 text-green-400" />
                   Revenue Potential
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                   <div>
-                    <div className="text-2xl font-bold text-green-600">
+                    <div className="text-2xl font-bold text-green-400">
                       {((interactionFee * revenueSharing) / 100).toFixed(6)}{" "}
                       {selectedToken}
                     </div>
-                    <div className="text-sm text-gray-600">Per Interaction</div>
+                    <div className="text-sm text-slate-300">
+                      Per Interaction
+                    </div>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-green-600">
+                    <div className="text-2xl font-bold text-green-400">
                       {(((interactionFee * revenueSharing) / 100) * 10).toFixed(
                         6
                       )}{" "}
                       {selectedToken}
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-slate-300">
                       10 Interactions/Day
                     </div>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-green-600">
+                    <div className="text-2xl font-bold text-green-400">
                       {(
                         ((interactionFee * revenueSharing) / 100) *
                         300
                       ).toFixed(6)}{" "}
                       {selectedToken}
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-slate-300">
                       Monthly Potential
                     </div>
                   </div>
@@ -2188,7 +2190,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   !currentNetwork.isSupported ||
                   networkLoading
                 }
-                className="w-full flex items-center justify-center px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-lg font-semibold rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                className="w-full flex items-center justify-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-700 text-white text-lg font-semibold rounded-xl hover:shadow-lg hover:shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
                 {isDeploying ? (
                   <>
