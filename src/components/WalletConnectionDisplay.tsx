@@ -96,9 +96,15 @@ const WalletConnectionDisplay = ({
         await solanaWallet.connect();
       } catch (error) {
         console.error("Error connecting to Phantom:", error);
+        alert("Failed to connect to Phantom wallet. Please try again.");
       }
     } else {
-      window.open("https://phantom.app/", "_blank");
+      const install = window.confirm(
+        "Phantom wallet not detected. Would you like to install it?"
+      );
+      if (install) {
+        window.open("https://phantom.app/", "_blank");
+      }
     }
   };
 
