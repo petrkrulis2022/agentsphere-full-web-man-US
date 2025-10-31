@@ -179,6 +179,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     if (currentNetwork?.chainId) {
       // Different tokens supported on different networks
       switch (currentNetwork.chainId) {
+        case 296: // Hedera Testnet - Use native HBAR
+          return ["HBAR"];
         case 11155111: // Ethereum Sepolia
           return ["USDC", "USDT", "DAI"];
         case 421614: // Arbitrum Sepolia
@@ -1361,6 +1363,22 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         !supportedTokens.includes(selectedToken)
       ) {
         setSelectedToken(supportedTokens[0]); // Default to first supported token
+
+        // Adjust default interaction fee based on network
+        if (currentNetwork.chainId === 296) {
+          // Hedera Testnet - HBAR is cheaper, suggest 1 HBAR
+          setInteractionFee(1);
+        } else if (
+          selectedToken === "USDC" ||
+          selectedToken === "USDT" ||
+          selectedToken === "DAI"
+        ) {
+          // Stablecoins - suggest 10 tokens
+          if (interactionFee === 1) {
+            // Only update if it was set to HBAR default
+            setInteractionFee(10);
+          }
+        }
       }
     }
   }, [currentNetwork]);
@@ -2108,29 +2126,17 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     disabled={!currentNetwork || !currentNetwork.isSupported}
                   >
-                    {SUPPORTED_STABLECOINS.map((token) => (
+                    {getSupportedStablecoins().map((token) => (
                       <option key={token} value={token}>
-                        {token}{" "}
-                        {TOKEN_ADDRESSES[token as keyof typeof TOKEN_ADDRESSES]
-                          ? "✓"
-                          : "⚠"}
+                        {token}
                       </option>
                     ))}
                   </select>
                   {currentNetwork && (
                     <p className="text-xs text-gray-500 mt-1">
-                      Available tokens for {currentNetwork.name}
-                      {TOKEN_ADDRESSES[
-                        selectedToken as keyof typeof TOKEN_ADDRESSES
-                      ] ? (
-                        <span className="text-green-600 ml-1">
-                          ✓ Contract verified
-                        </span>
-                      ) : (
-                        <span className="text-yellow-600 ml-1">
-                          ⚠ Contract not configured
-                        </span>
-                      )}
+                      {currentNetwork.chainId === 296 
+                        ? "Native HBAR payments on Hedera Testnet"
+                        : `Available tokens for ${currentNetwork.name}`}
                     </p>
                   )}
                 </div>
