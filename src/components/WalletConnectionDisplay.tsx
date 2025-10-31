@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Wallet } from "lucide-react";
+import { networkDetectionService } from "../services/networkDetectionService.js";
 
 interface WalletConnectionDisplayProps {
   onConnect?: () => void;
@@ -11,6 +12,7 @@ const WalletConnectionDisplay = ({
   const [solanaWallet, setSolanaWallet] = useState<any>(null);
   const [solanaAddress, setSolanaAddress] = useState<string>("");
   const [evmAddress, setEvmAddress] = useState<string>("");
+  const [currentNetwork, setCurrentNetwork] = useState<any>(null);
 
   // Check for Phantom wallet (Solana)
   useEffect(() => {
@@ -57,7 +59,7 @@ const WalletConnectionDisplay = ({
     };
   }, []);
 
-  // Check for MetaMask/EVM wallet
+  // Check for MetaMask/EVM wallet and detect network
   useEffect(() => {
     const checkEvmWallet = async () => {
       if (typeof window !== "undefined" && (window as any).ethereum) {
@@ -67,6 +69,11 @@ const WalletConnectionDisplay = ({
           });
           if (accounts && accounts.length > 0) {
             setEvmAddress(accounts[0]);
+
+            // Detect current network
+            const network =
+              await networkDetectionService.detectCurrentNetwork();
+            setCurrentNetwork(network);
           }
         } catch (error) {
           console.error("Error checking EVM wallet:", error);
@@ -78,14 +85,31 @@ const WalletConnectionDisplay = ({
 
     // Listen for account changes
     if ((window as any).ethereum) {
-      (window as any).ethereum.on("accountsChanged", (accounts: string[]) => {
-        setEvmAddress(accounts[0] || "");
+      (window as any).ethereum.on(
+        "accountsChanged",
+        async (accounts: string[]) => {
+          setEvmAddress(accounts[0] || "");
+          if (accounts[0]) {
+            const network =
+              await networkDetectionService.detectCurrentNetwork();
+            setCurrentNetwork(network);
+          } else {
+            setCurrentNetwork(null);
+          }
+        }
+      );
+
+      // Listen for network/chain changes
+      (window as any).ethereum.on("chainChanged", async () => {
+        const network = await networkDetectionService.detectCurrentNetwork();
+        setCurrentNetwork(network);
       });
     }
 
     return () => {
       if ((window as any).ethereum?.removeListener) {
         (window as any).ethereum.removeListener("accountsChanged", () => {});
+        (window as any).ethereum.removeListener("chainChanged", () => {});
       }
     };
   }, []);
@@ -172,11 +196,19 @@ const WalletConnectionDisplay = ({
 
       {/* EVM Wallet */}
       {evmAddress ? (
-        <div className="flex items-center space-x-2 px-3 py-2 rounded-md bg-blue-600 text-white">
-          <Wallet className="w-4 h-4" />
-          <span className="text-sm font-medium">
-            {formatAddress(evmAddress)}
-          </span>
+        <div className="flex items-center space-x-2">
+          {currentNetwork && (
+            <div className="flex items-center space-x-1 px-3 py-2 rounded-md bg-blue-50 text-blue-700">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+              <span className="text-xs font-medium">{currentNetwork.name}</span>
+            </div>
+          )}
+          <div className="flex items-center space-x-2 px-3 py-2 rounded-md bg-blue-600 text-white">
+            <Wallet className="w-4 h-4" />
+            <span className="text-sm font-medium">
+              {formatAddress(evmAddress)}
+            </span>
+          </div>
         </div>
       ) : (
         <button
