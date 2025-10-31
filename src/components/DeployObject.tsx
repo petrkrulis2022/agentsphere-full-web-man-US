@@ -132,9 +132,12 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   const [deploymentError, setDeploymentError] = useState("");
 
   // Agent wallet = User connected wallet (same address)
-  // Use Solana wallet address if connected, otherwise use EVM address
+  // Use Solana wallet address if connected, otherwise use EVM address (MetaMask or Thirdweb)
   const agentWallet =
-    solanaWallet?.publicKey?.toString() || address || "0x000...000";
+    solanaWallet?.publicKey?.toString() ||
+    evmWallet ||
+    address ||
+    "0x000...000";
 
   // USDC token contract address on Base Sepolia
   // USDC contract addresses for different networks
@@ -1218,6 +1221,53 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     return () => clearInterval(interval);
   }, []);
 
+  // Detect MetaMask wallet connection
+  useEffect(() => {
+    const checkMetaMaskWallet = async () => {
+      if (typeof window !== "undefined" && (window as any).ethereum) {
+        try {
+          const accounts = await (window as any).ethereum.request({
+            method: "eth_accounts",
+          });
+          if (accounts && accounts.length > 0) {
+            console.log("✅ MetaMask wallet detected:", accounts[0]);
+            setEvmWallet(accounts[0]);
+            setWalletType("metamask");
+          }
+        } catch (error) {
+          console.error("Error checking MetaMask wallet:", error);
+        }
+      }
+    };
+
+    // Check immediately
+    checkMetaMaskWallet();
+
+    // Listen for account changes
+    if ((window as any).ethereum) {
+      const handleAccountsChanged = (accounts: string[]) => {
+        if (accounts.length > 0) {
+          console.log("✅ MetaMask account changed:", accounts[0]);
+          setEvmWallet(accounts[0]);
+          setWalletType("metamask");
+        } else {
+          setEvmWallet(null);
+        }
+      };
+
+      (window as any).ethereum.on("accountsChanged", handleAccountsChanged);
+
+      return () => {
+        if ((window as any).ethereum?.removeListener) {
+          (window as any).ethereum.removeListener(
+            "accountsChanged",
+            handleAccountsChanged
+          );
+        }
+      };
+    }
+  }, []);
+
   // Network detection when wallet connects
   useEffect(() => {
     const initializeNetwork = async () => {
@@ -2020,6 +2070,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     </label>
                     <div className="bg-white p-3 rounded border font-mono text-sm">
                       {solanaWallet?.publicKey?.toString() ||
+                        evmWallet ||
                         address ||
                         "Not connected"}
                     </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Wallet } from "lucide-react";
 import { networkDetectionService } from "../services/networkDetectionService.js";
+import { hederaWalletService } from "../services/hederaWalletService";
 
 interface WalletConnectionDisplayProps {
   onConnect?: () => void;
@@ -13,6 +14,8 @@ const WalletConnectionDisplay = ({
   const [solanaAddress, setSolanaAddress] = useState<string>("");
   const [evmAddress, setEvmAddress] = useState<string>("");
   const [currentNetwork, setCurrentNetwork] = useState<any>(null);
+  const [hbarBalance, setHbarBalance] = useState<number | null>(null);
+  const [balanceLoading, setBalanceLoading] = useState(false);
 
   // Check for Phantom wallet (Solana)
   useEffect(() => {
@@ -114,6 +117,31 @@ const WalletConnectionDisplay = ({
     };
   }, []);
 
+  // Fetch HBAR balance when connected to Hedera Testnet
+  useEffect(() => {
+    const fetchHbarBalance = async () => {
+      // Check if we're on Hedera Testnet (Chain ID 296)
+      if (evmAddress && currentNetwork && currentNetwork.chainId === 296) {
+        setBalanceLoading(true);
+        try {
+          const balance = await hederaWalletService.getHBARBalance(evmAddress);
+          setHbarBalance(balance);
+          console.log("✅ HBAR Balance fetched:", balance);
+        } catch (error) {
+          console.error("❌ Error fetching HBAR balance:", error);
+          setHbarBalance(null);
+        } finally {
+          setBalanceLoading(false);
+        }
+      } else {
+        // Reset balance if not on Hedera Testnet
+        setHbarBalance(null);
+      }
+    };
+
+    fetchHbarBalance();
+  }, [evmAddress, currentNetwork]);
+
   const connectSolanaWallet = async () => {
     if (solanaWallet) {
       try {
@@ -198,9 +226,34 @@ const WalletConnectionDisplay = ({
       {evmAddress ? (
         <div className="flex items-center space-x-2">
           {currentNetwork && (
-            <div className="flex items-center space-x-1 px-3 py-2 rounded-md bg-blue-50 text-blue-700">
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-              <span className="text-xs font-medium">{currentNetwork.name}</span>
+            <div
+              className={`flex items-center space-x-1 px-3 py-2 rounded-md ${
+                currentNetwork.chainId === 296
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-blue-50 text-blue-700"
+              }`}
+            >
+              <div
+                className={`w-2 h-2 rounded-full animate-pulse ${
+                  currentNetwork.chainId === 296
+                    ? "bg-emerald-500"
+                    : "bg-blue-500"
+                }`}
+              ></div>
+              <span className="text-xs font-medium">
+                {currentNetwork.name}
+                {currentNetwork.chainId === 296 && hbarBalance !== null && (
+                  <span
+                    className="ml-1 font-semibold"
+                    style={{ color: "#00D4AA" }}
+                  >
+                    [{hbarBalance.toFixed(4)} HBAR]
+                  </span>
+                )}
+                {currentNetwork.chainId === 296 && balanceLoading && (
+                  <span className="ml-1 text-xs opacity-70">loading...</span>
+                )}
+              </span>
             </div>
           )}
           <div className="flex items-center space-x-2 px-3 py-2 rounded-md bg-blue-600 text-white">
