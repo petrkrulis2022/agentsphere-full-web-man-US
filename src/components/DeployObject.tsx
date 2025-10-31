@@ -765,7 +765,12 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     );
 
     // Check for either EVM or Solana wallet
-    if (hasCryptoEnabled && !address && !solanaWallet?.publicKey) {
+    if (
+      hasCryptoEnabled &&
+      !address &&
+      !solanaWallet?.publicKey &&
+      !evmWallet
+    ) {
       errors.push("Wallet connection required for crypto payment methods");
     }
 
@@ -934,7 +939,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     }
 
     // Check for either EVM or Solana wallet
-    if (!address && !solanaWallet?.publicKey) {
+    if (!address && !solanaWallet?.publicKey && !evmWallet) {
       alert("Please connect your wallet first.");
       return;
     }
@@ -970,7 +975,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       }
 
       const deploymentData = {
-        user_id: solanaWallet?.publicKey?.toString() || address,
+        user_id: solanaWallet?.publicKey?.toString() || evmWallet || address,
         name: agentName.trim(),
         description:
           agentDescription.trim() ||
@@ -1011,20 +1016,25 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         interaction_fee_usdfc: interactionFee, // Legacy field
 
         // Wallet configuration
-        owner_wallet: solanaWallet?.publicKey?.toString() || address,
+        owner_wallet:
+          solanaWallet?.publicKey?.toString() || evmWallet || address,
         agent_wallet_address: agentWallet,
         agent_wallet_type: solanaWallet?.publicKey
           ? "solana_wallet"
           : "evm_wallet",
-        deployer_address: solanaWallet?.publicKey?.toString() || address,
+        deployer_address:
+          solanaWallet?.publicKey?.toString() || evmWallet || address,
 
         // Token information
         currency_type: selectedToken,
         token_symbol: selectedToken,
-        token_address: solanaWallet?.publicKey
-          ? "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU" // Solana USDC Devnet mint
-          : TOKEN_ADDRESSES[selectedToken as keyof typeof TOKEN_ADDRESSES] ||
-            "",
+        token_address:
+          selectedToken === "HBAR"
+            ? "native" // HBAR is native token, no contract address
+            : solanaWallet?.publicKey
+            ? "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU" // Solana USDC Devnet mint
+            : TOKEN_ADDRESSES[selectedToken as keyof typeof TOKEN_ADDRESSES] ||
+              "",
 
         // Communication features
         chat_enabled: textChat,
@@ -1042,7 +1052,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
         // DYNAMIC PAYMENT CONFIG - FIXED
         payment_config: {
-          wallet_address: solanaWallet?.publicKey?.toString() || address,
+          wallet_address:
+            solanaWallet?.publicKey?.toString() || evmWallet || address,
           supported_tokens: [selectedToken],
           network_info: {
             name: currentNetwork.name,
@@ -1273,13 +1284,14 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   // Network detection when wallet connects
   useEffect(() => {
     const initializeNetwork = async () => {
-      // Check for EVM wallet
-      if (address && window.ethereum) {
+      // Check for EVM wallet (MetaMask or Thirdweb)
+      if ((evmWallet || address) && window.ethereum) {
         setNetworkLoading(true);
         setNetworkError("");
 
         try {
           const network = await networkDetectionService.detectCurrentNetwork();
+          console.log("🌐 Network detected:", network);
           setCurrentNetwork(network);
 
           if (network && !network.isSupported) {
@@ -1294,6 +1306,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
           // Subscribe to network change events
           const handleNetworkChange = (event: any) => {
             const newNetwork = event.detail.network;
+            console.log("🔄 Network changed:", newNetwork);
             setCurrentNetwork(newNetwork);
 
             if (!newNetwork.isSupported) {
@@ -1352,30 +1365,42 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     };
 
     initializeNetwork();
-  }, [address, solanaWallet]);
+  }, [address, solanaWallet, evmWallet]);
 
   // Update selected token when network changes
   useEffect(() => {
     if (currentNetwork) {
       const supportedTokens = getSupportedStablecoins();
+      console.log(
+        "🔍 Network changed:",
+        currentNetwork.name,
+        "Chain ID:",
+        currentNetwork.chainId
+      );
+      console.log("🪙 Supported tokens:", supportedTokens);
+      console.log("💰 Current selected token:", selectedToken);
+
       if (
         supportedTokens.length > 0 &&
         !supportedTokens.includes(selectedToken)
       ) {
+        console.log("✅ Switching token to:", supportedTokens[0]);
         setSelectedToken(supportedTokens[0]); // Default to first supported token
 
         // Adjust default interaction fee based on network
         if (currentNetwork.chainId === 296) {
           // Hedera Testnet - HBAR is cheaper, suggest 1 HBAR
+          console.log("💎 Setting Hedera HBAR fee to 1");
           setInteractionFee(1);
         } else if (
-          selectedToken === "USDC" ||
-          selectedToken === "USDT" ||
-          selectedToken === "DAI"
+          supportedTokens[0] === "USDC" ||
+          supportedTokens[0] === "USDT" ||
+          supportedTokens[0] === "DAI"
         ) {
           // Stablecoins - suggest 10 tokens
           if (interactionFee === 1) {
             // Only update if it was set to HBAR default
+            console.log("💵 Setting stablecoin fee to 10");
             setInteractionFee(10);
           }
         }
@@ -1501,39 +1526,41 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                                 </p>
                               </div>
                               <div className="max-h-64 overflow-y-auto">
-                                {getSupportedNetworks().map((network) => (
-                                  <button
-                                    key={network.chainId}
-                                    onClick={() => {
-                                      handleNetworkSwitch(network);
-                                      setShowNetworkSelector(false);
-                                    }}
-                                    className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b last:border-b-0 ${
-                                      currentNetwork?.chainId ===
-                                      network.chainId
-                                        ? "bg-green-50 border-l-4 border-l-green-500"
-                                        : ""
-                                    }`}
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <div>
-                                        <div className="font-medium text-gray-900">
-                                          {network.name}
+                                {getSupportedNetworks().map(
+                                  (network, index) => (
+                                    <button
+                                      key={`${network.chainId}-${network.name}-${index}`}
+                                      onClick={() => {
+                                        handleNetworkSwitch(network);
+                                        setShowNetworkSelector(false);
+                                      }}
+                                      className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b last:border-b-0 ${
+                                        currentNetwork?.chainId ===
+                                        network.chainId
+                                          ? "bg-green-50 border-l-4 border-l-green-500"
+                                          : ""
+                                      }`}
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <div>
+                                          <div className="font-medium text-gray-900">
+                                            {network.name}
+                                          </div>
+                                          <div className="text-sm text-gray-600">
+                                            Chain ID: {network.chainId}
+                                          </div>
+                                          <div className="text-xs text-gray-500">
+                                            Currency: {network.symbol}
+                                          </div>
                                         </div>
-                                        <div className="text-sm text-gray-600">
-                                          Chain ID: {network.chainId}
-                                        </div>
-                                        <div className="text-xs text-gray-500">
-                                          Currency: {network.symbol}
-                                        </div>
+                                        {currentNetwork?.chainId ===
+                                          network.chainId && (
+                                          <CheckCircle className="h-5 w-5 text-green-500" />
+                                        )}
                                       </div>
-                                      {currentNetwork?.chainId ===
-                                        network.chainId && (
-                                        <CheckCircle className="h-5 w-5 text-green-500" />
-                                      )}
-                                    </div>
-                                  </button>
-                                ))}
+                                    </button>
+                                  )
+                                )}
                               </div>
                               <div className="p-3 border-t bg-gray-50">
                                 <p className="text-xs text-gray-600">
@@ -1624,9 +1651,9 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                         <div className="grid grid-cols-1 gap-1 text-xs">
                           {getSupportedNetworks()
                             .slice(0, 3)
-                            .map((network) => (
+                            .map((network, index) => (
                               <button
-                                key={network.chainId}
+                                key={`${network.chainId}-${network.name}-${index}`}
                                 onClick={() => handleNetworkSwitch(network)}
                                 className="text-left px-2 py-1 bg-white bg-opacity-20 rounded hover:bg-opacity-30 transition-colors"
                               >
@@ -1668,9 +1695,9 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   Supported EVM Testnets
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                  {getSupportedNetworks().map((network) => (
+                  {getSupportedNetworks().map((network, index) => (
                     <div
-                      key={network.chainId}
+                      key={`${network.chainId}-${network.name}-${index}`}
                       className="bg-white rounded-lg p-3 border border-gray-200"
                     >
                       <div className="font-medium text-gray-900">
@@ -2134,7 +2161,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   </select>
                   {currentNetwork && (
                     <p className="text-xs text-gray-500 mt-1">
-                      {currentNetwork.chainId === 296 
+                      {currentNetwork.chainId === 296
                         ? "Native HBAR payments on Hedera Testnet"
                         : `Available tokens for ${currentNetwork.name}`}
                     </p>
@@ -2319,7 +2346,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                 onClick={deployAgent}
                 disabled={
                   isDeploying ||
-                  (!address && !solanaWallet?.publicKey) || // Allow either EVM or Solana wallet
+                  (!address && !solanaWallet?.publicKey && !evmWallet) || // Allow EVM (MetaMask), Solana, or Thirdweb wallet
                   !agentName.trim() ||
                   !location ||
                   !currentNetwork ||
