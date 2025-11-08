@@ -51,7 +51,10 @@ const AuthSection = ({
   };
 
   return (
-    <section id="auth" className="py-16 bg-white">
+    <section
+      id="auth"
+      className="py-16 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="lg:grid lg:grid-cols-2 lg:gap-8">
           <motion.div
@@ -61,21 +64,21 @@ const AuthSection = ({
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+            <h2 className="text-3xl md:text-4xl font-bold text-white">
               Join 2,847+ Early Pioneers
             </h2>
-            <p className="mt-4 text-lg text-gray-600 max-w-lg">
+            <p className="mt-4 text-lg text-slate-300 max-w-lg">
               🚀 <strong>Limited Beta Access:</strong> Be among the first 5,000
               to deploy AI agents in AR. Early members get exclusive templates,
               bonus tokens, and priority support.
             </p>
 
-            <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
-              <div className="flex items-center text-green-800">
+            <div className="mt-6 p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl border border-green-500/30 backdrop-blur-sm">
+              <div className="flex items-center text-green-400">
                 <span className="text-2xl mr-2">⚡</span>
                 <div>
                   <div className="font-semibold">Early Bird Bonus</div>
-                  <div className="text-sm">
+                  <div className="text-sm text-slate-300">
                     500 USDFC + Premium Agent Templates (Worth $50)
                   </div>
                 </div>
@@ -84,42 +87,42 @@ const AuthSection = ({
 
             <div className="mt-8 space-y-6">
               <div className="flex items-center">
-                <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md bg-green-100 text-green-600">
+                <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md bg-green-500/10 backdrop-blur-sm border border-green-500/30 text-green-400">
                   <Mail className="h-6 w-6" />
                 </div>
                 <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900">
+                  <h3 className="text-lg font-medium text-white">
                     Instant Access
                   </h3>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-sm text-slate-400">
                     Get early beta invitation in 48 hours
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center">
-                <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md bg-blue-100 text-blue-600">
+                <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md bg-blue-500/10 backdrop-blur-sm border border-blue-500/30 text-blue-400">
                   <Lock className="h-6 w-6" />
                 </div>
                 <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900">
+                  <h3 className="text-lg font-medium text-white">
                     Blockchain Security
                   </h3>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-sm text-slate-400">
                     Secure wallet integration with ThirdWeb
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center">
-                <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md bg-purple-100 text-purple-600">
+                <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md bg-purple-500/10 backdrop-blur-sm border border-purple-500/30 text-purple-400">
                   <Wallet className="h-6 w-6" />
                 </div>
                 <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900">
+                  <h3 className="text-lg font-medium text-white">
                     Multi-Chain Support
                   </h3>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-sm text-slate-400">
                     Ethereum, Polygon, Avalanche, BlockDAG
                   </p>
                 </div>
@@ -127,14 +130,14 @@ const AuthSection = ({
             </div>
 
             <div className="mt-8 flex items-center justify-between">
-              <div className="inline-flex items-center px-4 py-2 rounded-full bg-green-100 text-green-800">
+              <div className="inline-flex items-center px-4 py-2 rounded-full bg-green-500/10 border border-green-500/30 text-green-400 backdrop-blur-sm">
                 <span className="text-sm font-medium">
                   {waitlistCount.toLocaleString()} pioneers already joined
                 </span>
               </div>
               <div className="text-right">
-                <div className="text-sm text-gray-500">Spots remaining</div>
-                <div className="text-xl font-bold text-red-600">
+                <div className="text-sm text-slate-400">Spots remaining</div>
+                <div className="text-xl font-bold text-red-400">
                   {(5000 - waitlistCount).toLocaleString()}
                 </div>
               </div>
@@ -146,10 +149,10 @@ const AuthSection = ({
                   N
                 </div>
               </div>
-              <h3 className="mt-4 text-xl font-bold text-gray-900">
+              <h3 className="mt-4 text-xl font-bold text-white">
                 Earn 500 USDFC
               </h3>
-              <p className="mt-2 text-gray-600">
+              <p className="mt-2 text-slate-300">
                 Join now and receive 500 USDFC when we launch - enough to deploy
                 your first 5 AI agents!
               </p>
@@ -163,13 +166,13 @@ const AuthSection = ({
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <div>
+            <div className="bg-slate-800/90 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-700">
               <div className="px-6 py-8 sm:p-10 sm:pb-6">
                 <div className="flex justify-between items-baseline">
                   <h3 className="text-2xl leading-8 font-extrabold text-white sm:text-3xl">
                     Early Access
                   </h3>
-                  <span className="px-3 py-1 rounded-full text-sm font-semibold bg-white bg-opacity-20 text-white">
+                  <span className="px-3 py-1 rounded-full text-sm font-semibold bg-orange-500/20 border border-orange-500/30 text-orange-400 backdrop-blur-sm">
                     Limited Spots
                   </span>
                 </div>
@@ -177,17 +180,17 @@ const AuthSection = ({
                   <span className="text-5xl font-extrabold tracking-tight">
                     Free
                   </span>
-                  <span className="ml-1 text-xl font-semibold">
+                  <span className="ml-1 text-xl font-semibold text-slate-300">
                     for beta testers
                   </span>
                 </div>
-                <p className="mt-5 text-lg text-white text-opacity-90">
+                <p className="mt-5 text-lg text-slate-300">
                   Get exclusive early access to AgentSphere and help shape the
                   future of AR agents.
                 </p>
               </div>
 
-              <div className="px-6 pt-6 pb-8 bg-white bg-opacity-10 sm:p-10">
+              <div className="px-6 pt-6 pb-8 bg-slate-700/50 backdrop-blur-sm sm:p-10 border-t border-slate-600">
                 {!isSubmitted ? (
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
@@ -204,14 +207,14 @@ const AuthSection = ({
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@school.edu"
-                        className="mt-1 block w-full border-0 rounded-lg py-3 px-4 text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        className="mt-1 block w-full border-0 rounded-lg py-3 px-4 bg-slate-900/50 text-white placeholder-slate-400 shadow-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
                         required
                         aria-describedby={error ? "email-error" : undefined}
                       />
                       {error && (
                         <p
                           id="email-error"
-                          className="mt-2 text-sm text-pink-300"
+                          className="mt-2 text-sm text-red-400"
                           role="alert"
                         >
                           {error}
@@ -224,7 +227,7 @@ const AuthSection = ({
                         id="notify-checkbox"
                         name="notify"
                         type="checkbox"
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-green-600 focus:ring-green-500 border-slate-600 bg-slate-900/50 rounded"
                         defaultChecked
                         aria-describedby="notify-description"
                       />
@@ -243,13 +246,13 @@ const AuthSection = ({
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-lg text-green-700 bg-white hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                       aria-describedby="submit-status"
                     >
                       {isSubmitting ? (
                         <span className="flex items-center">
                           <svg
-                            className="animate-spin -ml-1 mr-3 h-5 w-5 text-green-700"
+                            className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
                             xmlns="http://www.w3.org/2000/svg"
                             fill="none"
                             viewBox="0 0 24 24"
@@ -285,28 +288,28 @@ const AuthSection = ({
                   </form>
                 ) : (
                   <div className="text-center py-8">
-                    <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
-                      <Check className="h-6 w-6 text-green-600" />
+                    <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-500/10 border border-green-500/30 backdrop-blur-sm">
+                      <Check className="h-6 w-6 text-green-400" />
                     </div>
                     <h3 className="mt-4 text-xl font-medium text-white">
                       You're on the list!
                     </h3>
-                    <p className="mt-2 text-white text-opacity-80">
+                    <p className="mt-2 text-slate-300">
                       We'll notify you when AgentSphere is ready for early
                       access.
                     </p>
 
-                    <div className="mt-8 bg-white rounded-xl shadow-md p-6">
-                      <h3 className="text-lg font-medium text-gray-900">
+                    <div className="mt-8 bg-slate-900/50 backdrop-blur-sm rounded-xl shadow-md p-6 border border-slate-700">
+                      <h3 className="text-lg font-medium text-white">
                         Connect Your Wallet
                       </h3>
-                      <p className="mt-2 text-gray-600">
+                      <p className="mt-2 text-slate-300">
                         Store your USDFC securely and trade with other NEAR
                         users.
                       </p>
                       <div className="mt-4">
                         <button
-                          className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors duration-200"
+                          className="w-full flex items-center justify-center px-4 py-3 border border-slate-600 rounded-lg text-white bg-slate-700/50 hover:bg-slate-600/50 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors duration-200"
                           aria-describedby="wallet-status"
                         >
                           <Wallet className="h-5 w-5 mr-2" />
@@ -314,7 +317,7 @@ const AuthSection = ({
                         </button>
                         <p
                           id="wallet-status"
-                          className="mt-2 text-sm text-gray-500 text-center"
+                          className="mt-2 text-sm text-slate-400 text-center"
                         >
                           Wallet integration will be available at launch
                         </p>

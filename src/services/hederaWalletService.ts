@@ -7,6 +7,13 @@ import {
 
 export interface HederaBalanceData {
   hbar: number;
+  usdh?: number; // USDh stablecoin balance
+  usdDelta?: number; // USDΔ stablecoin balance
+  usdaix?: number; // USDaix stablecoin balance
+  usdDeltaPlus?: number; // USDΔ+ stablecoin balance
+  usdaixPlus?: number; // USDaix+ stablecoin balance
+  usdar?: number; // USDar stablecoin balance
+  usdair?: number; // USDair stablecoin balance
   loading: boolean;
   error: string | null;
 }
@@ -76,14 +83,130 @@ export class HederaWalletService {
     }
   }
 
-  public async getBalances(walletAddress: string): Promise<{ hbar: number }> {
+  public async getBalances(
+    walletAddress: string
+  ): Promise<{ hbar: number; usdh?: number }> {
     try {
       const hbar = await this.getHBARBalance(walletAddress);
-      return { hbar };
+      const usdh = await this.getUSDhBalance(walletAddress);
+      return { hbar, usdh };
     } catch (error) {
       console.error("Error fetching balances:", error);
       throw error;
     }
+  }
+
+  /**
+   * Get ERC-20 token balance (like USDh)
+   * @param walletAddress The wallet address to check
+   * @param tokenAddress The ERC-20 token contract address
+   * @param decimals Token decimals (default 6 for stablecoins)
+   */
+  public async getERC20Balance(
+    walletAddress: string,
+    tokenAddress: string,
+    decimals: number = 6
+  ): Promise<number> {
+    try {
+      if (typeof window === "undefined" || !window.ethereum) {
+        throw new Error("MetaMask not detected");
+      }
+
+      // ERC-20 balanceOf function signature: balanceOf(address)
+      // Function selector: 0x70a08231
+      const data = "0x70a08231" + walletAddress.substring(2).padStart(64, "0");
+
+      console.log("📞 Calling ERC-20 balanceOf:", {
+        tokenAddress,
+        walletAddress,
+        data,
+      });
+
+      const balanceHex = await window.ethereum.request({
+        method: "eth_call",
+        params: [
+          {
+            to: tokenAddress,
+            data: data,
+          },
+          "latest",
+        ],
+      });
+
+      console.log("🔍 Raw ERC-20 balance:", {
+        tokenAddress,
+        balanceHex,
+      });
+
+      // Convert from hex to decimal
+      const balanceWei = BigInt(balanceHex);
+      const balance = Number(balanceWei) / Math.pow(10, decimals);
+
+      console.log(`💰 Converted ${tokenAddress} balance:`, balance);
+
+      return balance;
+    } catch (error) {
+      console.error("Error fetching ERC-20 balance:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to fetch ERC-20 balance: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Get USDh token balance on Hedera Testnet
+   */
+  public async getUSDhBalance(walletAddress: string): Promise<number> {
+    const USDH_CONTRACT = "0x00000000000000000000000000000000006e24c7";
+    return this.getERC20Balance(walletAddress, USDH_CONTRACT, 6);
+  }
+
+  /**
+   * Get USDΔ token balance
+   */
+  public async getUSDDeltaBalance(walletAddress: string): Promise<number> {
+    const USDDELTA_CONTRACT = "0x0000000000000000000000000000000000000000"; // TODO: Add contract address
+    return this.getERC20Balance(walletAddress, USDDELTA_CONTRACT, 6);
+  }
+
+  /**
+   * Get USDaix token balance
+   */
+  public async getUSDaixBalance(walletAddress: string): Promise<number> {
+    const USDAIX_CONTRACT = "0x0000000000000000000000000000000000000000"; // TODO: Add contract address
+    return this.getERC20Balance(walletAddress, USDAIX_CONTRACT, 6);
+  }
+
+  /**
+   * Get USDΔ+ token balance
+   */
+  public async getUSDDeltaPlusBalance(walletAddress: string): Promise<number> {
+    const USDDELTAPLUS_CONTRACT = "0x0000000000000000000000000000000000000000"; // TODO: Add contract address
+    return this.getERC20Balance(walletAddress, USDDELTAPLUS_CONTRACT, 6);
+  }
+
+  /**
+   * Get USDaix+ token balance
+   */
+  public async getUSDaixPlusBalance(walletAddress: string): Promise<number> {
+    const USDAIXPLUS_CONTRACT = "0x0000000000000000000000000000000000000000"; // TODO: Add contract address
+    return this.getERC20Balance(walletAddress, USDAIXPLUS_CONTRACT, 6);
+  }
+
+  /**
+   * Get USDar token balance
+   */
+  public async getUSdarBalance(walletAddress: string): Promise<number> {
+    const USDAR_CONTRACT = "0x0000000000000000000000000000000000000000"; // TODO: Add contract address
+    return this.getERC20Balance(walletAddress, USDAR_CONTRACT, 6);
+  }
+
+  /**
+   * Get USDair token balance
+   */
+  public async getUSDairBalance(walletAddress: string): Promise<number> {
+    const USDAIR_CONTRACT = "0x0000000000000000000000000000000000000000"; // TODO: Add contract address
+    return this.getERC20Balance(walletAddress, USDAIR_CONTRACT, 6);
   }
 
   public getExplorerUrl(address: string): string {

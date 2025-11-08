@@ -15,6 +15,7 @@ const WalletConnectionDisplay = ({
   const [evmAddress, setEvmAddress] = useState<string>("");
   const [currentNetwork, setCurrentNetwork] = useState<any>(null);
   const [hbarBalance, setHbarBalance] = useState<number | null>(null);
+  const [usdhBalance, setUsdhBalance] = useState<number | null>(null);
   const [balanceLoading, setBalanceLoading] = useState(false);
 
   // Check for Phantom wallet (Solana)
@@ -142,6 +143,26 @@ const WalletConnectionDisplay = ({
     fetchHbarBalance();
   }, [evmAddress, currentNetwork]);
 
+  // Fetch USDh balance when connected to Hedera Testnet
+  useEffect(() => {
+    const fetchUsdhBalance = async () => {
+      if (evmAddress && currentNetwork && currentNetwork.chainId === 296) {
+        try {
+          const balance = await hederaWalletService.getUSDhBalance(evmAddress);
+          setUsdhBalance(balance);
+          console.log("✅ USDh Balance fetched:", balance);
+        } catch (error) {
+          console.error("❌ Error fetching USDh balance:", error);
+          setUsdhBalance(null);
+        }
+      } else {
+        setUsdhBalance(null);
+      }
+    };
+
+    fetchUsdhBalance();
+  }, [evmAddress, currentNetwork]);
+
   const connectSolanaWallet = async () => {
     if (solanaWallet) {
       try {
@@ -248,6 +269,14 @@ const WalletConnectionDisplay = ({
                     style={{ color: "#00D4AA" }}
                   >
                     [{hbarBalance.toFixed(4)} HBAR]
+                  </span>
+                )}
+                {currentNetwork.chainId === 296 && usdhBalance !== null && (
+                  <span
+                    className="ml-1 font-semibold"
+                    style={{ color: "#00D4AA" }}
+                  >
+                    [{usdhBalance.toFixed(4)} USDh]
                   </span>
                 )}
                 {currentNetwork.chainId === 296 && balanceLoading && (

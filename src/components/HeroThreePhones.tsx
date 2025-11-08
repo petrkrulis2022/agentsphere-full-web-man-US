@@ -85,12 +85,12 @@ const HeroThreePhones = () => {
   ];
 
   return (
-    <section className="relative overflow-hidden pt-16 pb-20 md:pt-20 md:pb-28 bg-gradient-to-br from-gray-900 via-black to-blue-900">
+    <section className="relative overflow-hidden pt-16 pb-20 md:pt-20 md:pb-28 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       {/* Background elements */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute top-20 right-20 w-64 h-64 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-        <div className="absolute top-40 left-20 w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-20 right-40 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+        <div className="absolute top-20 right-20 w-64 h-64 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute top-40 left-20 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-20 right-40 w-72 h-72 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -108,7 +108,7 @@ const HeroThreePhones = () => {
                 Anywhere, Instantly
               </span>
             </h1>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
+            <p className="text-xl text-slate-300 max-w-3xl mx-auto mb-8">
               The future of location-based AI is here. Deploy intelligent agents
               using AR/QR technology, interact through blockchain payments, and
               transform any space into an interactive digital experience.
@@ -116,26 +116,26 @@ const HeroThreePhones = () => {
 
             {/* Status Indicators */}
             <div className="flex flex-wrap justify-center gap-6 mb-8">
-              <div className="flex items-center bg-green-500/20 rounded-full px-4 py-2">
+              <div className="flex items-center bg-green-500/10 border border-green-500/30 rounded-full px-4 py-2">
                 <div className="w-2 h-2 rounded-full bg-green-400 mr-2"></div>
-                <span className="text-green-400 text-sm">
+                <span className="text-green-300 text-sm">
                   Live on Blockchain
                 </span>
               </div>
-              <div className="flex items-center bg-blue-500/20 rounded-full px-4 py-2">
+              <div className="flex items-center bg-blue-500/10 border border-blue-500/30 rounded-full px-4 py-2">
                 <div className="w-2 h-2 rounded-full bg-blue-400 mr-2"></div>
-                <span className="text-blue-400 text-sm">AR/QR Ready</span>
+                <span className="text-blue-300 text-sm">AR/QR Ready</span>
               </div>
             </div>
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-              <button className="group bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-lg font-semibold transition-all duration-300 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105">
+              <button className="group bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white px-8 py-4 rounded-lg font-semibold transition-all duration-300 flex items-center space-x-2 shadow-lg hover:shadow-green-500/50 transform hover:scale-105">
                 <span>Join 2,847+ Early Users</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
 
-              <button className="group border-2 border-green-500 text-green-400 hover:bg-green-500/10 px-8 py-4 rounded-lg font-semibold transition-all duration-300">
+              <button className="group bg-slate-700/50 border border-slate-600 text-white hover:bg-slate-700 px-8 py-4 rounded-lg font-semibold transition-all duration-300">
                 <span>Watch Demo</span>
               </button>
             </div>
@@ -144,15 +144,15 @@ const HeroThreePhones = () => {
             <div className="grid grid-cols-3 gap-8 max-w-md mx-auto">
               <div className="text-center">
                 <div className="text-2xl font-bold text-white">2,847</div>
-                <div className="text-sm text-gray-400">Early Users</div>
+                <div className="text-sm text-slate-400">Early Users</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-white">12.5K</div>
-                <div className="text-sm text-gray-400">Agents Deployed</div>
+                <div className="text-sm text-slate-400">Agents Deployed</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-white">94%</div>
-                <div className="text-sm text-gray-400">Satisfaction</div>
+                <div className="text-sm text-slate-400">Satisfaction</div>
               </div>
             </div>
           </motion.div>
@@ -160,9 +160,9 @@ const HeroThreePhones = () => {
 
         {/* Feature Banner */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full px-6 py-3 border border-purple-500/30">
+          <div className="inline-flex items-center bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full px-6 py-3 border border-purple-500/30">
             <TrendingUp className="w-5 h-5 text-purple-400 mr-2" />
-            <span className="text-purple-300 font-medium">
+            <span className="text-purple-200 font-medium">
               🚀 Revolutionary AR+QR+Blockchain Integration
             </span>
           </div>
@@ -179,7 +179,7 @@ const HeroThreePhones = () => {
               className="group relative"
             >
               {/* Phone Container */}
-              <div className="relative bg-gray-900 rounded-[2.5rem] p-2 shadow-2xl border border-gray-700 hover:border-green-500/50 transition-all duration-300 transform hover:scale-105">
+              <div className="relative bg-slate-800/90 backdrop-blur-sm rounded-[2.5rem] p-2 shadow-2xl border border-slate-700/50 hover:border-blue-500/50 transition-all duration-300 transform hover:scale-105">
                 {/* Phone Screen */}
                 <div className="relative rounded-[2rem] overflow-hidden bg-black aspect-[9/16] h-[400px]">
                   {/* Background Image */}
@@ -197,13 +197,13 @@ const HeroThreePhones = () => {
                   <h3 className="text-lg font-bold text-white mb-2">
                     {phone.title}
                   </h3>
-                  <p className="text-sm text-gray-400 mb-4">
+                  <p className="text-sm text-slate-400 mb-4">
                     {phone.description}
                   </p>
 
                   {/* Action Button */}
                   <button
-                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 flex items-center space-x-2 mx-auto group-hover:shadow-lg transform group-hover:scale-105"
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 flex items-center space-x-2 mx-auto shadow-lg hover:shadow-green-500/50 transform group-hover:scale-105"
                     onClick={() => {
                       if (phone.external) {
                         window.open(phone.link, "_blank");

@@ -179,24 +179,109 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     if (currentNetwork?.chainId) {
       // Different tokens supported on different networks
       switch (currentNetwork.chainId) {
-        case 296: // Hedera Testnet - Use native HBAR
-          return ["HBAR"];
-        case 11155111: // Ethereum Sepolia
-          return ["USDC", "USDT", "DAI"];
+        case 296: // Hedera Testnet - Custom ERC-20 stablecoins
+          return [
+            "USDh",
+            "USDΔ",
+            "USDaix",
+            "USDΔ+",
+            "USDaix+",
+            "USDar",
+            "USDair",
+          ];
+        case 11155111: // Ethereum Sepolia - All custom stablecoins + standard ones
+          return [
+            "USDC",
+            "USDT",
+            "DAI",
+            "USDh",
+            "USDΔ",
+            "USDaix",
+            "USDΔ+",
+            "USDaix+",
+            "USDar",
+            "USDair",
+          ];
         case 421614: // Arbitrum Sepolia
-          return ["USDC", "USDT", "DAI"];
+          return [
+            "USDC",
+            "USDT",
+            "DAI",
+            "USDh",
+            "USDΔ",
+            "USDaix",
+            "USDΔ+",
+            "USDaix+",
+            "USDar",
+            "USDair",
+          ];
         case 84532: // Base Sepolia
-          return ["USDC", "USDT", "DAI"]; // Fixed: Removed CBETH, added DAI
+          return [
+            "USDC",
+            "USDT",
+            "DAI",
+            "USDh",
+            "USDΔ",
+            "USDaix",
+            "USDΔ+",
+            "USDaix+",
+            "USDar",
+            "USDair",
+          ];
         case 11155420: // OP Sepolia
-          return ["USDC", "USDT", "DAI"]; // Fixed: Removed OP, added DAI
+          return [
+            "USDC",
+            "USDT",
+            "DAI",
+            "USDh",
+            "USDΔ",
+            "USDaix",
+            "USDΔ+",
+            "USDaix+",
+            "USDar",
+            "USDair",
+          ];
         case 43113: // Avalanche Fuji
-          return ["USDC", "USDT", "DAI"]; // Fixed: Removed AVAX, added DAI
+          return [
+            "USDC",
+            "USDT",
+            "DAI",
+            "USDh",
+            "USDΔ",
+            "USDaix",
+            "USDΔ+",
+            "USDaix+",
+            "USDar",
+            "USDair",
+          ];
         case 80002: // Polygon Amoy
-          return ["USDC", "USDT", "DAI"]; // Polygon Amoy support
+          return [
+            "USDC",
+            "USDT",
+            "DAI",
+            "USDh",
+            "USDΔ",
+            "USDaix",
+            "USDΔ+",
+            "USDaix+",
+            "USDar",
+            "USDair",
+          ];
         case "devnet": // Solana Devnet
           return ["USDC"];
         default:
-          return ["USDC", "USDT", "DAI"]; // Fixed: Added DAI as default
+          return [
+            "USDC",
+            "USDT",
+            "DAI",
+            "USDh",
+            "USDΔ",
+            "USDaix",
+            "USDΔ+",
+            "USDaix+",
+            "USDar",
+            "USDair",
+          ]; // All stablecoins
       }
     }
     return [
@@ -219,41 +304,93 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   const getTokenAddresses = () => {
     if (currentNetwork?.chainId) {
       switch (currentNetwork.chainId) {
+        case 296: // Hedera Testnet
+          return {
+            USDh: "0x00000000000000000000000000000000006e24c7", // USDh ERC-20 stablecoin
+            USDΔ: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDaix: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            "USDΔ+": "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            "USDaix+": "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDar: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDair: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+          };
         case 11155111: // Ethereum Sepolia
           return {
             USDC: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
             USDT: "0x7169D38820dfd117C3FA1f22a697dBA58d90BA06",
             DAI: "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357",
+            USDh: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDΔ: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDaix: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            "USDΔ+": "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            "USDaix+": "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDar: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDair: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
           };
         case 421614: // Arbitrum Sepolia
           return {
             USDC: "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
             USDT: "0xb1D4538B4571d411F07960EF2838Ce337FE1E80E",
             ARB: "0x1234567890123456789012345678901234567890", // Placeholder
+            USDh: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDΔ: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDaix: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            "USDΔ+": "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            "USDaix+": "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDar: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDair: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
           };
         case 84532: // Base Sepolia
           return {
             USDC: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
             USDT: "0x1234567890123456789012345678901234567890", // Placeholder
             CBETH: "0x1234567890123456789012345678901234567890", // Placeholder
+            USDh: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDΔ: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDaix: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            "USDΔ+": "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            "USDaix+": "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDar: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDair: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
           };
         case 11155420: // OP Sepolia
           return {
             USDC: "0x5fd84259d3c8b37a387c0d8a4c5b0c0d7d3c0D7",
             USDT: "0x1234567890123456789012345678901234567890", // Placeholder
             OP: "0x1234567890123456789012345678901234567890", // Placeholder
+            USDh: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDΔ: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDaix: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            "USDΔ+": "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            "USDaix+": "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDar: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDair: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
           };
         case 43113: // Avalanche Fuji
           return {
             USDC: "0x5425890298aed601595a70AB815c96711a31Bc65",
             USDT: "0x1234567890123456789012345678901234567890", // Placeholder
             AVAX: "0x0000000000000000000000000000000000000000", // Native token
+            USDh: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDΔ: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDaix: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            "USDΔ+": "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            "USDaix+": "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDar: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDair: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
           };
         case 80002: // Polygon Amoy
           return {
             USDC: "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582",
             USDT: "0x1234567890123456789012345678901234567890", // Placeholder
             DAI: "0x1234567890123456789012345678901234567890", // Placeholder
+            USDh: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDΔ: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDaix: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            "USDΔ+": "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            "USDaix+": "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDar: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
+            USDair: "0x0000000000000000000000000000000000000000", // Placeholder - TODO: Add contract address
           };
         case "devnet": // Solana Devnet
           return {
@@ -1387,22 +1524,25 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         console.log("✅ Switching token to:", supportedTokens[0]);
         setSelectedToken(supportedTokens[0]); // Default to first supported token
 
-        // Adjust default interaction fee based on network
-        if (currentNetwork.chainId === 296) {
-          // Hedera Testnet - HBAR is cheaper, suggest 1 HBAR
-          console.log("💎 Setting Hedera HBAR fee to 1");
-          setInteractionFee(1);
-        } else if (
-          supportedTokens[0] === "USDC" ||
-          supportedTokens[0] === "USDT" ||
-          supportedTokens[0] === "DAI"
+        // Adjust default interaction fee based on token type
+        // All supported tokens are now ERC-20 stablecoins - suggest 10 tokens
+        const customStablecoins = [
+          "USDh",
+          "USDΔ",
+          "USDaix",
+          "USDΔ+",
+          "USDaix+",
+          "USDar",
+          "USDair",
+        ];
+        const standardStablecoins = ["USDC", "USDT", "DAI"];
+
+        if (
+          standardStablecoins.includes(supportedTokens[0]) ||
+          customStablecoins.includes(supportedTokens[0])
         ) {
-          // Stablecoins - suggest 10 tokens
-          if (interactionFee === 1) {
-            // Only update if it was set to HBAR default
-            console.log("💵 Setting stablecoin fee to 10");
-            setInteractionFee(10);
-          }
+          console.log("💵 Setting stablecoin fee to 10");
+          setInteractionFee(10);
         }
       }
     }
