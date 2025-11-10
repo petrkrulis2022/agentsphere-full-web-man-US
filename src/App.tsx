@@ -12,6 +12,7 @@ import Footer from "./components/Footer";
 import DeployObject from "./components/DeployObject";
 import { MultiChainAgentDashboard } from "./components/MultiChainAgentDashboard";
 import ARViewer from "./components/ARViewer";
+import ARAgentPlacer from "./components/ARAgentPlacer";
 
 // Initialize Supabase client only if credentials are available
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -103,6 +104,7 @@ function App() {
             path="/deploy"
             element={<DeployObject supabase={supabase} />}
           />
+          <Route path="/deploy/ar-placement" element={<ARAgentPlacer />} />
           <Route path="/dashboard" element={<MultiChainAgentDashboard />} />
           <Route path="/ar" element={<ARViewer supabase={supabase} />} />
         </Routes>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useSDK } from "@thirdweb-dev/react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   MapPin,
   Crosshair,
@@ -20,6 +21,7 @@ import {
   Navigation,
   Network,
   RefreshCw,
+  Camera,
 } from "lucide-react";
 import { useAddress } from "@thirdweb-dev/react";
 import PaymentMethodsSelector from "./PaymentMethodsSelector";
@@ -64,6 +66,8 @@ interface PreciseLocationData extends LocationData {
 const DeployObject = ({ supabase }: DeployObjectProps) => {
   const address = useAddress();
   const sdk = useSDK();
+  const navigate = useNavigate();
+  const routerLocation = useLocation();
   const [usdcBalance, setUsdcBalance] = useState<string>("0.000000");
   const [loadingBalance, setLoadingBalance] = useState(false);
   const [balanceError, setBalanceError] = useState<string>("");
@@ -1056,6 +1060,34 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     }
   };
 
+  // Navigate to AR placement mode
+  const navigateToARPlacement = () => {
+    // Save current form state
+    const deploymentData = {
+      agentName,
+      agentType,
+      agentDescription,
+      selectedToken,
+      interactionFee,
+      paymentMethods,
+      textChat,
+      voiceChat,
+      videoChat,
+      defiFeatures,
+      mcpIntegrations,
+      trailingAgent,
+      arNotifications,
+      locationType,
+      visibilityRange,
+      interactionRange,
+      revenueSharing,
+    };
+
+    navigate("/deploy/ar-placement", {
+      state: { deploymentData },
+    });
+  };
+
   // Deploy agent
   const deployAgent = async () => {
     /**
@@ -1504,6 +1536,54 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     initializeNetwork();
   }, [address, solanaWallet, evmWallet]);
 
+  // Check for AR-placed coordinates from navigation state
+  useEffect(() => {
+    if (routerLocation.state?.arPlacedCoordinates) {
+      const coords = routerLocation.state.arPlacedCoordinates;
+      console.log("📍 AR-placed coordinates received:", coords);
+
+      setLocation({
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        altitude: coords.altitude || 0,
+        accuracy: routerLocation.state.accuracy || 0,
+      });
+
+      // Restore all form data from AR navigation
+      const savedData = routerLocation.state;
+      if (savedData.agentName) setAgentName(savedData.agentName);
+      if (savedData.agentType) setAgentType(savedData.agentType);
+      if (savedData.agentDescription)
+        setAgentDescription(savedData.agentDescription);
+      if (savedData.selectedToken) setSelectedToken(savedData.selectedToken);
+      if (savedData.interactionFee !== undefined)
+        setInteractionFee(savedData.interactionFee);
+      if (savedData.paymentMethods) setPaymentMethods(savedData.paymentMethods);
+      if (savedData.textChat !== undefined) setTextChat(savedData.textChat);
+      if (savedData.voiceChat !== undefined) setVoiceChat(savedData.voiceChat);
+      if (savedData.videoChat !== undefined) setVideoChat(savedData.videoChat);
+      if (savedData.defiFeatures !== undefined)
+        setDefiFeatures(savedData.defiFeatures);
+      if (savedData.mcpIntegrations)
+        setMcpIntegrations(savedData.mcpIntegrations);
+      if (savedData.trailingAgent !== undefined)
+        setTrailingAgent(savedData.trailingAgent);
+      if (savedData.arNotifications !== undefined)
+        setArNotifications(savedData.arNotifications);
+      if (savedData.locationType) setLocationType(savedData.locationType);
+      if (savedData.visibilityRange !== undefined)
+        setVisibilityRange(savedData.visibilityRange);
+      if (savedData.interactionRange !== undefined)
+        setInteractionRange(savedData.interactionRange);
+      if (savedData.revenueSharing) setRevenueSharing(savedData.revenueSharing);
+
+      console.log("✅ Form data restored from AR placement");
+
+      // Clear the state to prevent re-applying on next render
+      window.history.replaceState({}, document.title);
+    }
+  }, [routerLocation]);
+
   // Update selected token when network changes
   useEffect(() => {
     if (currentNetwork) {
@@ -1899,9 +1979,17 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
               {/* Location Display */}
               {location && (
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-900 mb-2">
-                    Current Location
-                  </h3>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-gray-900">
+                      Current Location
+                    </h3>
+                    {routerLocation.state?.arPlacedCoordinates && (
+                      <span className="flex items-center text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                        <Camera className="h-3 w-3 mr-1" />
+                        AR Placed
+                      </span>
+                    )}
+                  </div>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-gray-600">Latitude:</span>
@@ -2522,6 +2610,25 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   </>
                 )}
               </button>
+
+              {/* AR Camera Placement Button */}
+              <button
+                onClick={navigateToARPlacement}
+                disabled={
+                  isDeploying || !currentNetwork || !currentNetwork.isSupported
+                }
+                className="w-full mt-4 flex items-center justify-center px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-lg font-semibold rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 border-2 border-blue-300"
+              >
+                <Camera className="h-6 w-6 mr-2" />
+                <span>Deploy with AR Camera</span>
+              </button>
+
+              <div className="mt-3 text-center text-sm text-gray-600">
+                <p>
+                  💡 <strong>Tip:</strong> You can use AR Camera to place your
+                  agent first, then fill in the name and details after returning
+                </p>
+              </div>
 
               {/* Network-specific deployment info */}
               {currentNetwork && currentNetwork.isSupported && (
