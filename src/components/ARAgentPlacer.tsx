@@ -49,12 +49,30 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
     initializeCamera();
     initializeDeviceOrientation();
 
+    // Add visibility change listener to stop camera when page is hidden
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        console.log("📹 Page hidden, stopping camera...");
+        if (videoRef.current && videoRef.current.srcObject) {
+          const stream = videoRef.current.srcObject as MediaStream;
+          stream.getTracks().forEach((track) => track.stop());
+          setCameraActive(false);
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       // Cleanup camera stream
+      console.log("📹 Component unmounting, stopping camera...");
       if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
         stream.getTracks().forEach((track) => track.stop());
+        videoRef.current.srcObject = null;
       }
+      // Remove visibility listener
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
