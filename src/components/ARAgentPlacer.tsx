@@ -203,6 +203,15 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
     });
   };
 
+  const stopCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach((track) => track.stop());
+      videoRef.current.srcObject = null;
+      setCameraActive(false);
+    }
+  };
+
   const confirmPlacement = () => {
     if (!userLocation || !placedPosition) {
       setError("Location or placement position not available");
@@ -231,6 +240,9 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
       altitude: 0, // Ground level
     };
 
+    // Stop camera before navigating
+    stopCamera();
+
     // Navigate back to deployment page with coordinates
     navigate("/deploy", {
       state: {
@@ -247,6 +259,9 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
   };
 
   const cancelPlacement = () => {
+    // Stop camera before navigating
+    stopCamera();
+
     navigate("/deploy", {
       state: deploymentData,
     });
