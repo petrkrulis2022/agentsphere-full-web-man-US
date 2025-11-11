@@ -123,6 +123,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   const [interactionFee, setInteractionFee] = useState(10); // Default to 10 USDC instead of 1
   const [selectedToken, setSelectedToken] = useState("USDC"); // Changed to USDC as default
   const [revenueSharing, setRevenueSharing] = useState(70);
+  const [feeType, setFeeType] = useState<"fixed" | "dynamic">("fixed"); // Fee type for payment terminals
 
   // Payment Methods (6-faced cube system)
   const [paymentMethods, setPaymentMethods] = useState<any>(null);
@@ -1069,6 +1070,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       agentDescription,
       selectedToken,
       interactionFee,
+      feeType, // Include feeType in saved state
       paymentMethods,
       textChat,
       voiceChat,
@@ -1179,10 +1181,25 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
             ? currentNetwork.chainId
             : null, // 11155111 or null for Solana
 
-        // DYNAMIC PAYMENT DATA - FIXED
-        interaction_fee_amount: parseFloat(interactionFee.toString()), // 10.0
-        interaction_fee_token: selectedToken, // "USDC"
-        interaction_fee_usdfc: interactionFee, // Legacy field
+        // DYNAMIC PAYMENT DATA - WITH FEE TYPE SUPPORT
+        fee_type:
+          agentType === "payment_terminal" ||
+          agentType === "trailing_payment_terminal"
+            ? feeType
+            : "fixed", // Add fee_type field
+        interaction_fee_amount:
+          (agentType === "payment_terminal" ||
+            agentType === "trailing_payment_terminal") &&
+          feeType === "dynamic"
+            ? null
+            : parseFloat(interactionFee.toString()), // null for dynamic payment terminals, amount for others
+        interaction_fee_token: selectedToken, // "USDh" or "USDC"
+        interaction_fee_usdfc:
+          (agentType === "payment_terminal" ||
+            agentType === "trailing_payment_terminal") &&
+          feeType === "dynamic"
+            ? null
+            : interactionFee, // Legacy field, null for dynamic
 
         // Wallet configuration
         owner_wallet:
@@ -1558,6 +1575,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       if (savedData.selectedToken) setSelectedToken(savedData.selectedToken);
       if (savedData.interactionFee !== undefined)
         setInteractionFee(savedData.interactionFee);
+      if (savedData.feeType) setFeeType(savedData.feeType); // Restore fee type
       if (savedData.paymentMethods) setPaymentMethods(savedData.paymentMethods);
       if (savedData.textChat !== undefined) setTextChat(savedData.textChat);
       if (savedData.voiceChat !== undefined) setVoiceChat(savedData.voiceChat);
@@ -2398,25 +2416,65 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Interaction Fee{" "}
-                    {agentType === "payment_terminal" ||
-                    agentType === "trailing_payment_terminal"
-                      ? "(Dynamic Amount)"
-                      : ""}
+                    Interaction Fee
                   </label>
-                  {agentType === "payment_terminal" ||
-                  agentType === "trailing_payment_terminal" ? (
+
+                  {/* Fee Type Selector for Payment Terminals */}
+                  {(agentType === "payment_terminal" ||
+                    agentType === "trailing_payment_terminal") && (
+                    <div className="mb-4 space-y-3">
+                      <div className="flex gap-4">
+                        <label className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="feeType"
+                            value="fixed"
+                            checked={feeType === "fixed"}
+                            onChange={(e) =>
+                              setFeeType(e.target.value as "fixed" | "dynamic")
+                            }
+                            className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-sm font-medium text-gray-700">
+                            Fixed Fee
+                          </span>
+                        </label>
+                        <label className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="feeType"
+                            value="dynamic"
+                            checked={feeType === "dynamic"}
+                            onChange={(e) =>
+                              setFeeType(e.target.value as "fixed" | "dynamic")
+                            }
+                            className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-sm font-medium text-gray-700">
+                            Dynamic Fee
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Dynamic Fee Info Box */}
+                  {(agentType === "payment_terminal" ||
+                    agentType === "trailing_payment_terminal") &&
+                  feeType === "dynamic" ? (
                     <div className="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg">
                       <p className="text-sm text-blue-800 font-medium">
                         💰 Dynamic Amount from Merchant
                       </p>
                       <p className="text-xs text-blue-600 mt-1">
-                        Payment terminals accept variable amounts from merchants
-                        (e-shops, on-ramps, etc.). The amount is set per
-                        transaction, not fixed.
+                        This terminal will accept variable amounts from
+                        merchants. The fee will be set per transaction by
+                        e-shops, on-ramps, or other payment sources. No fixed
+                        amount is required.
                       </p>
                     </div>
                   ) : (
+                    /* Fixed Fee Input */
                     <>
                       <input
                         type="number"
@@ -2429,12 +2487,14 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                         }}
                         min="0.1"
                         step="0.1"
-                        placeholder="Enter fee amount (integer only)"
+                        placeholder="Enter fee amount"
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                       />
                       <p className="text-xs text-gray-500 mt-1">
-                        This exact amount will be stored and displayed in agent
-                        cards
+                        {agentType === "payment_terminal" ||
+                        agentType === "trailing_payment_terminal"
+                          ? "Fixed amount for this payment terminal"
+                          : "This exact amount will be stored and displayed in agent cards"}
                       </p>
                     </>
                   )}
