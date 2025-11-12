@@ -7,6 +7,12 @@ export default defineConfig({
   server: {
     port: 5174,
     strictPort: true,
+    allowedHosts: [
+      "6529c4b46a03.ngrok-free.app",
+      "8323ecb51478.ngrok-free.app",
+      "8ac2a20e77ca.ngrok-free.app",
+      "e07b521b8735.ngrok-free.app",
+    ],
     proxy: {
       // Proxy API requests to avoid CORS issues
       "/api": {
@@ -18,7 +24,10 @@ export default defineConfig({
       origin: [
         "http://localhost:5173",
         "http://localhost:5174",
+        "https://6529c4b46a03.ngrok-free.app",
         "https://8323ecb51478.ngrok-free.app",
+        "https://8ac2a20e77ca.ngrok-free.app",
+        "https://e07b521b8735.ngrok-free.app",
       ],
       credentials: true,
     },
