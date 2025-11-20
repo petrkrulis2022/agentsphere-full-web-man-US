@@ -22,7 +22,12 @@ import {
   Network,
   RefreshCw,
   Camera,
+  Bus,
+  Train,
+  Hotel,
+  Plane,
 } from "lucide-react";
+import { hederaService } from "../services/hederaService";
 import { useAddress } from "@thirdweb-dev/react";
 import PaymentMethodsSelector from "./PaymentMethodsSelector";
 import BankDetailsForm from "./BankDetailsForm";
@@ -131,18 +136,32 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     "virtual_card" | "bank_qr" | null
   >(null);
 
+  // Hedera AI Agent Kit States
+  const [hederaWalletCreating, setHederaWalletCreating] = useState(false);
+  const [hederaAccountId, setHederaAccountId] = useState<string>("");
+  const [hederaPrivateKey, setHederaPrivateKey] = useState<string>("");
+  const [hederaNftId, setHederaNftId] = useState<string>("");
+  const [a2aEndpoint, setA2aEndpoint] = useState<string>("");
+  const [x402Enabled, setX402Enabled] = useState(false);
+  const [mcpServers, setMcpServers] = useState<string[]>([]);
+  const [agentCapabilities, setAgentCapabilities] = useState<{
+    chat: boolean;
+    voice: boolean;
+    video: boolean;
+    a2a: boolean;
+    x402: boolean;
+  }>({
+    chat: true,
+    voice: false,
+    video: false,
+    a2a: false,
+    x402: false,
+  });
+
   // Deployment states
   const [isDeploying, setIsDeploying] = useState(false);
   const [deploymentSuccess, setDeploymentSuccess] = useState(false);
   const [deploymentError, setDeploymentError] = useState("");
-
-  // Agent wallet = User connected wallet (same address)
-  // Use Solana wallet address if connected, otherwise use EVM address (MetaMask or Thirdweb)
-  const agentWallet =
-    solanaWallet?.publicKey?.toString() ||
-    evmWallet ||
-    address ||
-    "0x000...000";
 
   // USDC token contract address on Base Sepolia
   // USDC contract addresses for different networks
@@ -167,6 +186,13 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     { value: "content_creator", label: "Content Creator" },
     { value: "real_estate_broker", label: "Real Estate Broker" },
     { value: "bus_stop_agent", label: "Bus Stop Agent" },
+    // Hedera AI Travel Agents with A2A Communication
+    { value: "bus_agent", label: "🚌 Bus Agent (Hedera AI)" },
+    { value: "train_agent", label: "🚆 Train Agent (Hedera AI)" },
+    { value: "hotel_agent", label: "🏨 Hotel Agent (Hedera AI)" },
+    { value: "flight_agent", label: "✈️ Flight Agent (Hedera AI)" },
+    { value: "restaurant_agent", label: "🍽️ Restaurant Agent (Hedera AI)" },
+    { value: "travel_agent", label: "🌍 Travel Coordinator (Hedera AI)" },
     // Conditional trailing agent types
     ...(trailingAgent
       ? [
@@ -1145,6 +1171,88 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         );
       }
 
+      // HEDERA AI AGENT KIT INTEGRATION
+      // Check if this is a Hedera AI agent type (bus, train, hotel, etc.)
+      const isHederaAgent = [
+        "bus_agent",
+        "train_agent",
+        "hotel_agent",
+        "flight_agent",
+        "restaurant_agent",
+        "travel_agent",
+      ].includes(agentType);
+
+      let hederaWalletData = null;
+      let hederaIdentityData = null;
+
+      if (isHederaAgent) {
+        console.log(`🔷 Creating Hedera wallet for ${agentType}...`);
+        setHederaWalletCreating(true);
+
+        try {
+          // 1. Create Hedera wallet for the agent
+          hederaWalletData = await hederaService.createAgentWallet(10);
+          setHederaAccountId(hederaWalletData.accountId);
+          setHederaPrivateKey(hederaWalletData.privateKey);
+
+          console.log(
+            `✅ Hedera wallet created: ${hederaWalletData.accountId}`
+          );
+
+          // 2. Fund the agent wallet with initial USDh
+          await hederaService.fundAgentWallet(hederaWalletData.accountId, 100);
+          console.log(`✅ Agent funded with 100 USDh`);
+
+          // 3. Mint ERC-8004 identity NFT (optional - skip if contract not deployed)
+          const agentCardUrl = `${window.location.origin}/agents/${agentName
+            .toLowerCase()
+            .replace(/\\s+/g, "-")}`;
+
+          try {
+            hederaIdentityData = await hederaService.mintAgentIdentity(
+              hederaWalletData.accountId,
+              agentCardUrl,
+              agentName
+            );
+            setHederaNftId(hederaIdentityData.nftId);
+            console.log(`✅ Identity NFT minted: ${hederaIdentityData.nftId}`);
+          } catch (nftError) {
+            console.warn(
+              `⚠️ NFT minting skipped (contract not deployed):`,
+              nftError
+            );
+            // Continue without NFT - wallet creation is more important
+          }
+
+          // 4. Set A2A endpoint (will be agent's microservice URL)
+          const a2aUrl = `${
+            import.meta.env.VITE_A2A_BASE_URL || "http://localhost:3001"
+          }/agents/${hederaWalletData.accountId}`;
+          setA2aEndpoint(a2aUrl);
+
+          // 5. Enable A2A and x402 capabilities for Hedera agents
+          setAgentCapabilities({
+            chat: textChat,
+            voice: voiceChat,
+            video: videoChat,
+            a2a: true, // Always true for Hedera agents
+            x402: true, // Always true for Hedera agents
+          });
+          setX402Enabled(true);
+        } catch (hederaError) {
+          console.error("❌ Hedera integration failed:", hederaError);
+          throw new Error(
+            `Hedera wallet creation failed: ${
+              hederaError instanceof Error
+                ? hederaError.message
+                : "Unknown error"
+            }`
+          );
+        } finally {
+          setHederaWalletCreating(false);
+        }
+      }
+
       const deploymentData = {
         user_id: solanaWallet?.publicKey?.toString() || evmWallet || address,
         name: agentName.trim(),
@@ -1204,8 +1312,14 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         // Wallet configuration
         owner_wallet:
           solanaWallet?.publicKey?.toString() || evmWallet || address,
-        agent_wallet_address: agentWallet,
-        agent_wallet_type: solanaWallet?.publicKey
+        agent_wallet_address:
+          hederaWalletData?.evmAddress ||
+          solanaWallet?.publicKey?.toString() ||
+          evmWallet ||
+          address,
+        agent_wallet_type: hederaWalletData?.accountId
+          ? "hedera_wallet"
+          : solanaWallet?.publicKey
           ? "solana_wallet"
           : "evm_wallet",
         deployer_address:
@@ -1235,6 +1349,21 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         // Integrations
         mcp_integrations: mcpIntegrations.length > 0 ? mcpIntegrations : null,
         payment_methods: paymentMethods || {},
+
+        // HEDERA AI AGENT KIT FIELDS
+        hedera_account_id: hederaWalletData?.accountId || null,
+        hedera_private_key: hederaWalletData?.privateKey || null, // IMPORTANT: Should be encrypted in production!
+        hedera_nft_id: hederaIdentityData?.nftId || null,
+        agent_wallet_public_key: hederaWalletData?.publicKey || null,
+        agent_initial_balance: isHederaAgent ? 100 : 0, // 100 USDh for Hedera agents
+        agent_capabilities: isHederaAgent
+          ? agentCapabilities
+          : { chat: textChat, voice: voiceChat, video: videoChat },
+        a2a_endpoint: isHederaAgent ? a2aEndpoint : null,
+        mcp_servers: isHederaAgent
+          ? ["https://nexus.thirdweb.com/api"]
+          : mcpServers,
+        x402_enabled: isHederaAgent ? true : false,
 
         // DYNAMIC PAYMENT CONFIG - FIXED
         payment_config: {
@@ -2351,7 +2480,11 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                       Agent Wallet (Payment Receiver)
                     </label>
                     <div className="bg-white p-3 rounded border font-mono text-sm">
-                      {agentWallet}
+                      {hederaAccountId ||
+                        solanaWallet?.publicKey?.toString() ||
+                        evmWallet ||
+                        address ||
+                        "Will be created on deployment"}
                     </div>
                   </div>
 
@@ -2370,11 +2503,20 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
                 <div className="bg-blue-50 rounded-lg p-4">
                   <p className="text-sm text-blue-800">
-                    <strong>Purpose:</strong> The agent's wallet address is
-                    identical to your connected wallet. This address will be the
-                    receiver of all payments when users interact with your
-                    deployed agent. The interaction fee and token selection
-                    below will be used for generating payment QR codes.
+                    <strong>Purpose:</strong>{" "}
+                    {agentType &&
+                    [
+                      "bus_agent",
+                      "train_agent",
+                      "hotel_agent",
+                      "flight_agent",
+                      "restaurant_agent",
+                      "travel_agent",
+                    ].includes(agentType)
+                      ? "Hedera AI agents receive their own unique blockchain wallet (Hedera account). This wallet enables autonomous payments for x402 APIs and A2A communication. You (the deployer) receive payments to your connected wallet."
+                      : "The agent's wallet address is identical to your connected wallet. This address will be the receiver of all payments when users interact with your deployed agent."}{" "}
+                    The interaction fee and token selection below will be used
+                    for generating payment QR codes.
                   </p>
                 </div>
               </div>
@@ -2581,7 +2723,11 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
               <PaymentMethodsSelector
                 onPaymentMethodsChange={handlePaymentMethodsChange}
                 connectedWallet={
-                  agentWallet !== "0x000...000" ? agentWallet : null
+                  hederaAccountId ||
+                  solanaWallet?.publicKey?.toString() ||
+                  evmWallet ||
+                  address ||
+                  null
                 }
                 initialMethods={paymentMethods}
               />
