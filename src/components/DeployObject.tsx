@@ -1354,6 +1354,11 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         hedera_account_id: hederaWalletData?.accountId || null,
         hedera_private_key: hederaWalletData?.privateKey || null, // IMPORTANT: Should be encrypted in production!
         hedera_nft_id: hederaIdentityData?.nftId || null,
+        agent_identity: hederaIdentityData?.nftId
+          ? hederaIdentityData.nftId
+          : hederaWalletData?.accountId
+          ? `did:hedera:testnet:${hederaWalletData.accountId}`
+          : null,
         agent_wallet_public_key: hederaWalletData?.publicKey || null,
         agent_initial_balance: isHederaAgent ? 100 : 0, // 100 USDh for Hedera agents
         agent_capabilities: isHederaAgent

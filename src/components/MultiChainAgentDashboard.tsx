@@ -62,6 +62,7 @@ const FILTER_OPTIONS = [
 
 const NETWORK_FILTER_OPTIONS = [
   { value: "all", label: "All Networks" },
+  { value: "Hedera Testnet", label: "Hedera Testnet" },
   ...Object.entries(EVM_NETWORKS).map(([chainId, network]) => ({
     value: chainId,
     label: network.name,
@@ -94,7 +95,7 @@ export const MultiChainAgentDashboard: React.FC = () => {
 
     // Then load the actual data
     loadAgents();
-    loadStats();
+    loadNetworkStats();
   }, []);
 
   // Debug function to test Supabase column access
@@ -138,33 +139,49 @@ export const MultiChainAgentDashboard: React.FC = () => {
     try {
       setLoading(true);
 
-      console.log("� NEW AGENT SERVICE: Loading comprehensive agent data...");
+      console.log("📊 Loading agents from database...");
 
-      // Use the new AgentDataService for comprehensive data
-      const agents = await AgentDataService.getAllAgents({
-        network: selectedNetwork !== "all" ? selectedNetwork : undefined,
-        agent_type: selectedFilter !== "all" ? selectedFilter : undefined,
-      });
+      // Simple direct query - get all active agents
+      const { data, error } = await supabase
+        .from("deployed_objects")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
 
-      console.log(
-        `✅ NEW AGENT SERVICE: Loaded ${agents.length} comprehensive agents`
-      );
-      console.log("✅ NEW AGENT SERVICE: First agent sample:", {
-        id: agents[0]?.id,
-        name: agents[0]?.name,
-        interaction_fee_amount:
-          agents[0]?.payment_config?.interaction_fee_amount,
-        interaction_fee_token: agents[0]?.payment_config?.interaction_fee_token,
-        deployment_network_name: agents[0]?.deployment_network_name,
-        deployment_chain_id: agents[0]?.deployment_chain_id,
-        payment_methods: agents[0]?.payment_config?.payment_methods,
-        wallet_address: agents[0]?.wallet_config?.agent_wallet?.address,
-        revenue_potential: agents[0]?.payment_config?.revenue_potential,
-      });
+      if (error) {
+        console.error("❌ Error loading agents:", error);
+        throw error;
+      }
 
-      setAgents(agents);
+      console.log(`✅ Loaded ${data?.length || 0} agents from database`);
+
+      if (data && data.length > 0) {
+        console.log("✅ First agent sample:", {
+          id: data[0].id,
+          name: data[0].name,
+          agent_identity: data[0].agent_identity,
+          object_type: data[0].object_type,
+        });
+      }
+
+      // Map to DeployedAgent format
+      const mappedAgents = (data || []).map((agent) => ({
+        ...agent,
+        deployment_network: {
+          primary: {
+            name: agent.deployment_network_name || agent.network || "Unknown",
+            chainId: agent.deployment_chain_id || agent.chain_id || "Unknown",
+          },
+          additional: [],
+          cross_chain_enabled: false,
+        },
+        supported_networks: [agent.network || "Unknown"],
+        status: agent.deployment_status || "active",
+      }));
+
+      setAgents(mappedAgents);
     } catch (error) {
-      console.error("❌ NEW AGENT SERVICE: Error loading agents:", error);
+      console.error("❌ Error loading agents:", error);
     } finally {
       setLoading(false);
     }
@@ -346,9 +363,19 @@ export const MultiChainAgentDashboard: React.FC = () => {
       >
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              {agent.name}
-            </h3>
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {agent.name}
+              </h3>
+              {(agent as any).agent_identity && (
+                <span
+                  className="px-2 py-0.5 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 rounded text-xs font-medium"
+                  title={(agent as any).agent_identity}
+                >
+                  🆔 Verified
+                </span>
+              )}
+            </div>
             <p className="text-sm text-gray-600 mt-1">{agent.description}</p>
           </div>
           <div className="flex space-x-2">
@@ -804,10 +831,27 @@ export const MultiChainAgentDashboard: React.FC = () => {
             >
               <div className="p-6">
                 <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">
-                      {selectedAgent.name}
-                    </h2>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h2 className="text-2xl font-bold text-gray-900">
+                        {selectedAgent.name}
+                      </h2>
+                      {(selectedAgent as any).agent_identity && (
+                        <span className="px-3 py-1 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 rounded-full text-sm font-medium">
+                          🆔 Verified Identity
+                        </span>
+                      )}
+                    </div>
+                    {(selectedAgent as any).agent_identity && (
+                      <div className="mb-2 p-2 bg-gray-50 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">
+                          Agent Identity:
+                        </p>
+                        <p className="text-sm font-mono text-gray-700 break-all">
+                          {(selectedAgent as any).agent_identity}
+                        </p>
+                      </div>
+                    )}
                     <p className="text-gray-600 mt-1">
                       {selectedAgent.description}
                     </p>
