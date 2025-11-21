@@ -150,44 +150,63 @@ export class FlightradarMcpService {
         return cachedResult;
       }
 
-      // Build MCP request payload
-      const requestPayload = {
-        method: "queryFlights",
-        params: {
-          origin: origin.toUpperCase(),
-          destination: destination.toUpperCase(),
-          date,
-          time,
-          maxResults,
-          includeAlternatives,
-        },
-        timestamp: new Date().toISOString(),
-      };
+      // ═══════════════════════════════════════════════════════════════════════
+      // TODO: REPLACE THIS MOCK WITH REAL MCP SERVER INTEGRATION
+      // ═══════════════════════════════════════════════════════════════════════
+      // CURRENT: Mock implementation for development (no real payments)
+      // FUTURE: Replace with custom MCP server that accepts USDH on Hedera
+      //
+      // When integrating real MCP:
+      // 1. Remove this entire mock block (lines 153-202)
+      // 2. Uncomment the real x402 payment flow below
+      // 3. Update MCP endpoint to your custom server URL
+      // 4. Verify USDH token ID matches production token
+      // 5. Test with small amounts first
+      //
+      // Real MCP server requirements:
+      // - Accept x402 payment protocol
+      // - Support USDH stablecoin (Hedera HTS)
+      // - Return flight data in same format as mock
+      // - Cost: ~0.00022 USDH per query
+      // ═══════════════════════════════════════════════════════════════════════
 
-      // Execute x402 payment request
-      const startTime = Date.now();
-      const responseData = await this.x402Service.makeX402Request(
-        this.mcpEndpoint,
-        {
-          method: "POST",
-          headers: {
-            "X-MCP-Route": this.mcpRouteId,
-            "X-MCP-Action": "queryFlights",
-          },
-        },
-        requestPayload
+      console.log(
+        `[FlightradarMCP] MOCK MODE - Returning simulated flight data`
       );
 
-      const responseTime = Date.now() - startTime;
-      console.log(`[FlightradarMCP] Query successful (${responseTime}ms)`);
+      const startTime = Date.now();
 
-      // Attach payment metadata
+      // Simulate API delay
+      await new Promise((resolve) =>
+        setTimeout(resolve, 500 + Math.random() * 1000)
+      );
+
+      // Generate mock flight data based on route
+      const mockFlights = this._generateMockFlights(origin, destination, date);
+
+      // Generate fake x402 transaction ID (Hedera format)
+      const fakeTransactionId = `0.0.${Math.floor(
+        Math.random() * 1000000
+      )}@${Date.now()}.${Math.floor(Math.random() * 1000000000)}`;
+
+      const responseTime = Date.now() - startTime;
+      console.log(`[FlightradarMCP] MOCK query successful (${responseTime}ms)`);
+
+      // Return mock result with fake x402 payment
       const result = {
-        ...responseData,
+        flights: mockFlights,
+        query: { origin, destination, date },
         payment: {
           cost_usdh: "0.00022",
+          amount: 0.00022,
+          currency: "USDH",
+          transaction_id: fakeTransactionId,
+          hashscan_url: `https://hashscan.io/testnet/transaction/${fakeTransactionId}`,
           response_time_ms: responseTime,
           timestamp: new Date().toISOString(),
+          protocol: "x402",
+          service: "Flightradar24 MCP (MOCKED)",
+          mock: true,
         },
       };
 
@@ -195,6 +214,56 @@ export class FlightradarMcpService {
       this._setCache(cacheKey, result);
 
       return result;
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // END OF MOCK - REAL MCP IMPLEMENTATION STARTS HERE
+      // ═══════════════════════════════════════════════════════════════════════
+      // Uncomment this section when integrating real MCP server:
+      /*
+      // Build real MCP request payload
+      const requestPayload = {
+        method: "queryFlights",
+        params: {
+          origin,
+          destination,
+          date,
+          maxResults,
+          includeAlternatives,
+        },
+        timestamp: new Date().toISOString(),
+      };
+
+      // Execute x402 request to real MCP server
+      const responseData = await this.x402Service.makeX402Request(
+        this.mcpEndpoint, // Your custom MCP server URL
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-MCP-Route": this.mcpRouteId,
+            "X-MCP-Action": "queryFlights",
+          },
+        },
+        requestPayload
+      );
+
+      const result = {
+        ...responseData,
+        payment: {
+          ...responseData.payment,
+          cost_usdh: "0.00022",
+          timestamp: new Date().toISOString(),
+          protocol: "x402",
+          service: "Custom Flight MCP",
+        },
+      };
+
+      // Cache result
+      this._setCache(cacheKey, result);
+
+      return result;
+      */
+      // ═══════════════════════════════════════════════════════════════════════
     } catch (error) {
       console.error(`[FlightradarMCP] Query failed:`, error);
       throw new Error(`Flightradar24 MCP query failed: ${error.message}`);
@@ -298,6 +367,73 @@ export class FlightradarMcpService {
   clearCache() {
     this.cache.clear();
     console.log(`[FlightradarMCP] Cache cleared`);
+  }
+
+  /**
+   * Generate mock flight data for development
+   *
+   * TODO: DELETE THIS FUNCTION when integrating real MCP server
+   * This is only used for mocking during development phase.
+   */
+  _generateMockFlights(origin, destination, date) {
+    const airlines = [
+      "Wizz Air",
+      "Ryanair",
+      "British Airways",
+      "Lufthansa",
+      "Air France",
+    ];
+    const numFlights = 2 + Math.floor(Math.random() * 4); // 2-5 flights
+
+    const flights = [];
+    const baseTime = new Date(date);
+    baseTime.setHours(6, 0, 0, 0);
+
+    for (let i = 0; i < numFlights; i++) {
+      const airline = airlines[Math.floor(Math.random() * airlines.length)];
+      const flightNum = Math.floor(1000 + Math.random() * 8000);
+      const departHours = 6 + i * 3 + Math.floor(Math.random() * 2);
+      const departMins = Math.floor(Math.random() * 60);
+
+      const departure = new Date(baseTime);
+      departure.setHours(departHours, departMins);
+
+      const arrival = new Date(departure);
+      arrival.setHours(arrival.getHours() + 2 + Math.floor(Math.random() * 2));
+      arrival.setMinutes(arrival.getMinutes() + Math.floor(Math.random() * 60));
+
+      flights.push({
+        airline: airline,
+        flightNumber: `${airline.substring(0, 2).toUpperCase()}${flightNum}`,
+        departure: {
+          time: departure.toISOString(),
+          airport: origin,
+          terminal: `${Math.floor(Math.random() * 3) + 1}`,
+          gate: `${String.fromCharCode(65 + Math.floor(Math.random() * 10))}${
+            Math.floor(Math.random() * 20) + 1
+          }`,
+        },
+        arrival: {
+          time: arrival.toISOString(),
+          airport: destination,
+          terminal: `${Math.floor(Math.random() * 3) + 1}`,
+          gate: `${String.fromCharCode(65 + Math.floor(Math.random() * 10))}${
+            Math.floor(Math.random() * 20) + 1
+          }`,
+        },
+        duration: `${Math.floor((arrival - departure) / 3600000)}h ${Math.floor(
+          ((arrival - departure) % 3600000) / 60000
+        )}m`,
+        aircraft: ["Boeing 737-800", "Airbus A320", "Airbus A321"][
+          Math.floor(Math.random() * 3)
+        ],
+        price: Math.floor(45 + Math.random() * 200),
+        status: "On Time",
+        available_seats: Math.floor(20 + Math.random() * 150),
+      });
+    }
+
+    return flights;
   }
 
   /**

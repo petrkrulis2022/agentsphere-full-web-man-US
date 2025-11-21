@@ -16,16 +16,11 @@
  * - AGENT_PORT: Server port (default: 4001)
  */
 
+import "dotenv/config";
 import express from "express";
+import cors from "cors";
 import { v4 as uuidv4 } from "uuid";
-import type { AgentCard, Message, Task } from "@a2a-js/sdk";
-import {
-  AgentExecutor,
-  RequestContext,
-  ExecutionEventBus,
-  DefaultRequestHandler,
-  InMemoryTaskStore,
-} from "@a2a-js/sdk/server";
+import { DefaultRequestHandler, InMemoryTaskStore } from "@a2a-js/sdk/server";
 import { A2AExpressApp } from "@a2a-js/sdk/server/express";
 import FlightradarMcpService from "./services/mcpService.js";
 
@@ -66,7 +61,7 @@ if (MCP_FLIGHTRADAR_ENABLED) {
 }
 
 // Define Travel Agent Card
-const travelAgentCard: AgentCard = {
+const travelAgentCard = {
   name: "Travel Agent",
   description:
     "Coordinates multi-modal travel packages. Uses x402 to query Flightradar24 for real-time flight data, then coordinates with Bus, Train, and Hotel agents.",
@@ -99,11 +94,8 @@ const travelAgentCard: AgentCard = {
 };
 
 // Travel Agent Executor
-class TravelAgentExecutor implements AgentExecutor {
-  async execute(
-    requestContext: RequestContext,
-    eventBus: ExecutionEventBus
-  ): Promise<void> {
+class TravelAgentExecutor {
+  async execute(requestContext, eventBus) {
     try {
       const userMessage =
         requestContext.messages[requestContext.messages.length - 1];
@@ -128,7 +120,7 @@ class TravelAgentExecutor implements AgentExecutor {
       }
 
       // Create response message
-      const responseMessage: Message = {
+      const responseMessage = {
         kind: "message",
         messageId: uuidv4(),
         role: "agent",
@@ -141,7 +133,7 @@ class TravelAgentExecutor implements AgentExecutor {
     } catch (error) {
       console.error("[TravelAgent] Execution error:", error);
 
-      const errorMessage: Message = {
+      const errorMessage = {
         kind: "message",
         messageId: uuidv4(),
         role: "agent",
@@ -162,7 +154,7 @@ class TravelAgentExecutor implements AgentExecutor {
   /**
    * Parse user message to determine intent
    */
-  _parseUserRequest(messageText: string): any {
+  _parseUserRequest(messageText) {
     const lowerText = messageText.toLowerCase();
 
     // Detect flight query
@@ -206,7 +198,7 @@ class TravelAgentExecutor implements AgentExecutor {
   /**
    * Handle flight query using Flightradar24 MCP
    */
-  async _handleFlightQuery(request: any): Promise<string> {
+  async _handleFlightQuery(request) {
     if (!MCP_FLIGHTRADAR_ENABLED || !flightradarService) {
       return "Flight query service is not available. MCP integration is disabled.";
     }
@@ -262,7 +254,7 @@ class TravelAgentExecutor implements AgentExecutor {
   /**
    * Handle trip planning (coordinates with other agents)
    */
-  async _handleTripPlanning(request: any): Promise<string> {
+  async _handleTripPlanning(request) {
     // This would coordinate with Bus, Train, Hotel agents via A2A
     // For now, return placeholder
     return `🌍 Travel Package Planning\n\nStep 1: Query flights via Flightradar24 (x402)\nStep 2: Coordinate with Bus Agent (A2A)\nStep 3: Coordinate with Train Agent (A2A)\nStep 4: Coordinate with Hotel Agent (A2A)\nStep 5: Present complete package to user\n\n(Full implementation pending)`;
@@ -271,11 +263,11 @@ class TravelAgentExecutor implements AgentExecutor {
   /**
    * Handle general queries
    */
-  _handleGeneralQuery(messageText: string): string {
+  _handleGeneralQuery(messageText) {
     return `I am the Travel Agent. I can help you:\n1. Query real-time flight data (via Flightradar24 MCP)\n2. Plan complete travel packages\n3. Coordinate with Bus, Train, and Hotel agents\n\nExample: "Find flights from BUD to BCN on 2025-01-15"`;
   }
 
-  cancelTask = async (): Promise<void> => {};
+  cancelTask = async () => {};
 }
 
 // Initialize server
@@ -289,6 +281,16 @@ const requestHandler = new DefaultRequestHandler(
 const appBuilder = new A2AExpressApp(requestHandler);
 const expressApp = appBuilder.setupRoutes(express());
 
+// Enable CORS for AR Viewer
+expressApp.use(
+  cors({
+    origin: "*", // Allow all origins for development (restrict in production)
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
+
 // Health check endpoint
 expressApp.get("/health", (req, res) => {
   res.json({
@@ -298,6 +300,115 @@ expressApp.get("/health", (req, res) => {
     mcp_enabled: MCP_FLIGHTRADAR_ENABLED,
     account_id: AGENT_ACCOUNT_ID,
   });
+});
+
+// AR Viewer MCP Query Endpoint (Server-side x402)
+expressApp.post("/api/agents/travel/query", async (req, res) => {
+  try {
+    const { origin, destination, date, include_package } = req.body;
+
+    console.log(`[API] Flight query received: ${origin} → ${destination}`);
+
+    if (include_package) {
+      console.log(
+        `[API] ⚠️ A2A package requested - switching to HCS coordination`
+      );
+    }
+
+    if (!origin || !destination) {
+      return res.status(400).json({
+        error: "Missing required parameters",
+        details: "Both 'origin' and 'destination' are required",
+      });
+    }
+
+    if (!flightradarService) {
+      return res.status(503).json({
+        error: "MCP service not available",
+        details: "Flightradar24 MCP integration is disabled",
+      });
+    }
+
+    // Use provided date or default to tomorrow
+    const queryDate =
+      date ||
+      new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+    console.log(
+      `[API] Querying Flightradar24 MCP for ${origin} → ${destination} on ${queryDate}`
+    );
+
+    // Query Flightradar24 MCP with server-side x402 payment
+    const result = await flightradarService.queryFlights({
+      origin,
+      destination,
+      date: queryDate,
+      maxResults: 5,
+      includeAlternatives: true,
+    });
+
+    // If A2A package requested, initiate HCS-based agent coordination
+    if (include_package) {
+      console.log(`[API] 🤝 Starting A2A coordination via HCS...`);
+
+      // TODO: IMPLEMENT REAL HCS-BASED A2A COORDINATION
+      // For now, return placeholder structure
+      result.a2a_package = {
+        coordinator: {
+          agent_id: AGENT_ACCOUNT_ID,
+          agent_type: "travel",
+          coordination_fee: 625,
+          total_agents: 3,
+        },
+        agents: [
+          {
+            agent_id: "0.0.PENDING",
+            agent_type: "bus",
+            service: "HCS Discovery Pending",
+            status: "discovering",
+            discovery_method: "hcs_topic",
+          },
+          {
+            agent_id: "0.0.PENDING",
+            agent_type: "train",
+            service: "HCS Discovery Pending",
+            status: "discovering",
+            discovery_method: "hcs_topic",
+          },
+          {
+            agent_id: "0.0.PENDING",
+            agent_type: "hotel",
+            service: "HCS Discovery Pending",
+            status: "discovering",
+            discovery_method: "hcs_topic",
+          },
+        ],
+        coordination_metadata: {
+          discovery_time_ms: 0,
+          coordination_time_ms: 0,
+          total_a2a_time_ms: 0,
+          agents_discovered: 0,
+          agents_selected: 0,
+          hcs_messages_sent: 0,
+          hcs_messages_received: 0,
+          status: "TODO: Implement HCS-based agent discovery",
+        },
+      };
+
+      console.log(
+        `[API] ⚠️ A2A coordination not yet implemented - returning placeholder`
+      );
+    }
+
+    console.log(`[API] MCP query successful`);
+    res.json(result);
+  } catch (error) {
+    console.error(`[API] Error querying flights:`, error);
+    res.status(500).json({
+      error: "Failed to query flights",
+      details: error.message,
+    });
+  }
 });
 
 // Start server

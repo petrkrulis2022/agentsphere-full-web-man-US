@@ -854,7 +854,7 @@ const PackageComparisonView: React.FC<PackageComparisonProps> = ({
    - Shows Hedera wallet connection prompt
    - Displays transaction preview:
      - From: User wallet
-     - To: Travel Agent (0.0.7301232)
+     - To: Travel Agent (0.0.7301930)
      - Amount: 4,325 USDH
      - Fee: ~0.001 HBAR
    - Approve button triggers Standard HTS transfer
@@ -869,7 +869,7 @@ const PackageComparisonView: React.FC<PackageComparisonProps> = ({
 
 ```json
 {
-  "agentAccountId": "0.0.7301232",
+  "agentAccountId": "0.0.7301930",
   "query": "Weekend trip to Barcelona",
   "origin": "BUD",
   "destination": "BCN",
@@ -1015,7 +1015,7 @@ const handlePackagePayment = async () => {
   // 3. Build transaction
   const tx = {
     from: wallet.accountId,
-    to: "0.0.7301232", // Travel Agent
+    to: "0.0.7301930", // Travel Agent
     amount: 4325, // Total package cost
     token: "0.0.7218375", // USDH
     memo: "Travel package: BUD->BCN (Bus+Train+Hotel)",
@@ -1035,7 +1035,7 @@ const handlePackagePayment = async () => {
   });
 
   // 7. Listen for A2A events (Travel Agent auto-splitting payment)
-  subscribeToAgentEvents("0.0.7301232", (event) => {
+  subscribeToAgentEvents("0.0.7301930", (event) => {
     if (event.type === "PAYMENT_SPLIT_COMPLETE") {
       // Show NFT tickets being minted
       displayTicketNFTs(event.tickets);
@@ -1057,7 +1057,7 @@ const handlePackagePayment = async () => {
     </SummaryRow>
     <SummaryRow>
       <Label>To</Label>
-      <Value>0.0.7301232 (Travel Agent)</Value>
+      <Value>0.0.7301930 (Travel Agent)</Value>
     </SummaryRow>
     <SummaryRow>
       <Label>Amount</Label>

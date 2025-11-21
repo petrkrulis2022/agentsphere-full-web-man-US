@@ -228,7 +228,10 @@ export class X402PaymentService {
 
           if (retryResponse.status === 200) {
             console.log(`[x402] Request successful after payment`);
-            return retryResponse.data;
+            // Attach transaction ID to response for tracking
+            const responseData = retryResponse.data;
+            responseData.transactionId = paymentProof; // x402 payment transaction ID
+            return responseData;
           } else {
             throw new Error(
               `Request failed after payment: ${retryResponse.status} ${retryResponse.statusText}`

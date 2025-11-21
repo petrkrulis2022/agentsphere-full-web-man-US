@@ -6,31 +6,55 @@ Complete end-to-end travel booking flow demonstrating multi-agent coordination, 
 
 ## Deployed Agents
 
-### 1. Travel Agent (Main Coordinator) ✅ DEPLOYED
+### 1. Travel Agent 1 (Standard Coordinator) ✅ DEPLOYED
 
 - **Hedera Account**: `0.0.7301232`
 - **Agent Type**: Travel Agent (Package Coordinator)
 - **Fee Structure**: **STATIC** - 625 USDH (Demo Configuration)
-- **x402 Enabled**: Yes
+- **x402 Enabled**: Yes (for sub-agent payments only)
+- **MCP Integration**: ❌ No
 - **AID NFT**: Minted (TX: `0x04beefb4e8d16246e7bef4892d318fdaf75efdefc417771720a9d23766a8ed58`)
-- **Role**: Main agent user interacts with - coordinates all sub-agents
-- **Capabilities**:
+- **Role**: Standard package coordinator - coordinates sub-agents only (no flight data)
+
+### 1b. Travel Agent 2 (MCP-Enabled Coordinator) ✅ DEPLOYED
+
+- **Hedera Account**: `0.0.7301930`
+- **Agent Type**: Travel Agent (Package Coordinator + MCP)
+- **Fee Structure**: **STATIC** - 625 USDH (Demo Configuration)
+- **x402 Enabled**: Yes (for MCP queries + sub-agent payments)
+- **MCP Integration**: ✅ Yes (Flightradar24)
+- **x402 MCP Cost**: 0.00022 USDH per flight query
+- **AID NFT**: Minted (TX: TBD)
+- **Role**: Main agent user interacts with - queries Flightradar24 + coordinates all sub-agents
+- **Capabilities** (Both Travel Agents):
   - Package deal creation (transport + hotel)
   - Multi-agent coordination via A2A protocol
   - Automated payment splitting to sub-agents
   - Trip planning and optimization
   - Real-time itinerary updates
   - Customer support coordination
-- **Payment Flow**:
-  - Receives total payment from user (including fee)
-  - Distributes payments to Bus, Train, Hotel agents
-  - Keeps coordination fee
-- **Metadata Fields**:
-  - Supported destinations
-  - Partner agents (bus/train/hotel DIDs)
-  - Commission rate (5%)
-  - Package types (weekend/business/vacation)
-  - Cancellation policy
+
+**Additional Capabilities** (Travel Agent 2 only):
+
+- Real-time flight data via Flightradar24 MCP
+- x402 micropayments for MCP queries (0.00022 USDH)
+- Flight price comparison
+- Alternative package suggestions (flight vs bus+train+hotel)
+
+**Payment Flow**:
+
+- Receives total payment from user (including fee)
+- Distributes payments to Bus, Train, Hotel agents
+- Keeps coordination fee
+
+**Metadata Fields**:
+
+- Supported destinations
+- Partner agents (bus/train/hotel DIDs)
+- Commission rate (625 USDH fixed)
+- Package types (weekend/business/vacation)
+- Cancellation policy
+- MCP services (Travel Agent 2 only: Flightradar24)
 
 ### 2. AI Bus Agent (Hedera AI Bus 2) ✅ DEPLOYED
 
@@ -119,21 +143,25 @@ Complete end-to-end travel booking flow demonstrating multi-agent coordination, 
 
 ### Step 1: Travel Package Booking (Travel Agent - Main Interaction)
 
-**User opens AR Viewer → Scans Travel Agent QR code (at tourist office/app)**
+**User opens AR Viewer → Pays 100 USDH unlock fee → Chat unlocks**
 
 ```
 🆔 Agent Identity Verification:
 - Agent: Prague Weekend Travel Agent
 - DID: did:hedera:testnet:0.0.7301232
 - Verification: ✓ On-chain identity confirmed
-- Fee: 625 USDH (Fixed Package Fee)
+- Unlock Fee: 100 USDH (to unlock chat)
+- Package Fee: 625 USDH (Fixed Package Fee)
 - x402: Enabled
+- MCP: Flightradar24 (0.00022 USDH per query, paid by agent)
 ```
 
 **Interaction Flow**:
 
-1. User: "I want a weekend trip to Prague - transport + hotel for 2 nights"
-2. Travel Agent (A2A protocol):
+1. **User pays 100 USDH unlock fee** → Chat interface unlocks
+2. User: "I want a weekend trip to Prague - transport + hotel for 2 nights"
+3. Travel Agent queries Flightradar24 MCP (0.00022 USDH, auto-paid by agent)
+4. Travel Agent (A2A protocol):
 
    - Queries Bus Agent: "Bus to train station?" → 1000 USDH
    - Queries Train Agent: "Friday 18:30 to Prague?" → 1500 USDH
@@ -142,7 +170,7 @@ Complete end-to-end travel booking flow demonstrating multi-agent coordination, 
    - **Travel Agent Fee**: 625 USDH
    - **Total Package**: 4325 USDH
 
-3. Travel Agent presents package in AR:
+5. Travel Agent presents package in AR:
 
    ```
    📦 Prague Weekend Package
@@ -157,30 +185,30 @@ Complete end-to-end travel booking flow demonstrating multi-agent coordination, 
    TOTAL: 4325 USDH
    ```
 
-4. User approves package in AR interface
+6. User approves package in AR interface
 
-5. **x402 Multi-Transfer Payment**:
+7. **x402 Multi-Transfer Payment**:
 
    - User wallet → Travel Agent: **4325 USDH** (single transaction)
    - _Note: Travel Agent collects the FULL amount to distribute._
 
-6. **Travel Agent Auto-Splits Payment** (Standard USDH Transfer):
+8. **Travel Agent Auto-Splits Payment** (Standard USDH Transfer):
 
    - Travel Agent → Bus Agent: 1000 USDH
    - Travel Agent → Train Agent: 1500 USDH
    - Travel Agent → Hotel Agent: 1200 USDH
    - Travel Agent keeps: 625 USDH (coordination fee)
 
-7. Each sub-agent receives payment notification via A2A:
+9. Each sub-agent receives payment notification via A2A:
 
    - Bus Agent: Issues ticket NFT, confirms pickup time
    - Train Agent: Issues ticket NFT, reserves seat 3A
    - Hotel Agent: Issues room key NFT, sends check-in code
 
-8. Travel Agent consolidates confirmations:
-   - AR displays complete itinerary
-   - All NFT tickets bundled in wallet
-   - Real-time trip tracking enabled
+10. Travel Agent consolidates confirmations:
+    - AR displays complete itinerary
+    - All NFT tickets bundled in wallet
+    - Real-time trip tracking enabled
 
 **Transaction Details**:
 
@@ -349,8 +377,10 @@ Hotel Agent → User (AR notification):
 ### Agent Coordination Timeline
 
 ```
-Friday 16:00 - User scans Travel Agent QR (ONE INTERACTION)
-           └─> User: "Weekend trip to Prague - transport + hotel"
+Friday 16:00 - User opens AR Viewer and pays 100 USDH unlock fee
+           └─> Chat interface unlocks
+
+Friday 16:01 - User: "Weekend trip to Prague - transport + hotel"
 
 Friday 16:01 - Travel Agent queries Flightradar24 MCP (x402 payment)
            ├─> GET /api/live/flight-positions/full?origin=LHR&dest=PRG
@@ -411,12 +441,15 @@ Sunday 11:45 - Hotel Agent releases room, triggers housekeeping
            └─> Travel Agent notified: "Trip completed successfully"
 ```
 
-**Key Improvement**: User only scanned **2 QR codes** total:
+**Key Improvement**: User only had **1 payment interaction** with Travel Agent:
 
-1. Travel Agent (main package) - Friday 16:00
-2. Payment Terminal (extras) - Sunday 11:30
+1. Unlock payment (100 USDH) - Friday 16:00
+2. Package payment (4325 USDH) - Friday 16:05
 
-vs. old flow where user scanned 4 QR codes (Bus, Train, Hotel, Terminal)## Technical Architecture
+Then optionally scanned Payment Terminal QR for hotel extras (Sunday 11:30)
+
+**Total user interactions**: 2-3 payments (unlock + package + optional extras)
+**No QR code scanning needed** - all coordination happens via chat and A2A protocol## Technical Architecture
 
 ### x402 Micropayment Protocol
 
@@ -638,10 +671,10 @@ vs. old flow where user scanned 4 QR codes (Bus, Train, Hotel, Terminal)## Techn
 ### Old Flow (Direct Agent Interaction)
 
 ```
-User → Bus Agent (1000 USDH)
-User → Train Agent (1500 USDH)
-User → Hotel Agent (10,000 USDH)
-User → Payment Terminal (1600 + 32 USDH)
+User → Bus Agent (1000 USDH) - scans QR at bus stop
+User → Train Agent (1500 USDH) - scans QR at station
+User → Hotel Agent (10,000 USDH) - scans QR at hotel
+User → Payment Terminal (1600 + 32 USDH) - scans QR at checkout
 
 Total: 4 QR scans, 4 transactions, user manages coordination
 ```
@@ -649,18 +682,19 @@ Total: 4 QR scans, 4 transactions, user manages coordination
 ### New Flow (Travel Agent Orchestration) ⭐ RECOMMENDED
 
 ```
-User → Travel Agent (13,125 USDH package)
+User → Travel Agent unlock (100 USDH) - pays in AR Viewer
+User → Travel Agent package (4325 USDH) - pays via chat
          ├─> Travel Agent → Bus (1000 USDH)
          ├─> Travel Agent → Train (1500 USDH)
-         ├─> Travel Agent → Hotel (10,000 USDH)
+         ├─> Travel Agent → Hotel (1200 USDH)
          └─> Travel Agent keeps (625 USDH fee)
 
-User → Payment Terminal (1632 USDH extras, optional)
+User → Payment Terminal (1632 USDH extras, optional) - scans QR at checkout
 
-Total: 2 QR scans, 2 transactions, Travel Agent handles coordination
+Total: 2-3 payments, 0-1 QR scans, Travel Agent handles coordination
 ```
 
-**Improvement**: 50% fewer user interactions, automated payment splitting
+**Improvement**: No QR scanning for main package, automated payment splitting, chat-based coordination
 
 ---
 

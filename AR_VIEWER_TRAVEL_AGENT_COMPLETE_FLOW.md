@@ -6,9 +6,18 @@ This document describes the complete user interaction flow for the Travel Agent 
 
 1. **Click-based AR interaction** (not QR scanning)
 2. **Unlock payment** (100 USDH fee to access chat/voice/video)
-3. **Chat interface** with Travel Agent
-4. **Multi-agent coordination** (Travel Agent + 3 sub-agents: Bus, Train, Hotel)
-5. **Package booking** and NFT ticket delivery
+3. **Agent identity verification** with HashScan link (fixed)
+4. **Chat interface** with Travel Agent
+5. **x402 MCP integration** with Flightradar24 (real-time flight data)
+6. **Multi-agent coordination** (Travel Agent + 3 sub-agents: Bus, Train, Hotel)
+7. **Package booking** and NFT ticket delivery
+
+**Critical Updates Applied:**
+
+- ✅ HashScan links point to `/account/` not `/token/`
+- ✅ DID format displayed correctly: `did:hedera:testnet:0.0.7301930`
+- ✅ Click interaction model (not scan-to-unlock)
+- ✅ x402 micropayment for MCP queries (0.00022 USDH per flight query)
 
 ## User Journey
 
@@ -150,26 +159,26 @@ const AgentCardUnlocked: React.FC<AgentCardProps> = ({
         <IdentityValue>{agent.identity}</IdentityValue>
         <IdentityNote>Format: did:hedera:testnet:0.0.{accountId}</IdentityNote>
         <HashScanLink
-          href={`https://hashscan.io/testnet/account/${agent.identity
-            .split(":")
-            .pop()}`}
+          href={`https://hashscan.io/testnet/account/${agent.accountId}`}
           target="_blank"
         >
           <ExternalLink className="w-3 h-3" />
-          View Identity on HashScan
+          View Account on HashScan
         </HashScanLink>
       </IdentitySection> {/* MCP Integration Badge */}
       {agent.mcpEnabled && (
         <MCPSection>
-          <MCPBadge>⚡ MCP Integration Active</MCPBadge>
+          <MCPBadge>⚡ x402 MCP Integration</MCPBadge>
           <MCPDescription>
-            This agent uses Flightradar24 for real-time flight data
+            This agent uses Flightradar24 for real-time flight data via x402
+            micropayments
           </MCPDescription>
           <MCPServices>
             {agent.mcpServices?.map((service) => (
               <ServiceBadge key={service}>✈️ {service}</ServiceBadge>
             ))}
           </MCPServices>
+          <MCPCostNote>💳 Per-query cost: 0.00022 USDH</MCPCostNote>
         </MCPSection>
       )}
       {/* Unlock Payment Section */}
@@ -708,9 +717,11 @@ const FlightDataCard: React.FC<FlightDataCardProps> = ({ data }) => {
 
       <CardFooter>
         <FooterNote>
-          💳 Data query cost: 0.00022 USDH (already paid by agent)
+          💳 Query cost: 0.00022 USDH (paid via x402 micropayment)
         </FooterNote>
-        <FooterNote>ℹ️ Prices for reference only - booking external</FooterNote>
+        <FooterNote>
+          ℹ️ Prices for reference only - external booking required
+        </FooterNote>
       </CardFooter>
     </InlineCard>
   );
@@ -1035,12 +1046,22 @@ USER receives:
 
 ## Agent Accounts Reference
 
-| Agent Type   | Account ID  | Unlock Fee | Service Fee | MCP Enabled            |
-| ------------ | ----------- | ---------- | ----------- | ---------------------- |
-| Travel Agent | 0.0.7301232 | 100 USDH   | 625 USDH    | ✅ Yes (Flightradar24) |
-| Bus Agent    | 0.0.7299550 | 10 USDH    | 1,000 USDH  | ❌ No                  |
-| Train Agent  | 0.0.7300963 | 10 USDH    | 1,500 USDH  | ❌ No                  |
-| Hotel Agent  | 0.0.7300950 | 10 USDH    | 1,200 USDH  | ❌ No                  |
+| Agent Type   | Account ID  | Unlock Fee | Service Fee | MCP Enabled            | x402 Cost    |
+| ------------ | ----------- | ---------- | ----------- | ---------------------- | ------------ |
+| Travel Agent | 0.0.7301930 | 100 USDH   | 625 USDH    | ✅ Yes (Flightradar24) | 0.00022 USDH |
+| Bus Agent    | 0.0.7299550 | 10 USDH    | 1,000 USDH  | ❌ No                  | -            |
+| Train Agent  | 0.0.7300963 | 10 USDH    | 1,500 USDH  | ❌ No                  | -            |
+| Hotel Agent  | 0.0.7300950 | 10 USDH    | 1,200 USDH  | ❌ No                  | -            |
+
+**USDH Token**: `0.0.7218375`  
+**Network**: Hedera Testnet  
+**HashScan URLs**:
+
+- Travel Agent: https://hashscan.io/testnet/account/0.0.7301930
+- Bus Agent: https://hashscan.io/testnet/account/0.0.7299550
+- Train Agent: https://hashscan.io/testnet/account/0.0.7300963
+- Hotel Agent: https://hashscan.io/testnet/account/0.0.7300950
+- USDH Token: https://hashscan.io/testnet/token/0.0.7218375
 
 ---
 
@@ -1101,7 +1122,7 @@ USER receives:
 
 ```json
 {
-  "agentAccountId": "0.0.7301232",
+  "agentAccountId": "0.0.7301930",
   "query": "Plan trip to Barcelona for this weekend",
   "origin": "BUD",
   "destination": "BCN",
@@ -1131,7 +1152,7 @@ USER receives:
 ```json
 {
   "action": "subscribe",
-  "agentAccountId": "0.0.7301232",
+  "agentAccountId": "0.0.7301930",
   "eventTypes": ["PAYMENT_SPLIT_COMPLETE", "NFT_MINTED"]
 }
 ```
@@ -1141,7 +1162,7 @@ USER receives:
 ```json
 {
   "type": "PAYMENT_SPLIT_COMPLETE",
-  "agentAccountId": "0.0.7301232",
+  "agentAccountId": "0.0.7301930",
   "timestamp": "2025-01-14T16:06:00Z",
   "tickets": [
     {
