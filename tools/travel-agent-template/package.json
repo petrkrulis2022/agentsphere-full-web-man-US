@@ -1,0 +1,23 @@
+{
+  "name": "travel-agent-template",
+  "version": "2.0.0",
+  "description": "Travel Agent with x402 MCP integration for Flightradar24",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "@a2a-js/sdk": "^0.3.0",
+    "@hashgraph/sdk": "^2.49.0",
+    "axios": "^1.7.0",
+    "express": "^4.21.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/uuid": "^9.0.0"
+  }
+}

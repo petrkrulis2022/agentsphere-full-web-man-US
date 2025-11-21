@@ -2723,6 +2723,93 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
               </div>
             </div>
 
+            {/* MCP Integration Settings (Travel Agent only) */}
+            {agentType === "travel_agent" && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                  <Network className="h-6 w-6 mr-2 text-purple-600" />
+                  MCP Integration (x402 Data Services)
+                </h2>
+
+                <div className="space-y-4">
+                  <div className="flex items-start p-4 border border-purple-200 rounded-lg bg-purple-50">
+                    <input
+                      type="checkbox"
+                      id="mcpFlightradar"
+                      checked={mcpIntegrations.includes("flightradar24")}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setMcpIntegrations([
+                            ...mcpIntegrations,
+                            "flightradar24",
+                          ]);
+                        } else {
+                          setMcpIntegrations(
+                            mcpIntegrations.filter((m) => m !== "flightradar24")
+                          );
+                        }
+                      }}
+                      className="h-5 w-5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded mt-0.5"
+                    />
+                    <div className="ml-3 flex-1">
+                      <label
+                        htmlFor="mcpFlightradar"
+                        className="font-medium text-gray-900 flex items-center cursor-pointer"
+                      >
+                        <Plane className="h-4 w-4 mr-2 text-purple-600" />
+                        Flightradar24 API (Real-Time Flight Data)
+                      </label>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Access live flight information via Thirdweb Nexus MCP
+                        server
+                      </p>
+                      <div className="mt-2 space-y-1 text-xs text-gray-500">
+                        <div className="flex items-center">
+                          <span className="font-medium mr-2">Cost:</span>
+                          <span>€0.00022 per query (0.00022 USDH)</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="font-medium mr-2">Protocol:</span>
+                          <span>
+                            x402 micropayments (HTTP 402 + Hedera HTS)
+                          </span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="font-medium mr-2">Endpoint:</span>
+                          <span className="font-mono text-[10px]">
+                            https://nexus.thirdweb.com/routes/dck8b9de
+                          </span>
+                        </div>
+                      </div>
+                      <div className="mt-3 p-3 bg-white rounded border border-purple-200">
+                        <p className="text-xs text-purple-800 font-medium mb-2">
+                          ⚡ Agent will autonomously:
+                        </p>
+                        <ul className="text-xs text-gray-600 space-y-1 ml-4 list-disc">
+                          <li>Query real-time flight data for user routes</li>
+                          <li>Pay MCP server using agent's USDH balance</li>
+                          <li>Present flight options in AR interface</li>
+                          <li>Offer alternative packages (Bus+Train+Hotel)</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  {mcpIntegrations.includes("flightradar24") && (
+                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                      <p className="text-sm text-blue-800">
+                        <strong>💡 Recommendation:</strong> Fund agent with at
+                        least <strong>10-50 USDH</strong> for MCP queries. The
+                        agent will need sufficient balance to autonomously pay
+                        for flight data requests (100 queries = 0.022 USDH). You
+                        can monitor and top up the balance later.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Payment Methods Configuration (6-Faced Cube System) */}
             <div className="space-y-6">
               <PaymentMethodsSelector

@@ -385,7 +385,7 @@ export const MultiChainAgentDashboard: React.FC = () => {
         className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow cursor-pointer"
       >
         <div className="flex justify-between items-start mb-4">
-          <div>
+          <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="text-lg font-semibold text-gray-900">
                 {agent.name}
@@ -399,6 +399,29 @@ export const MultiChainAgentDashboard: React.FC = () => {
                 </span>
               )}
             </div>
+            {(agent as any).agent_identity && (
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-xs text-gray-500">
+                  DID: {((agent as any).agent_identity as string).slice(0, 20)}
+                  ...
+                  {((agent as any).agent_identity as string).slice(-8)}
+                </p>
+                <a
+                  href={`https://hashscan.io/testnet/account/${(
+                    (agent as any).agent_identity as string
+                  )
+                    .split(":")
+                    .pop()}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded text-xs font-medium transition-colors"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  View Identity on HashScan
+                </a>
+              </div>
+            )}
             <p className="text-sm text-gray-600 mt-1">{agent.description}</p>
           </div>
           <div className="flex space-x-2">
@@ -866,13 +889,26 @@ export const MultiChainAgentDashboard: React.FC = () => {
                       )}
                     </div>
                     {(selectedAgent as any).agent_identity && (
-                      <div className="mb-2 p-2 bg-gray-50 rounded-lg">
+                      <div className="mb-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
                         <p className="text-xs text-gray-500 mb-1">
-                          Agent Identity:
+                          Agent Identity (DID):
                         </p>
-                        <p className="text-sm font-mono text-gray-700 break-all">
+                        <p className="text-sm font-mono text-gray-700 break-all mb-2">
                           {(selectedAgent as any).agent_identity}
                         </p>
+                        <a
+                          href={`https://hashscan.io/testnet/account/${(
+                            (selectedAgent as any).agent_identity as string
+                          )
+                            .split(":")
+                            .pop()}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                          View Identity on HashScan
+                        </a>
                       </div>
                     )}
                     <p className="text-gray-600 mt-1">
