@@ -38,6 +38,75 @@ AgentSphere is a cutting-edge platform for deploying and managing AI agents thro
 - Multi-blockchain network compatibility
 - Location-based services and AR notifications
 
+## 🎉 **First Production Agent Deployed!**
+
+### **🚌 Hedera AI Bus 2 - Production Identity NFT**
+
+**Agent Details:**
+
+- **Name:** Hedera AI Bus 2
+- **Type:** AI Bus Agent
+- **Hedera Account:** `0.0.7299550`
+- **DID:** `did:hedera:testnet:0.0.7299550`
+- **Agent Wallet (EVM):** `0x0000000000000000000000000000000007299550`
+- **Network:** Hedera Testnet
+
+**Identity NFT (AID Token):**
+
+- **Contract:** `0x91465109a685abc19ecc94474c0f24bb05045d37` (Hedera: 0.0.7299955)
+- **Token Standard:** ERC-8004 (Identity Registry)
+- **Token Symbol:** AID (AgentIdentity)
+- **Minting Transaction:** `0x13ef328ce59d2be1c69388a8ec2fe02f53ad0d4a01557c7a54b7204b5ef0fd70`
+- **Minted By:** `0x97b83759eadb2503a8947e8d6eb734795cdefc95` (Treasury Wallet)
+
+**NFT Metadata (12 On-Chain Fields):**
+
+```json
+{
+  "name": "AI Bus Identity",
+  "description": "Verified agent identity for Hedera AI Bus 2. DID: did:hedera:testnet:0.0.7299550. x402 micropayments enabled. Fee: 1000 USDH (static).",
+  "attributes": [
+    { "trait_type": "Agent Type", "value": "AI Bus" },
+    { "trait_type": "Network", "value": "Hedera Testnet" },
+    { "trait_type": "Hedera Account", "value": "0.0.7299550" },
+    { "trait_type": "DID", "value": "did:hedera:testnet:0.0.7299550" },
+    { "trait_type": "Interaction Fee", "value": "1000 USDH" },
+    { "trait_type": "Fee Type", "value": "static" },
+    { "trait_type": "Fee Currency", "value": "USDH" },
+    { "trait_type": "x402 Enabled", "value": "Yes" },
+    {
+      "trait_type": "Agent Wallet (EVM)",
+      "value": "0x0000000000000000000000000000000007299550"
+    },
+    {
+      "trait_type": "Deployer Wallet (EVM)",
+      "value": "0x97b83759eadb2503a8947e8d6eb734795cdefc95"
+    },
+    { "trait_type": "Deployment Date", "value": "2025-11-21T12:14:49.317Z" },
+    { "trait_type": "Verification Status", "value": "Verified" }
+  ]
+}
+```
+
+**Pricing & Features:**
+
+- **Interaction Fee:** 1000 USDH (static)
+- **Fee Currency:** USDH (Hedera USD stablecoin)
+- **x402 Protocol:** ✅ Enabled (micropayment protocol)
+- **A2A Communication:** ✅ Supported (agent-to-agent)
+
+**On-Chain Verification:**
+
+- **View Agent:** [HashScan - Account 0.0.7299550](https://hashscan.io/testnet/account/0.0.7299550)
+- **View Identity Contract:** [HashScan - Contract 0.0.7299955](https://hashscan.io/testnet/contract/0x91465109a685abc19ecc94474c0f24bb05045d37)
+- **View Transaction:** [HashScan - Mint TX](https://hashscan.io/testnet/transaction/0x13ef328ce59d2be1c69388a8ec2fe02f53ad0d4a01557c7a54b7204b5ef0fd70)
+
+**Metadata Storage:**
+
+- **On-Chain:** 12 critical identity fields stored in IdentityRegistry contract
+- **Off-Chain:** Complete JSON metadata with unlimited attributes
+- **Format:** ERC-8004 compliant with OpenSea compatibility
+
 ## 🚀 **Quick Start Guide**
 
 ### **Prerequisites:**
@@ -254,9 +323,7 @@ MIT License - See individual repositories for specific license terms.
 - **Presentation** https://agentsphere-0xa1tku.gamma.site/
 - **Main AgentSPher** https://playful-cranachan-e941e5.netlify.app/
 - **Live AR Demo:** [https://admirable-hamster-b9c370.netlify.app/](https://admirable-hamster-b9c370.netlify.app/)
--
+- ***
 
----
-
-**Built with Blockchain Innovation** 🚀
-**Powered by Blockchain + Filecoin + USDC** 💎
+  **Built with Blockchain Innovation** 🚀
+  **Powered by Blockchain + Filecoin + USDC** 💎
