@@ -72,7 +72,7 @@
 
 ## 📊 Agent Accounts (Hedera Testnet)
 
-- **Travel Agent**: 0.0.7301232 (deploying as Travel Agent 2 for testing)
+- **Travel Agent**: 0.0.7301930 (deploying as Travel Agent 2 for testing)
 - **Bus Agent**: 0.0.7299550
 - **Train Agent**: 0.0.7300963
 - **Hotel Agent**: 0.0.7300950
