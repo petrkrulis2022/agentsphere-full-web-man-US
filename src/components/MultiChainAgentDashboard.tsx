@@ -165,19 +165,41 @@ export const MultiChainAgentDashboard: React.FC = () => {
       }
 
       // Map to DeployedAgent format
-      const mappedAgents = (data || []).map((agent) => ({
-        ...agent,
-        deployment_network: {
-          primary: {
-            name: agent.deployment_network_name || agent.network || "Unknown",
-            chainId: agent.deployment_chain_id || agent.chain_id || "Unknown",
+      const mappedAgents = (data || []).map((agent) => {
+        // Extract enabled payment methods from JSONB object
+        let paymentMethods = [];
+        if (
+          agent.payment_methods &&
+          typeof agent.payment_methods === "object" &&
+          !Array.isArray(agent.payment_methods)
+        ) {
+          paymentMethods = Object.entries(agent.payment_methods)
+            .filter(([key, value]: [string, any]) => value?.enabled === true)
+            .map(([key]) => key);
+        } else if (Array.isArray(agent.payment_methods)) {
+          paymentMethods = agent.payment_methods;
+        }
+
+        return {
+          ...agent,
+          location: {
+            latitude: agent.latitude || 0,
+            longitude: agent.longitude || 0,
+            address: agent.address || "",
           },
-          additional: [],
-          cross_chain_enabled: false,
-        },
-        supported_networks: [agent.network || "Unknown"],
-        status: agent.deployment_status || "active",
-      }));
+          payment_methods: paymentMethods,
+          deployment_network: {
+            primary: {
+              name: agent.deployment_network_name || agent.network || "Unknown",
+              chainId: agent.deployment_chain_id || agent.chain_id || "Unknown",
+            },
+            additional: [],
+            cross_chain_enabled: false,
+          },
+          supported_networks: [agent.network || "Unknown"],
+          status: agent.deployment_status || "active",
+        };
+      });
 
       setAgents(mappedAgents);
     } catch (error) {
@@ -359,7 +381,8 @@ export const MultiChainAgentDashboard: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
-        className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow"
+        onClick={() => setSelectedAgent(agent)}
+        className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow cursor-pointer"
       >
         <div className="flex justify-between items-start mb-4">
           <div>
@@ -988,14 +1011,21 @@ export const MultiChainAgentDashboard: React.FC = () => {
                       Payment Methods
                     </h3>
                     <div className="flex flex-wrap gap-2">
-                      {selectedAgent.payment_methods.map((method, index) => (
-                        <span
-                          key={index}
-                          className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium"
-                        >
-                          {method.replace("_", " ").toUpperCase()}
+                      {selectedAgent.payment_methods &&
+                      selectedAgent.payment_methods.length > 0 ? (
+                        selectedAgent.payment_methods.map((method, index) => (
+                          <span
+                            key={index}
+                            className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium"
+                          >
+                            {method.replace(/_/g, " ").toUpperCase()}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-gray-500 text-sm">
+                          No payment methods enabled
                         </span>
-                      ))}
+                      )}
                     </div>
                   </div>
                 </div>
