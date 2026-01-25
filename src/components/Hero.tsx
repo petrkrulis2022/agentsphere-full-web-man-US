@@ -240,10 +240,10 @@ const Hero = () => {
             transition={{ duration: 0.5 }}
           >
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white">
-              <span className="block">Deploy AI Agents</span>
               <span className="block bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-emerald-500">
-                Anywhere, Instantly
+                CubePay
               </span>
+              <span className="block">Future of Financial Infrastructure</span>
             </h1>
             <p className="mt-6 text-lg md:text-xl text-slate-300 max-w-4xl mx-auto">
               The future of location-based AI is here. Deploy intelligent agents
@@ -341,7 +341,7 @@ const Hero = () => {
                           // Open the live AR viewer in a new tab
                           window.open(
                             "https://admirable-hamster-b9c370.netlify.app/",
-                            "_blank"
+                            "_blank",
                           );
                         }}
                         className="group relative"
@@ -388,8 +388,8 @@ const Hero = () => {
                   phone.id === "deploy"
                     ? "bg-blue-500"
                     : phone.id === "preview"
-                    ? "bg-purple-500"
-                    : "bg-indigo-500"
+                      ? "bg-purple-500"
+                      : "bg-indigo-500"
                 } rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-${
                   index * 2000
                 }`}

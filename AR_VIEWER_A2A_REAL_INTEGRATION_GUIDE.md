@@ -12,32 +12,41 @@
 ### ❌ What We're NOT Doing:
 
 ```javascript
-// ❌ WRONG - Centralized backend coordinating everything
-POST / api / backend / coordinate - package;
+// ❌ WRONG - Centralized backend with HTTP endpoints
+POST http://api.backend.com/coordinate-package
+
+// ❌ WRONG - Agent URLs or REST APIs
+{
+  "bus_agent_url": "http://bus-agent.com/api",  // NO!
+  "train_agent_url": "http://train.com/api"     // NO!
+}
 ```
 
 ### ✅ What We ARE Doing:
 
 ```javascript
-// ✅ CORRECT - Decentralized A2A via HCS Topics
+// ✅ CORRECT - Decentralized A2A via HCS Topics (NO URLs!)
 AR Viewer → Travel Agent (0.0.7301930)
                 ↓
-    [HCS Topic: Agent Discovery]
+    [HCS Topic: 0.0.DISCOVERY_TOPIC]
+    (Travel Agent subscribes to topic)
                 ↓
-    Travel Agent discovers:
+    Travel Agent discovers agents via HCS messages:
         - Bus Agents (type: "bus")
         - Train Agents (type: "train")
         - Hotel Agents (type: "hotel")
                 ↓
-    [Direct A2A Coordination]
-        - Travel Agent ↔ Bus Agent
-        - Travel Agent ↔ Train Agent
-        - Travel Agent ↔ Hotel Agent
+    [Direct A2A Coordination via HCS]
+        - Travel Agent ↔ Bus Agent (HCS messages only)
+        - Travel Agent ↔ Train Agent (HCS messages only)
+        - Travel Agent ↔ Hotel Agent (HCS messages only)
                 ↓
-    [USDH Payment Distribution]
-        Travel Agent splits payment among agents
+    [USDH Payment Distribution on Hedera]
+        Travel Agent sends USDH to agents
                 ↓
     AR Viewer receives complete package
+
+⚠️ NO HTTP ENDPOINTS - PURE HCS MESSAGE PASSING
 ```
 
 ---
@@ -56,30 +65,51 @@ AR Viewer → Travel Agent (0.0.7301930)
 ### HCS Topic Structure
 
 ```javascript
-// Agent Discovery Topic (HCS)
+// Agent Discovery Topic (HCS) - NO URLs!
 Topic ID: 0.0.DISCOVERY_TOPIC
 Purpose: Agents advertise their capabilities
+Access: Public (all agents can subscribe)
 
-// Message Format:
+// Agent Advertisement Message (published to HCS):
 {
-  "agent_id": "0.0.7301930",
-  "agent_type": "travel",
-  "capabilities": ["flight", "package_coordination"],
+  "agent_id": "0.0.8901234",
+  "agent_type": "bus",
+  "capabilities": ["airport_transfer", "city_routes"],
   "status": "active",
-  "endpoint": null, // No centralized endpoint!
-  "hcs_response_topic": "0.0.TRAVEL_RESPONSE_TOPIC"
+  "location": "BCN",
+  "fee_range": [800, 1200],
+  "hcs_response_topic": "0.0.BUS_RESPONSE_TOPIC"  // For coordination
 }
+
+// ⚠️ NO "endpoint" field - NO HTTP URLs!
+// All communication via HCS message passing only
 ```
+
+**Travel Agent Discovery Flow:**
+
+1. Subscribe to `0.0.DISCOVERY_TOPIC`
+2. Read last 100 messages for active agents
+3. Filter by `agent_type` and `location`
+4. Send coordination request to agent's `hcs_response_topic`
+5. Receive confirmation via Travel Agent's own response topic
+6. Send USDH payment on-chain
+7. Return package to AR Viewer
 
 ---
 
 ## 📡 AR Viewer API Integration
 
-### Endpoint (Same as Mock)
+### Endpoint (AR Viewer → Travel Agent Only)
 
 **URL:** `http://localhost:4001/api/agents/travel/query`  
 **Method:** `POST`  
 **Content-Type:** `application/json`
+
+⚠️ **IMPORTANT:** This is the **ONLY** HTTP endpoint used!
+
+- AR Viewer calls Travel Agent via HTTP
+- Travel Agent → Other Agents via **HCS Topics only** (NO HTTP!)
+- No centralized backend, no agent URLs, no REST APIs between agents
 
 ### Request Format
 
