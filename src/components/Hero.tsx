@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Plus, Eye, Camera } from "lucide-react";
+import {
+  ArrowRight,
+  Plus,
+  Eye,
+  Camera,
+  Wallet,
+  MapPin,
+  CreditCard,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import AgentInteractionModal from "./interaction/AgentInteractionModal";
 import "./interaction/ARPaymentStyles.css";
@@ -136,71 +144,12 @@ const Hero = () => {
       ),
     },
     {
-      id: "preview",
-      title: "🔍 Preview Agents",
-      subtitle: "Test & Debug",
-      description: "Test your deployed AI agents in our AR preview environment",
-      buttonText: "AR Preview",
-      buttonIcon: <Eye className="h-4 w-4" />,
-      link: "/ar",
-      bgImage:
-        "https://images.pexels.com/photos/267885/pexels-photo-267885.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1",
-      overlayContent: (
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-white z-10">
-          {/* AR Preview Interactive Elements */}
-          <div className="bg-black/60 backdrop-blur-sm rounded-xl p-4 text-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Eye className="text-white text-2xl" />
-            </div>
-            <div className="font-bold text-sm">AR Testing Mode</div>
-            <div className="text-xs opacity-80">
-              View & interact with AI agents
-            </div>
-          </div>
-
-          {/* Interactive Agent Dots for AR Preview */}
-          <div className="absolute inset-0 pointer-events-none">
-            {fakeAgents.slice(0, 3).map((agent, index) => {
-              const positions = [
-                { top: "30%", left: "20%" },
-                { top: "50%", left: "70%" },
-                { top: "70%", left: "40%" },
-              ];
-
-              return (
-                <motion.div
-                  key={agent.id}
-                  className="absolute w-4 h-4 bg-blue-400 rounded-full cursor-pointer pointer-events-auto hover:scale-125 transition-transform"
-                  style={positions[index]}
-                  onClick={() => handleAgentClick(agent)}
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    delay: index * 0.5,
-                  }}
-                >
-                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold whitespace-nowrap">
-                    {agent.name}
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-          <div className="absolute top-4 right-4 bg-green-500/80 backdrop-blur-sm rounded-lg px-2 py-1 text-white text-xs flex items-center">
-            <div className="w-2 h-2 rounded-full bg-green-300 mr-1"></div>
-            Testing Mode
-          </div>
-        </div>
-      ),
-    },
-    {
       id: "experience",
-      title: "🌍 Enter AR World",
-      subtitle: "Live Experience",
+      title: "💳 Pay With CubePay",
+      subtitle: "Make Payment",
       description: "Experience full AR with camera and real-world AI agents",
-      buttonText: "Go Live",
-      buttonIcon: <Camera className="h-4 w-4" />,
+      buttonText: "Pay With CubePay",
+      buttonIcon: <Wallet className="h-4 w-4" />,
       link: "https://admirable-hamster-b9c370.netlify.app/",
       external: true,
       bgImage:
@@ -221,17 +170,33 @@ const Hero = () => {
         </div>
       ),
     },
+    {
+      id: "atms",
+      title: "🏧 Find Virtual ATMs",
+      subtitle: "Locate ATMs",
+      description: "Find nearby virtual ATMs for cash access",
+      buttonText: "Find Virtual ATMs",
+      buttonIcon: <MapPin className="h-4 w-4" />,
+      link: "/atms",
+      external: false,
+    },
+    {
+      id: "terminal",
+      title: "💳 Pay With Terminal",
+      subtitle: "Terminal Payment",
+      description: "Use your payment terminal for transactions",
+      buttonText: "Pay With Your Terminal",
+      buttonIcon: <CreditCard className="h-4 w-4" />,
+      link: "/terminal",
+      external: false,
+    },
   ];
 
   return (
-    <section className="relative overflow-hidden pt-16 pb-20 md:pt-20 md:pb-28 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-      {/* Background elements */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute top-20 right-20 w-64 h-64 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute top-40 left-20 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-20 right-40 w-72 h-72 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
-      </div>
-
+    <section
+      className="relative overflow-hidden pt-16 pb-20 md:pt-20 md:pb-28"
+      style={{ backgroundColor: "rgb(15, 23, 42)" }}
+    >
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <motion.div
@@ -243,189 +208,41 @@ const Hero = () => {
               <span className="block bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-emerald-500">
                 CubePay
               </span>
-              <span className="block">Future of Financial Infrastructure</span>
             </h1>
-            <p className="mt-6 text-lg md:text-xl text-slate-300 max-w-4xl mx-auto">
-              The future of location-based AI is here. Deploy intelligent agents
-              using AR/QR technology, interact through blockchain payments, and
-              transform any space into an interactive digital experience.
-            </p>
-            <div className="mt-4 flex items-center justify-center space-x-6">
-              <div className="bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-2 rounded-full text-sm font-medium flex items-center backdrop-blur-sm">
-                <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-                Live on Blockchain
-              </div>
-              <div className="bg-blue-500/10 border border-blue-500/30 text-blue-400 px-4 py-2 rounded-full text-sm font-medium flex items-center backdrop-blur-sm">
-                <span className="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse"></span>
-                AR/QR Ready
-              </div>
-            </div>
-            <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
-              <a
-                href="#auth"
-                className="glow-button bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group"
-              >
-                Join 2,847+ Early Users
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </a>
-              <a
-                href="#features"
-                className="bg-slate-700/50 backdrop-blur-sm text-green-400 border border-green-500/30 px-8 py-3 rounded-xl font-medium shadow-sm hover:shadow-md transition-all duration-200 hover:border-green-400"
-              >
-                Watch Demo
-              </a>
-            </div>
-
-            {/* Social Proof Stats */}
-            <div className="mt-8 grid grid-cols-3 gap-4 max-w-md mx-auto text-center">
-              <div className="text-slate-300">
-                <div className="text-xl font-bold text-white">2,847</div>
-                <div className="text-xs">Early Users</div>
-              </div>
-              <div className="text-slate-300">
-                <div className="text-xl font-bold text-white">12.5K</div>
-                <div className="text-xs">Agents Deployed</div>
-              </div>
-              <div className="text-slate-300">
-                <div className="text-xl font-bold text-white">94%</div>
-                <div className="text-xs">Satisfaction</div>
-              </div>
-            </div>
-
-            <div className="mt-6 text-sm text-slate-400">
-              <span className="font-medium">
-                🚀 Revolutionary AR-QR-Blockchain Integration
-              </span>
-            </div>
           </motion.div>
         </div>
 
-        {/* Three Phone Layout */}
-        <motion.div
-          className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
+        {/* Four Buttons in 2x2 Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-16 max-w-md mx-auto">
           {phones.map((phone, index) => (
             <motion.div
               key={phone.id}
-              className="relative mx-auto w-full max-w-sm"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
             >
-              {/* Phone mockup */}
-              <div className="relative shadow-2xl rounded-[2.5rem] border-8 border-slate-700 overflow-hidden">
-                <div className="absolute top-0 inset-x-0 h-6 bg-slate-800 z-20"></div>
-                <div className="absolute bottom-0 inset-x-0 h-6 bg-slate-800 z-20"></div>
-                <div className="h-[500px] bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden">
-                  {/* Background image */}
-                  <img
-                    src={phone.bgImage}
-                    alt={phone.title}
-                    className="absolute inset-0 w-full h-full object-cover opacity-60"
-                  />
-
-                  {/* Overlay gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 to-transparent"></div>
-
-                  {/* Phone content */}
-                  {phone.overlayContent}
-
-                  {/* Action button */}
-                  <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10">
-                    {phone.id === "experience" ? (
-                      <button
-                        onClick={() => {
-                          // Open the live AR viewer in a new tab
-                          window.open(
-                            "https://admirable-hamster-b9c370.netlify.app/",
-                            "_blank",
-                          );
-                        }}
-                        className="group relative"
-                      >
-                        <motion.div
-                          className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-xl font-medium shadow-lg flex items-center space-x-2 group-hover:shadow-xl transition-all duration-300"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          {phone.buttonIcon}
-                          <span>{phone.buttonText}</span>
-                        </motion.div>
-                      </button>
-                    ) : (
-                      <Link to={phone.link} className="group relative">
-                        <motion.div
-                          className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-xl font-medium shadow-lg flex items-center space-x-2 group-hover:shadow-xl transition-all duration-300"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          {phone.buttonIcon}
-                          <span>{phone.buttonText}</span>
-                        </motion.div>
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Phone description */}
-              <div className="mt-6 text-center">
-                <h3 className="text-xl font-bold text-white mb-2">
-                  {phone.title}
-                </h3>
-                <p className="text-sm font-medium text-green-400 mb-2">
-                  {phone.subtitle}
-                </p>
-                <p className="text-slate-300 text-sm">{phone.description}</p>
-              </div>
-
-              {/* Decorative elements */}
-              <div
-                className={`absolute -top-6 -right-6 w-24 h-24 ${
-                  phone.id === "deploy"
-                    ? "bg-blue-500"
-                    : phone.id === "preview"
-                      ? "bg-purple-500"
-                      : "bg-indigo-500"
-                } rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-${
-                  index * 2000
-                }`}
-              ></div>
+              {phone.external ? (
+                <a
+                  href={phone.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-gradient-to-br from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-black font-semibold px-3 py-3 text-sm rounded-2xl transition-all duration-200 hover:scale-105 shadow-xl hover:shadow-2xl shadow-green-500/30 flex flex-col items-center justify-center gap-2 min-h-[60px] sm:min-h-[70px] w-full border-b-4 border-green-700"
+                >
+                  {phone.buttonIcon}
+                  {phone.buttonText}
+                </a>
+              ) : (
+                <Link
+                  to={phone.link}
+                  className="bg-gradient-to-br from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-black font-semibold px-3 py-3 text-sm rounded-2xl transition-all duration-200 hover:scale-105 shadow-xl hover:shadow-2xl shadow-green-500/30 flex flex-col items-center justify-center gap-2 min-h-[60px] sm:min-h-[70px] w-full border-b-4 border-green-700"
+                >
+                  {phone.buttonIcon}
+                  {phone.buttonText}
+                </Link>
+              )}
             </motion.div>
           ))}
-        </motion.div>
-
-        {/* Process flow indicators */}
-        <motion.div
-          className="mt-12 flex justify-center items-center space-x-4 text-slate-400"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.8 }}
-        >
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-green-500/10 border border-green-500/30 rounded-full flex items-center justify-center">
-              <span className="text-green-400 font-bold text-sm">1</span>
-            </div>
-            <span className="text-sm font-medium">Deploy</span>
-          </div>
-          <ArrowRight className="h-4 w-4" />
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-green-500/10 border border-green-500/30 rounded-full flex items-center justify-center">
-              <span className="text-green-400 font-bold text-sm">2</span>
-            </div>
-            <span className="text-sm font-medium">Test</span>
-          </div>
-          <ArrowRight className="h-4 w-4" />
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-green-500/10 border border-green-500/30 rounded-full flex items-center justify-center">
-              <span className="text-green-400 font-bold text-sm">3</span>
-            </div>
-            <span className="text-sm font-medium">Experience</span>
-          </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* Enhanced Interaction Modal for AR Preview */}

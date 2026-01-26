@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Globe,
   AlertTriangle,
+  Check,
 } from "lucide-react";
 import { useAddress, useDisconnect, ConnectWallet } from "@thirdweb-dev/react";
 import { Link, useLocation } from "react-router-dom";
@@ -88,7 +89,7 @@ const Navbar = () => {
     } catch (error) {
       console.error("Failed to switch network:", error);
       alert(
-        "Failed to switch network. Please try manually switching in your wallet."
+        "Failed to switch network. Please try manually switching in your wallet.",
       );
     }
   };
@@ -110,89 +111,63 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="bg-white bg-opacity-90 backdrop-blur-sm shadow-sm sticky top-0 z-50">
+      <nav
+        style={{ backgroundColor: "rgb(15, 23, 42)" }}
+        className="bg-opacity-90 backdrop-blur-sm shadow-sm sticky top-0 z-50"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
+          <div className="flex flex-col items-center py-2 space-y-3">
+            {/* First Line: Logo and Wallet Connections */}
+            <div className="flex items-center space-x-4">
               <Link to="/" className="flex-shrink-0 flex items-center">
-                <div className="h-8 w-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center text-white font-bold mr-2">
-                  A
-                </div>
+                <img
+                  src="/AR_VIEWER_INTEGRATION_PACKAGE/cubepay_simple_cube.gif"
+                  alt="CubePay"
+                  className="h-8 w-auto mr-2"
+                />
                 <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-500 to-emerald-600">
-                  AgentSphere
+                  CubePay
                 </span>
               </Link>
+
+              {/* Unified Wallet Connection - Both Solana and EVM */}
+              <WalletConnectionDisplay />
             </div>
 
-            <div className="hidden md:flex items-center space-x-4">
-              {location.pathname === "/" ? (
-                <>
-                  <a
-                    href="#features"
-                    className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Features
-                  </a>
-                  <a
-                    href="#map"
-                    className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Explore
-                  </a>
-                  <a
-                    href="#auth"
-                    className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Join Waitlist
-                  </a>
-                </>
-              ) : (
-                <Link
-                  to="/"
-                  className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Home
-                </Link>
-              )}
-
-              <Link
-                to="/deploy"
-                className="flex items-center text-gray-700 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Deploy Agent
-              </Link>
+            {/* Second Line: Action Buttons */}
+            <div className="flex items-center space-x-3">
               <Link
                 to="/dashboard"
-                className="flex items-center text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                className="bg-gradient-to-br from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-black font-semibold px-3 py-2 text-xs rounded-xl transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl shadow-green-500/20 flex items-center gap-1 border-b-2 border-green-700"
               >
-                <LayoutDashboard className="h-4 w-4 mr-1" />
+                <LayoutDashboard className="h-3 w-3" />
                 Dashboard
-              </Link>
-              <Link
-                to="/ar"
-                className="flex items-center text-gray-700 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium"
-              >
-                <Eye className="h-4 w-4 mr-1" />
-                View AR
               </Link>
 
               {/* Supabase Connection Button */}
               <button
                 onClick={handleSupabaseSetup}
-                className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isSupabaseConnected
-                    ? "text-green-700 bg-green-50 hover:bg-green-100"
-                    : "text-green-700 bg-green-50 hover:bg-green-100"
-                }`}
+                className="bg-gradient-to-br from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-black font-semibold px-3 py-2 text-xs rounded-xl transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl shadow-green-500/20 flex items-center gap-1 border-b-2 border-green-700"
               >
-                <Database className="h-4 w-4 mr-1" />
-                {isSupabaseConnected
-                  ? "Database Connected"
-                  : "Connect Database"}
+                <Database className="h-3 w-3" />
+                Database
+                {isSupabaseConnected && (
+                  <Check className="h-3 w-3 ml-1" />
+                )}
               </button>
 
-              {/* Unified Wallet Connection - Both Solana and EVM */}
+              {/* AR Preview Button */}
+              <Link
+                to="/ar"
+                className="bg-gradient-to-br from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-black font-semibold px-3 py-2 text-xs rounded-xl transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl shadow-green-500/20 flex items-center gap-1 border-b-2 border-green-700"
+              >
+                <Eye className="h-3 w-3" />
+                AR Preview
+              </Link>
+            </div>
+
+            {/* Hidden duplicate wallet section - to be cleaned up */}
+            <div className="hidden">
               <WalletConnectionDisplay />
 
               {/* Legacy Network Modal triggers - keeping for now */}
@@ -230,48 +205,6 @@ const Navbar = () => {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white shadow-lg rounded-b-lg">
-              {location.pathname === "/" ? (
-                <>
-                  <a
-                    href="#features"
-                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Features
-                  </a>
-                  <a
-                    href="#map"
-                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Explore
-                  </a>
-                  <a
-                    href="#auth"
-                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Join Waitlist
-                  </a>
-                </>
-              ) : (
-                <Link
-                  to="/"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Home
-                </Link>
-              )}
-
-              <Link
-                to="/deploy"
-                className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-green-600 hover:bg-green-50"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Deploy Agent
-              </Link>
               <Link
                 to="/dashboard"
                 className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50"
@@ -279,14 +212,6 @@ const Navbar = () => {
               >
                 <LayoutDashboard className="h-4 w-4 mr-1" />
                 Dashboard
-              </Link>
-              <Link
-                to="/ar"
-                className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-green-600 hover:bg-green-50"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Eye className="h-4 w-4 mr-1" />
-                View AR
               </Link>
 
               {/* Mobile Supabase Connection */}

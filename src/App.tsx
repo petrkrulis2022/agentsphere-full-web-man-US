@@ -13,6 +13,7 @@ import DeployObject from "./components/DeployObject";
 import { MultiChainAgentDashboard } from "./components/MultiChainAgentDashboard";
 import ARViewer from "./components/ARViewer";
 import ARAgentPlacer from "./components/ARAgentPlacer";
+import TouchIndicator from "./components/TouchIndicator";
 
 // Initialize Supabase client only if credentials are available
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -47,7 +48,10 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-indigo-900 to-purple-900">
+      <div
+        className="flex items-center justify-center min-h-screen"
+        style={{ backgroundColor: "rgb(15, 23, 42)" }}
+      >
         <div className="text-center">
           <motion.div
             className="text-6xl mb-4"
@@ -89,14 +93,6 @@ function App() {
             element={
               <>
                 <Hero />
-                <Features />
-                <MapVisualization />
-                <FAQSection />
-                <AuthSection
-                  waitlistCount={waitlistCount}
-                  setWaitlistCount={setWaitlistCount}
-                  supabase={supabase}
-                />
               </>
             }
           />
@@ -110,6 +106,9 @@ function App() {
         </Routes>
       </main>
       <Footer />
+
+      {/* Touch indicator for screen recording visibility */}
+      <TouchIndicator />
     </div>
   );
 }

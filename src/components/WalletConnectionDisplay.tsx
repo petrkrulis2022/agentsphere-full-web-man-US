@@ -236,9 +236,9 @@ const WalletConnectionDisplay = ({
       ) : (
         <button
           onClick={connectSolanaWallet}
-          className="flex items-center space-x-2 px-4 py-2 rounded-md bg-purple-600 hover:bg-purple-700 text-white font-medium transition-colors"
+          className="bg-gradient-to-br from-purple-400 to-purple-600 hover:from-purple-500 hover:to-purple-700 text-black font-semibold px-3 py-2 text-xs rounded-xl transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl shadow-purple-500/20 flex items-center gap-1 border-b-2 border-purple-700"
         >
-          <Wallet className="w-4 h-4" />
+          <Wallet className="w-3 h-3" />
           <span>Connect Solana</span>
         </button>
       )}
@@ -295,9 +295,9 @@ const WalletConnectionDisplay = ({
       ) : (
         <button
           onClick={connectEvmWallet}
-          className="flex items-center space-x-2 px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
+          className="bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-black font-semibold px-3 py-2 text-xs rounded-xl transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl shadow-blue-500/20 flex items-center gap-1 border-b-2 border-blue-700"
         >
-          <Wallet className="w-4 h-4" />
+          <Wallet className="w-3 h-3" />
           <span>Connect EVM</span>
         </button>
       )}
