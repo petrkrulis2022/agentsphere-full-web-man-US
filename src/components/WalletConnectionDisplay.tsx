@@ -100,7 +100,7 @@ const WalletConnectionDisplay = ({
           } else {
             setCurrentNetwork(null);
           }
-        }
+        },
       );
 
       // Listen for network/chain changes
@@ -173,7 +173,7 @@ const WalletConnectionDisplay = ({
       }
     } else {
       const install = window.confirm(
-        "Phantom wallet not detected. Would you like to install it?"
+        "Phantom wallet not detected. Would you like to install it?",
       );
       if (install) {
         window.open("https://phantom.app/", "_blank");

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -8,6 +8,14 @@ import {
   Wallet,
   MapPin,
   CreditCard,
+  Users,
+  Map,
+  Database,
+  Settings,
+  Info,
+  Boxes,
+  Video,
+  Zap,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import AgentInteractionModal from "./interaction/AgentInteractionModal";
@@ -16,6 +24,27 @@ import "./interaction/ARPaymentStyles.css";
 const Hero = () => {
   const [selectedAgent, setSelectedAgent] = useState(null);
   const [showInteractionModal, setShowInteractionModal] = useState(false);
+  const [agentCount, setAgentCount] = useState(54);
+
+  // Fetch agent count from database
+  useEffect(() => {
+    const fetchAgentCount = async () => {
+      try {
+        const { supabase } = await import("../lib/supabase");
+        const { count, error } = await supabase
+          .from("agents")
+          .select("*", { count: "exact", head: true });
+
+        if (!error && count !== null) {
+          setAgentCount(count);
+        }
+      } catch (error) {
+        console.error("Error fetching agent count:", error);
+      }
+    };
+
+    fetchAgentCount();
+  }, []);
 
   // Mock user location for AR Preview
   const mockUserLocation = {
@@ -242,6 +271,106 @@ const Hero = () => {
               )}
             </motion.div>
           ))}
+        </div>
+
+        {/* Minimalistic Navigation Grid */}
+        <div className="grid grid-cols-2 gap-3 mt-12 max-w-md mx-auto">
+          {/* CubePay */}
+          <Link
+            to="/"
+            className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-all duration-200 group"
+          >
+            <Camera className="h-6 w-6 text-green-400 mb-2 group-hover:scale-110 transition-transform" />
+            <span className="text-xs text-gray-300 font-medium">CubePay</span>
+          </Link>
+
+          {/* Agents Marketplace */}
+          <Link
+            to="/marketplace"
+            className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-all duration-200 group relative"
+          >
+            <Users className="h-6 w-6 text-green-400 mb-2 group-hover:scale-110 transition-transform" />
+            <span className="text-xs text-gray-300 font-medium">
+              Agents Marketplace
+            </span>
+            <span className="absolute -top-1 -right-1 bg-green-500 text-black text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+              {agentCount}
+            </span>
+          </Link>
+
+          {/* Agent Map */}
+          <Link
+            to="/map"
+            className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-all duration-200 group"
+          >
+            <Map className="h-6 w-6 text-green-400 mb-2 group-hover:scale-110 transition-transform" />
+            <span className="text-xs text-gray-300 font-medium">Agent Map</span>
+          </Link>
+
+          {/* Database */}
+          <Link
+            to="/database"
+            className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-all duration-200 group"
+          >
+            <Database className="h-6 w-6 text-green-400 mb-2 group-hover:scale-110 transition-transform" />
+            <span className="text-xs text-gray-300 font-medium">Database</span>
+          </Link>
+
+          {/* Wallet */}
+          <Link
+            to="/wallet"
+            className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-all duration-200 group"
+          >
+            <Wallet className="h-6 w-6 text-green-400 mb-2 group-hover:scale-110 transition-transform" />
+            <span className="text-xs text-gray-300 font-medium">Wallet</span>
+          </Link>
+
+          {/* Settings */}
+          <Link
+            to="/settings"
+            className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-all duration-200 group"
+          >
+            <Settings className="h-6 w-6 text-green-400 mb-2 group-hover:scale-110 transition-transform" />
+            <span className="text-xs text-gray-300 font-medium">Settings</span>
+          </Link>
+
+          {/* About */}
+          <Link
+            to="/about"
+            className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-all duration-200 group"
+          >
+            <Info className="h-6 w-6 text-green-400 mb-2 group-hover:scale-110 transition-transform" />
+            <span className="text-xs text-gray-300 font-medium">About</span>
+          </Link>
+
+          {/* QR Tests */}
+          <Link
+            to="/qr-tests"
+            className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-all duration-200 group"
+          >
+            <Zap className="h-6 w-6 text-green-400 mb-2 group-hover:scale-110 transition-transform" />
+            <span className="text-xs text-gray-300 font-medium">QR Tests</span>
+          </Link>
+
+          {/* Cube Demo */}
+          <Link
+            to="/cube-demo"
+            className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-all duration-200 group"
+          >
+            <Boxes className="h-6 w-6 text-green-400 mb-2 group-hover:scale-110 transition-transform" />
+            <span className="text-xs text-gray-300 font-medium">Cube Demo</span>
+          </Link>
+
+          {/* Camera Test */}
+          <Link
+            to="/camera-test"
+            className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-all duration-200 group"
+          >
+            <Video className="h-6 w-6 text-green-400 mb-2 group-hover:scale-110 transition-transform" />
+            <span className="text-xs text-gray-300 font-medium">
+              Camera Test
+            </span>
+          </Link>
         </div>
       </div>
 

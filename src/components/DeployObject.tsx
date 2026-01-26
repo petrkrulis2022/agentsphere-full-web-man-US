@@ -89,6 +89,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   const [networkLoading, setNetworkLoading] = useState(false);
   const [networkError, setNetworkError] = useState<string>("");
   const [showNetworkSelector, setShowNetworkSelector] = useState(false);
+  const [showSupportedNetworks, setShowSupportedNetworks] = useState(false);
 
   // Multi-chain wallet states
   const [solanaWallet, setSolanaWallet] = useState<any>(null);
@@ -97,7 +98,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     "metamask" | "phantom" | "coinbase" | null
   >(null);
   const [connectedWallets, setConnectedWallets] = useState<Map<string, any>>(
-    new Map()
+    new Map(),
   );
   const [activeNetwork, setActiveNetwork] = useState<"evm" | "solana">("evm");
 
@@ -545,7 +546,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       const network = solanaWallet.chainId as string;
       const usdcBalance = await solanaNetworkService.getUSDCBalance(
         solanaWallet.address,
-        network
+        network,
       );
 
       console.log("✅ Solana USDC balance fetched:", usdcBalance, "USDC");
@@ -593,7 +594,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
       if (!usdcContract) {
         console.warn(
-          `❌ USDC contract not found for chain ${currentNetwork.chainId}`
+          `❌ USDC contract not found for chain ${currentNetwork.chainId}`,
         );
         console.log("📋 Available chains:", Object.keys(USDC_CONTRACTS));
         console.log("🔍 Chain ID type:", typeof currentNetwork.chainId);
@@ -606,7 +607,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       console.log(
         "📄 Official USDC Contract for Chain",
         currentNetwork.chainId + ":",
-        usdcContract
+        usdcContract,
       );
 
       // Create provider using the current network RPC
@@ -619,7 +620,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
       if (network.chainId !== currentNetwork.chainId) {
         throw new Error(
-          `Network mismatch: Provider is on chain ${network.chainId}, expected ${currentNetwork.chainId}`
+          `Network mismatch: Provider is on chain ${network.chainId}, expected ${currentNetwork.chainId}`,
         );
       }
 
@@ -683,7 +684,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         "   Network:",
         currentNetwork.name,
         "(Chain ID:",
-        currentNetwork.chainId + ")"
+        currentNetwork.chainId + ")",
       );
 
       setUsdcBalance(balanceNumber.toFixed(6)); // Display with 6 decimals
@@ -692,13 +693,13 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       if (balanceNumber > 0) {
         console.log(
           `🎉 You have ${balanceNumber.toFixed(
-            6
-          )} ${symbol} in your connected account on ${currentNetwork.name}!`
+            6,
+          )} ${symbol} in your connected account on ${currentNetwork.name}!`,
         );
       } else {
         console.log("⚠️ No USDC balance found in connected account");
         setBalanceError(
-          `No USDC balance found for ${address}. You may need USDC tokens on ${currentNetwork.name} (Chain ID: ${currentNetwork.chainId}) to deploy agents.`
+          `No USDC balance found for ${address}. You may need USDC tokens on ${currentNetwork.name} (Chain ID: ${currentNetwork.chainId}) to deploy agents.`,
         );
       }
     } catch (error) {
@@ -708,7 +709,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
           error instanceof Error ? error.message : "Unknown error"
         }. Check network connection and ensure you're connected to ${
           currentNetwork?.name || "supported network"
-        }.`
+        }.`,
       );
       setUsdcBalance("0.000000");
     } finally {
@@ -756,7 +757,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       } else {
         console.error(`❌ Failed to switch to ${targetNetwork.name}`);
         setNetworkError(
-          `Failed to switch to ${targetNetwork.name}. Please try manually in your wallet.`
+          `Failed to switch to ${targetNetwork.name}. Please try manually in your wallet.`,
         );
       }
     } catch (error) {
@@ -764,7 +765,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       setNetworkError(
         `Network switch failed: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`
+        }`,
       );
     }
   };
@@ -772,10 +773,10 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   // Get supported networks for display
   const getSupportedNetworks = () => {
     const evmNetworks = Object.values(EVM_NETWORKS).filter(
-      (network) => network.status === "active"
+      (network) => network.status === "active",
     );
     const nonEvmNetworks = Object.values(NON_EVM_NETWORKS).filter(
-      (network) => network.status === "active"
+      (network) => network.status === "active",
     );
     return [...evmNetworks, ...nonEvmNetworks];
   };
@@ -793,7 +794,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       (network) =>
         network.chainId === currentNetwork.chainId ||
         (network.name === currentNetwork.name &&
-          currentNetwork.chainId === "devnet")
+          currentNetwork.chainId === "devnet"),
     );
   };
 
@@ -824,7 +825,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         alert("Error getting location: " + error.message);
         setLocationLoading(false);
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
     );
   };
 
@@ -854,12 +855,12 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
             latitude: location.latitude,
             longitude: location.longitude,
           }),
-        }
+        },
       );
 
       if (!response.ok) {
         console.warn(
-          `⚠️ RTK service unavailable (${response.status}). Continuing with standard GPS.`
+          `⚠️ RTK service unavailable (${response.status}). Continuing with standard GPS.`,
         );
         setRtkLoading(false);
         return; // Continue without RTK
@@ -880,7 +881,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       console.log("🎯 RTK enhanced location:", data);
     } catch (error) {
       console.warn(
-        "⚠️ RTK correction unavailable, using standard GPS location"
+        "⚠️ RTK correction unavailable, using standard GPS location",
       );
       // Don't show alert - RTK is optional enhancement
     } finally {
@@ -897,7 +898,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   // Handle bank details updates
   const handleBankDetailsChange = (
     details: any,
-    paymentType: "virtual_card" | "bank_qr"
+    paymentType: "virtual_card" | "bank_qr",
   ) => {
     if (paymentMethods) {
       const updatedMethods = { ...paymentMethods };
@@ -920,7 +921,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     }
 
     const enabledMethods = Object.values(paymentMethods).some(
-      (method: any) => method.enabled
+      (method: any) => method.enabled,
     );
     if (!enabledMethods) {
       errors.push("At least one payment method must be selected");
@@ -929,7 +930,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     // Validate crypto methods have wallet connection
     const cryptoMethods = ["crypto_qr", "voice_pay", "sound_pay"];
     const hasCryptoEnabled = cryptoMethods.some(
-      (method) => paymentMethods[method]?.enabled
+      (method) => paymentMethods[method]?.enabled,
     );
 
     // Check for either EVM or Solana wallet
@@ -965,13 +966,13 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     setMcpIntegrations((prev) =>
       prev.includes(integration)
         ? prev.filter((item) => item !== integration)
-        : [...prev, integration]
+        : [...prev, integration],
     );
   };
 
   // Process payment for agent deployment
   const processDeploymentPayment = async (
-    deploymentCost: number
+    deploymentCost: number,
   ): Promise<{
     success: boolean;
     transactionHash?: string;
@@ -1001,12 +1002,12 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         const hasBalance = await solanaPaymentService.checkSufficientBalance(
           solanaWallet.address,
           deploymentCost,
-          currentNetwork.chainId
+          currentNetwork.chainId,
         );
 
         if (!hasBalance) {
           throw new Error(
-            `Insufficient USDC balance. Required: ${deploymentCost} USDC`
+            `Insufficient USDC balance. Required: ${deploymentCost} USDC`,
           );
         }
 
@@ -1031,9 +1032,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         }
 
         // Process payment
-        const paymentResult = await solanaPaymentService.processPayment(
-          paymentRequest
-        );
+        const paymentResult =
+          await solanaPaymentService.processPayment(paymentRequest);
 
         if (!paymentResult.success) {
           throw new Error(paymentResult.error || "Payment processing failed");
@@ -1041,7 +1041,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
         console.log(
           "✅ Solana payment successful:",
-          paymentResult.transactionSignature
+          paymentResult.transactionSignature,
         );
         return {
           success: true,
@@ -1060,7 +1060,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         const currentUsdcBalance = parseFloat(usdcBalance || "0");
         if (currentUsdcBalance < deploymentCost) {
           throw new Error(
-            `Insufficient USDC balance. Required: ${deploymentCost} USDC, Available: ${currentUsdcBalance} USDC`
+            `Insufficient USDC balance. Required: ${deploymentCost} USDC, Available: ${currentUsdcBalance} USDC`,
           );
         }
 
@@ -1130,7 +1130,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
     if (!supabase) {
       alert(
-        "Database connection not available. Please connect to Supabase first."
+        "Database connection not available. Please connect to Supabase first.",
       );
       return;
     }
@@ -1167,7 +1167,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         throw new Error(
           `Please connect to a supported network. Current: ${
             currentNetwork?.name || "Unknown"
-          }`
+          }`,
         );
       }
 
@@ -1196,7 +1196,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
           setHederaPrivateKey(hederaWalletData.privateKey);
 
           console.log(
-            `✅ Hedera wallet created: ${hederaWalletData.accountId}`
+            `✅ Hedera wallet created: ${hederaWalletData.accountId}`,
           );
 
           // 2. Fund the agent wallet with initial USDh
@@ -1212,14 +1212,14 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
             hederaIdentityData = await hederaService.mintAgentIdentity(
               hederaWalletData.accountId,
               agentCardUrl,
-              agentName
+              agentName,
             );
             setHederaNftId(hederaIdentityData.nftId);
             console.log(`✅ Identity NFT minted: ${hederaIdentityData.nftId}`);
           } catch (nftError) {
             console.warn(
               `⚠️ NFT minting skipped (contract not deployed):`,
-              nftError
+              nftError,
             );
             // Continue without NFT - wallet creation is more important
           }
@@ -1246,7 +1246,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
               hederaError instanceof Error
                 ? hederaError.message
                 : "Unknown error"
-            }`
+            }`,
           );
         } finally {
           setHederaWalletCreating(false);
@@ -1320,8 +1320,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         agent_wallet_type: hederaWalletData?.accountId
           ? "hedera_wallet"
           : solanaWallet?.publicKey
-          ? "solana_wallet"
-          : "evm_wallet",
+            ? "solana_wallet"
+            : "evm_wallet",
         deployer_address:
           solanaWallet?.publicKey?.toString() || evmWallet || address,
 
@@ -1332,9 +1332,10 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
           selectedToken === "HBAR"
             ? "native" // HBAR is native token, no contract address
             : solanaWallet?.publicKey
-            ? "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU" // Solana USDC Devnet mint
-            : TOKEN_ADDRESSES[selectedToken as keyof typeof TOKEN_ADDRESSES] ||
-              "",
+              ? "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU" // Solana USDC Devnet mint
+              : TOKEN_ADDRESSES[
+                  selectedToken as keyof typeof TOKEN_ADDRESSES
+                ] || "",
 
         // Communication features
         chat_enabled: textChat,
@@ -1357,8 +1358,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         agent_identity: hederaIdentityData?.nftId
           ? hederaIdentityData.nftId
           : hederaWalletData?.accountId
-          ? `did:hedera:testnet:${hederaWalletData.accountId}`
-          : null,
+            ? `did:hedera:testnet:${hederaWalletData.accountId}`
+            : null,
         agent_wallet_public_key: hederaWalletData?.publicKey || null,
         agent_initial_balance: isHederaAgent ? 100 : 0, // 100 USDh for Hedera agents
         agent_capabilities: isHederaAgent
@@ -1401,14 +1402,14 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       console.log(
         "💰 Interaction Fee Input:",
         interactionFee,
-        typeof interactionFee
+        typeof interactionFee,
       );
       console.log("🪙 Selected Token:", selectedToken);
       console.log(
         "🌐 Network:",
         currentNetwork.name,
         "Chain ID:",
-        currentNetwork.chainId
+        currentNetwork.chainId,
       );
 
       // Verify the interaction fee amount before storing
@@ -1430,7 +1431,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         deploymentCost,
         "USDC (Interaction fee: ",
         interactionFee,
-        "USDC)"
+        "USDC)",
       );
 
       // Skip payment if deployment is free
@@ -1481,7 +1482,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       console.log(
         "💰 Stored Fee Amount:",
         data.interaction_fee_amount,
-        typeof data.interaction_fee_amount
+        typeof data.interaction_fee_amount,
       );
       console.log("🪙 Stored Fee Token:", data.interaction_fee_token);
       console.log("🌐 Stored Network:", data.deployment_network_name);
@@ -1537,7 +1538,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         if (phantom.isPhantom && phantom.isConnected && phantom.publicKey) {
           console.log(
             "✅ Phantom wallet detected and connected:",
-            phantom.publicKey.toString()
+            phantom.publicKey.toString(),
           );
           setSolanaWallet(phantom);
           setWalletType("phantom");
@@ -1594,7 +1595,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         if ((window as any).ethereum?.removeListener) {
           (window as any).ethereum.removeListener(
             "accountsChanged",
-            handleAccountsChanged
+            handleAccountsChanged,
           );
         }
       };
@@ -1616,7 +1617,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
           if (network && !network.isSupported) {
             setNetworkError(
-              `Network ${network.name} is not supported. Please switch to a supported network.`
+              `Network ${network.name} is not supported. Please switch to a supported network.`,
             );
           }
 
@@ -1631,7 +1632,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
             if (!newNetwork.isSupported) {
               setNetworkError(
-                `Network ${newNetwork.name} is not supported. Please switch to a supported network.`
+                `Network ${newNetwork.name} is not supported. Please switch to a supported network.`,
               );
             } else {
               setNetworkError("");
@@ -1647,7 +1648,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         } catch (error) {
           console.error("Network detection failed:", error);
           setNetworkError(
-            "Failed to detect network. Please ensure MetaMask is connected."
+            "Failed to detect network. Please ensure MetaMask is connected.",
           );
         } finally {
           setNetworkLoading(false);
@@ -1744,7 +1745,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         "🔍 Network changed:",
         currentNetwork.name,
         "Chain ID:",
-        currentNetwork.chainId
+        currentNetwork.chainId,
       );
       console.log("🪙 Supported tokens:", supportedTokens);
       console.log("💰 Current selected token:", selectedToken);
@@ -1797,12 +1798,15 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   }, [showNetworkSelector]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-emerald-50 py-8">
+    <div
+      className="min-h-screen py-8"
+      style={{ background: "rgb(15, 23, 42)" }}
+    >
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl shadow-xl overflow-hidden"
+          className="bg-slate-800/50 rounded-2xl shadow-xl overflow-hidden"
         >
           {/* Header */}
           <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-8 py-6">
@@ -1931,7 +1935,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                                         )}
                                       </div>
                                     </button>
-                                  )
+                                  ),
                                 )}
                               </div>
                               <div className="p-3 border-t bg-gray-50">
@@ -2059,43 +2063,80 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
           </div>
 
           <div className="p-8 space-y-8">
-            {/* Supported Networks Info Panel */}
+            {/* Supported Networks Button */}
             {!address && (
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                  <Network className="h-5 w-5 mr-2 text-blue-600" />
-                  Supported EVM Testnets
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                  {getSupportedNetworks().map((network, index) => (
-                    <div
-                      key={`${network.chainId}-${network.name}-${index}`}
-                      className="bg-white rounded-lg p-3 border border-gray-200"
+              <div className="flex justify-center">
+                <button
+                  onClick={() => setShowSupportedNetworks(true)}
+                  className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-lg"
+                >
+                  <Network className="h-5 w-5" />
+                  Click for Supported Testnets
+                </button>
+              </div>
+            )}
+
+            {/* Supported Networks Modal */}
+            {showSupportedNetworks && (
+              <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+                <div className="bg-slate-800 border border-slate-600 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                  <div className="sticky top-0 bg-slate-800 border-b border-slate-600 p-6 flex items-center justify-between">
+                    <h3 className="text-xl font-semibold text-gray-100 flex items-center">
+                      <Network className="h-6 w-6 mr-2 text-blue-400" />
+                      Supported EVM Testnets
+                    </h3>
+                    <button
+                      onClick={() => setShowSupportedNetworks(false)}
+                      className="text-gray-400 hover:text-white transition-colors p-1"
                     >
-                      <div className="font-medium text-gray-900">
-                        {network.name}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        Chain ID: {network.chainId}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {network.symbol} • USDC Support ✓
-                      </div>
+                      <svg
+                        className="h-6 w-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                      {getSupportedNetworks().map((network, index) => (
+                        <div
+                          key={`${network.chainId}-${network.name}-${index}`}
+                          className="bg-slate-700/50 rounded-lg p-4 border border-slate-600 hover:border-blue-500 transition-colors"
+                        >
+                          <div className="font-medium text-gray-100">
+                            {network.name}
+                          </div>
+                          <div className="text-sm text-gray-300 mt-1">
+                            Chain ID: {network.chainId}
+                          </div>
+                          <div className="text-xs text-gray-400 mt-1">
+                            {network.symbol} • USDC Support ✓
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                <div className="text-sm text-gray-600">
-                  💡 All networks support USDC payments. Connect your wallet to
-                  automatically detect your network or switch between supported
-                  chains.
+                    <div className="text-sm text-gray-300 bg-blue-500/20 border border-blue-500/30 rounded-lg p-4">
+                      💡 All networks support USDC payments. Connect your wallet
+                      to automatically detect your network or switch between
+                      supported chains.
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
 
             {/* Location & Deployment Section */}
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-                <MapPin className="h-6 w-6 mr-2 text-green-600" />
+              <h2 className="text-2xl font-bold text-gray-100 flex items-center">
+                <MapPin className="h-6 w-6 mr-2 text-green-400" />
                 Location & Deployment
               </h2>
 
@@ -2130,13 +2171,13 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
               {/* Location Display */}
               {location && (
-                <div className="bg-gray-50 rounded-lg p-4">
+                <div className="bg-slate-700/50 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-gray-900">
+                    <h3 className="font-semibold text-gray-100">
                       Current Location
                     </h3>
                     {routerLocation.state?.arPlacedCoordinates && (
-                      <span className="flex items-center text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                      <span className="flex items-center text-xs bg-blue-500/30 text-blue-300 px-2 py-1 rounded-full">
                         <Camera className="h-3 w-3 mr-1" />
                         AR Placed
                       </span>
@@ -2144,31 +2185,31 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="text-gray-600">Latitude:</span>
-                      <span className="ml-2 font-mono">
+                      <span className="text-gray-400">Latitude:</span>
+                      <span className="ml-2 font-mono text-gray-200">
                         {location.latitude.toFixed(8)}
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Longitude:</span>
-                      <span className="ml-2 font-mono">
+                      <span className="text-gray-400">Longitude:</span>
+                      <span className="ml-2 font-mono text-gray-200">
                         {location.longitude.toFixed(8)}
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Accuracy:</span>
-                      <span className="ml-2">
+                      <span className="text-gray-400">Accuracy:</span>
+                      <span className="ml-2 text-gray-200">
                         ±{location.accuracy?.toFixed(0) || "10"}m
                       </span>
                     </div>
                     {preciseLocation && (
                       <div>
-                        <span className="text-gray-600">RTK Status:</span>
+                        <span className="text-gray-400">RTK Status:</span>
                         <span
                           className={`ml-2 px-2 py-1 rounded-full text-xs ${
                             preciseLocation.correctionApplied
-                              ? "bg-green-100 text-green-800"
-                              : "bg-yellow-100 text-yellow-800"
+                              ? "bg-green-500/30 text-green-300"
+                              : "bg-yellow-500/30 text-yellow-300"
                           }`}
                         >
                           {preciseLocation.correctionApplied
@@ -2182,24 +2223,24 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
               )}
 
               {/* Trailing Agent Option */}
-              <div className="bg-blue-50 rounded-lg p-4">
+              <div className="bg-blue-500/20 rounded-lg p-4 border border-blue-500/30">
                 <div className="flex items-center mb-3">
                   <input
                     type="checkbox"
                     id="trailingAgent"
                     checked={trailingAgent}
                     onChange={(e) => setTrailingAgent(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-500 focus:ring-blue-500 border-gray-500 rounded"
                   />
                   <label
                     htmlFor="trailingAgent"
-                    className="ml-2 text-sm font-medium text-gray-900"
+                    className="ml-2 text-sm font-medium text-gray-100"
                   >
                     Trailing Agent
                   </label>
                 </div>
                 {trailingAgent && (
-                  <p className="text-sm text-blue-800">
+                  <p className="text-sm text-blue-200">
                     When 'Trailing Agent' is enabled, the agent's location will
                     dynamically follow the device's location used for
                     deployment, ensuring it always stays with you.
@@ -2210,7 +2251,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
               {/* Visibility Range */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Visibility Range: {visibilityRange}m
                   </label>
                   <div className="flex items-center space-x-4">
@@ -2218,7 +2259,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                       onClick={() =>
                         setVisibilityRange(Math.max(5, visibilityRange - 5))
                       }
-                      className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                      className="px-3 py-1 bg-slate-600 text-gray-200 rounded hover:bg-slate-500"
                     >
                       -
                     </button>
@@ -2230,23 +2271,22 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                       onChange={(e) =>
                         setVisibilityRange(Number(e.target.value))
                       }
-                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      className="flex-1 h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer"
                     />
                     <button
                       onClick={() =>
                         setVisibilityRange(Math.min(50, visibilityRange + 5))
                       }
-                      className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                      className="px-3 py-1 bg-slate-600 text-gray-200 rounded hover:bg-slate-500"
                     >
                       +
                     </button>
                   </div>
-                </div>
-
+                </div>{" "}
                 {/* Interaction Range & AR Notifications */}
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Interaction Range: {interactionRange}m
                     </label>
                     <input
@@ -2257,7 +2297,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                       onChange={(e) =>
                         setInteractionRange(Number(e.target.value))
                       }
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer"
                     />
                   </div>
 
@@ -2267,11 +2307,11 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                       id="arNotifications"
                       checked={arNotifications}
                       onChange={(e) => setArNotifications(e.target.checked)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-blue-500 focus:ring-blue-500 border-gray-500 rounded"
                     />
                     <label
                       htmlFor="arNotifications"
-                      className="ml-2 text-sm text-gray-700"
+                      className="ml-2 text-sm text-gray-300"
                     >
                       AR Notifications
                     </label>
@@ -2280,12 +2320,12 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
               </div>
 
               {/* Notification & Discovery */}
-              <div className="bg-yellow-50 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-2 flex items-center">
-                  <Bell className="h-5 w-5 mr-2 text-yellow-600" />
+              <div className="bg-yellow-500/20 rounded-lg p-4 border border-yellow-500/30">
+                <h3 className="font-semibold text-gray-100 mb-2 flex items-center">
+                  <Bell className="h-5 w-5 mr-2 text-yellow-400" />
                   Notification & Discovery
                 </h3>
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-gray-300">
                   Users within the interaction range ({interactionRange}m) will
                   receive notifications about your agent. The visibility range (
                   {visibilityRange}m) determines how far users can see your
@@ -2296,14 +2336,14 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
             {/* Agent Details Section */}
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-                <Settings className="h-6 w-6 mr-2 text-green-600" />
+              <h2 className="text-2xl font-bold text-gray-100 flex items-center">
+                <Settings className="h-6 w-6 mr-2 text-green-400" />
                 Agent Details
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Agent Name *
                   </label>
                   <input
@@ -2311,19 +2351,19 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     value={agentName}
                     onChange={(e) => setAgentName(e.target.value)}
                     placeholder="Enter agent name"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-4 py-2 border border-slate-600 bg-slate-700/50 text-gray-100 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder-gray-400"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Agent Type
                   </label>
                   <select
                     value={agentType}
                     onChange={(e) => setAgentType(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-4 py-2 border border-slate-600 bg-slate-700/50 text-gray-100 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   >
                     {agentTypes.map((type) => (
                       <option key={type.value} value={type.value}>
@@ -2334,7 +2374,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Agent Description
                   </label>
                   <textarea
@@ -2342,18 +2382,18 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     onChange={(e) => setAgentDescription(e.target.value)}
                     placeholder="Describe your agent's purpose and capabilities"
                     rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-4 py-2 border border-slate-600 bg-slate-700/50 text-gray-100 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder-gray-400"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Location Type
                   </label>
                   <select
                     value={locationType}
                     onChange={(e) => setLocationType(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-4 py-2 border border-slate-600 bg-slate-700/50 text-gray-100 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   >
                     {locationTypes.map((type) => (
                       <option key={type} value={type}>
@@ -2367,8 +2407,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
             {/* Agent Interaction Methods */}
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-                <MessageCircle className="h-6 w-6 mr-2 text-green-600" />
+              <h2 className="text-2xl font-bold text-gray-100 flex items-center">
+                <MessageCircle className="h-6 w-6 mr-2 text-green-400" />
                 Agent Interaction Methods
               </h2>
 
@@ -2445,8 +2485,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
             {/* MCP Server Interactions */}
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-                <Users className="h-6 w-6 mr-2 text-green-600" />
+              <h2 className="text-2xl font-bold text-gray-100 flex items-center">
+                <Users className="h-6 w-6 mr-2 text-green-400" />
                 MCP Server Interactions
               </h2>
 
@@ -2458,11 +2498,11 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                       id={`mcp-${option}`}
                       checked={mcpIntegrations.includes(option)}
                       onChange={() => toggleMCPIntegration(option)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-blue-500 focus:ring-blue-500 border-gray-500 rounded"
                     />
                     <label
                       htmlFor={`mcp-${option}`}
-                      className="ml-2 text-sm text-gray-700"
+                      className="ml-2 text-sm text-gray-300"
                     >
                       {option}
                     </label>
@@ -2473,18 +2513,18 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
             {/* Agent Wallet Type */}
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-                <Wallet className="h-6 w-6 mr-2 text-green-600" />
+              <h2 className="text-2xl font-bold text-gray-100 flex items-center">
+                <Wallet className="h-6 w-6 mr-2 text-green-400" />
                 Agent Wallet Type
               </h2>
 
-              <div className="bg-gray-50 rounded-lg p-6 space-y-4">
+              <div className="bg-slate-700/50 rounded-lg p-6 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Agent Wallet (Payment Receiver)
                     </label>
-                    <div className="bg-white p-3 rounded border font-mono text-sm">
+                    <div className="bg-slate-600/50 p-3 rounded border border-slate-500 font-mono text-sm text-gray-200">
                       {hederaAccountId ||
                         solanaWallet?.publicKey?.toString() ||
                         evmWallet ||
@@ -2494,10 +2534,10 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Your Connected Wallet
                     </label>
-                    <div className="bg-white p-3 rounded border font-mono text-sm">
+                    <div className="bg-slate-600/50 p-3 rounded border border-slate-500 font-mono text-sm text-gray-200">
                       {solanaWallet?.publicKey?.toString() ||
                         evmWallet ||
                         address ||
@@ -2506,8 +2546,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   </div>
                 </div>
 
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <p className="text-sm text-blue-800">
+                <div className="bg-blue-500/20 rounded-lg p-4 border border-blue-500/30">
+                  <p className="text-sm text-blue-200">
                     <strong>Purpose:</strong>{" "}
                     {agentType &&
                     [
@@ -2529,21 +2569,21 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
             {/* Economics & Ownership */}
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-                <DollarSign className="h-6 w-6 mr-2 text-green-600" />
+              <h2 className="text-2xl font-bold text-gray-100 flex items-center">
+                <DollarSign className="h-6 w-6 mr-2 text-green-400" />
                 Economics & Ownership
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Payment Token{" "}
                     {currentNetwork && `(${currentNetwork.shortName})`}
                   </label>
                   <select
                     value={selectedToken}
                     onChange={(e) => setSelectedToken(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-4 py-2 border border-slate-600 bg-slate-700/50 text-gray-100 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     disabled={!currentNetwork || !currentNetwork.isSupported}
                   >
                     {getSupportedStablecoins().map((token) => (
@@ -2553,7 +2593,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                     ))}
                   </select>
                   {currentNetwork && (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-400 mt-1">
                       {currentNetwork.chainId === 296
                         ? "Native HBAR payments on Hedera Testnet"
                         : `Available tokens for ${currentNetwork.name}`}
@@ -2562,7 +2602,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Interaction Fee
                   </label>
 
@@ -2609,11 +2649,11 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   {(agentType === "payment_terminal" ||
                     agentType === "trailing_payment_terminal") &&
                   feeType === "dynamic" ? (
-                    <div className="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-sm text-blue-800 font-medium">
+                    <div className="w-full px-4 py-3 bg-blue-500/20 border border-blue-500/30 rounded-lg">
+                      <p className="text-sm text-blue-200 font-medium">
                         💰 Dynamic Amount from Merchant
                       </p>
-                      <p className="text-xs text-blue-600 mt-1">
+                      <p className="text-xs text-blue-300 mt-1">
                         This terminal will accept variable amounts from
                         merchants. The fee will be set per transaction by
                         e-shops, on-ramps, or other payment sources. No fixed
@@ -2629,15 +2669,15 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                         onChange={(e) => {
                           const value = parseFloat(e.target.value);
                           setInteractionFee(
-                            isNaN(value) || value <= 0 ? 10 : value
+                            isNaN(value) || value <= 0 ? 10 : value,
                           );
                         }}
                         min="0.1"
                         step="0.1"
                         placeholder="Enter fee amount"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        className="w-full px-4 py-2 border border-slate-600 bg-slate-700/50 text-gray-100 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder-gray-400"
                       />
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-gray-400 mt-1">
                         {agentType === "payment_terminal" ||
                         agentType === "trailing_payment_terminal"
                           ? "Fixed amount for this payment terminal"
@@ -2648,7 +2688,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Revenue Sharing{" "}
                     {agentType === "payment_terminal" ||
                     agentType === "trailing_payment_terminal"
@@ -2657,11 +2697,11 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   </label>
                   {agentType === "payment_terminal" ||
                   agentType === "trailing_payment_terminal" ? (
-                    <div className="w-full px-4 py-3 bg-green-50 border border-green-200 rounded-lg">
-                      <p className="text-sm text-green-800 font-medium">
+                    <div className="w-full px-4 py-3 bg-green-500/20 border border-green-500/30 rounded-lg">
+                      <p className="text-sm text-green-200 font-medium">
                         ✓ 100% Revenue - No Platform Fee
                       </p>
-                      <p className="text-xs text-green-600 mt-1">
+                      <p className="text-xs text-green-300 mt-1">
                         Payment terminal agents receive 100% of payment amounts.
                         AgentSphere does not take a platform fee on terminal
                         transactions.
@@ -2676,46 +2716,46 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                       onChange={(e) =>
                         setRevenueSharing(Number(e.target.value))
                       }
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer"
                     />
                   )}
                 </div>
               </div>
 
               {/* Revenue Potential */}
-              <div className="bg-green-50 rounded-lg p-6">
-                <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
-                  <TrendingUp className="h-5 w-5 mr-2 text-green-600" />
+              <div className="bg-green-500/20 rounded-lg p-6 border border-green-500/30">
+                <h3 className="font-semibold text-gray-100 mb-4 flex items-center">
+                  <TrendingUp className="h-5 w-5 mr-2 text-green-400" />
                   Revenue Potential
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                   <div>
-                    <div className="text-2xl font-bold text-green-600">
+                    <div className="text-2xl font-bold text-green-400">
                       {((interactionFee * revenueSharing) / 100).toFixed(6)}{" "}
                       {selectedToken}
                     </div>
-                    <div className="text-sm text-gray-600">Per Interaction</div>
+                    <div className="text-sm text-gray-300">Per Interaction</div>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-green-600">
+                    <div className="text-2xl font-bold text-green-400">
                       {(((interactionFee * revenueSharing) / 100) * 10).toFixed(
-                        6
+                        6,
                       )}{" "}
                       {selectedToken}
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-300">
                       10 Interactions/Day
                     </div>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-green-600">
+                    <div className="text-2xl font-bold text-green-400">
                       {(
                         ((interactionFee * revenueSharing) / 100) *
                         300
                       ).toFixed(6)}{" "}
                       {selectedToken}
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-300">
                       Monthly Potential
                     </div>
                   </div>
@@ -2726,13 +2766,13 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
             {/* MCP Integration Settings (Travel Agent only) */}
             {agentType === "travel_agent" && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-                  <Network className="h-6 w-6 mr-2 text-purple-600" />
+                <h2 className="text-2xl font-bold text-gray-100 flex items-center">
+                  <Network className="h-6 w-6 mr-2 text-purple-400" />
                   MCP Integration (x402 Data Services)
                 </h2>
 
                 <div className="space-y-4">
-                  <div className="flex items-start p-4 border border-purple-200 rounded-lg bg-purple-50">
+                  <div className="flex items-start p-4 border border-purple-500/30 rounded-lg bg-purple-500/20">
                     <input
                       type="checkbox"
                       id="mcpFlightradar"
@@ -2745,25 +2785,27 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                           ]);
                         } else {
                           setMcpIntegrations(
-                            mcpIntegrations.filter((m) => m !== "flightradar24")
+                            mcpIntegrations.filter(
+                              (m) => m !== "flightradar24",
+                            ),
                           );
                         }
                       }}
-                      className="h-5 w-5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded mt-0.5"
+                      className="h-5 w-5 text-purple-500 focus:ring-purple-500 border-gray-500 rounded mt-0.5"
                     />
                     <div className="ml-3 flex-1">
                       <label
                         htmlFor="mcpFlightradar"
-                        className="font-medium text-gray-900 flex items-center cursor-pointer"
+                        className="font-medium text-gray-100 flex items-center cursor-pointer"
                       >
-                        <Plane className="h-4 w-4 mr-2 text-purple-600" />
+                        <Plane className="h-4 w-4 mr-2 text-purple-400" />
                         Flightradar24 API (Real-Time Flight Data)
                       </label>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm text-gray-300 mt-1">
                         Access live flight information via Thirdweb Nexus MCP
                         server
                       </p>
-                      <div className="mt-2 space-y-1 text-xs text-gray-500">
+                      <div className="mt-2 space-y-1 text-xs text-gray-400">
                         <div className="flex items-center">
                           <span className="font-medium mr-2">Cost:</span>
                           <span>€0.00022 per query (0.00022 USDH)</span>
@@ -2781,11 +2823,11 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                           </span>
                         </div>
                       </div>
-                      <div className="mt-3 p-3 bg-white rounded border border-purple-200">
-                        <p className="text-xs text-purple-800 font-medium mb-2">
+                      <div className="mt-3 p-3 bg-slate-700/50 rounded border border-slate-600">
+                        <p className="text-xs text-purple-300 font-medium mb-2">
                           ⚡ Agent will autonomously:
                         </p>
-                        <ul className="text-xs text-gray-600 space-y-1 ml-4 list-disc">
+                        <ul className="text-xs text-gray-300 space-y-1 ml-4 list-disc">
                           <li>Query real-time flight data for user routes</li>
                           <li>Pay MCP server using agent's USDH balance</li>
                           <li>Present flight options in AR interface</li>
@@ -2796,8 +2838,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   </div>
 
                   {mcpIntegrations.includes("flightradar24") && (
-                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                      <p className="text-sm text-blue-800">
+                    <div className="bg-blue-500/20 rounded-lg p-4 border border-blue-500/30">
+                      <p className="text-sm text-blue-200">
                         <strong>💡 Recommendation:</strong> Fund agent with at
                         least <strong>10-50 USDH</strong> for MCP queries. The
                         agent will need sufficient balance to autonomously pay
@@ -2930,11 +2972,11 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
               {/* Network-specific deployment info */}
               {currentNetwork && currentNetwork.isSupported && (
-                <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
-                  <h4 className="text-sm font-medium text-green-800 mb-2">
+                <div className="mt-4 p-4 bg-green-500/20 rounded-lg border border-green-500/30">
+                  <h4 className="text-sm font-medium text-green-200 mb-2">
                     Deployment Summary
                   </h4>
-                  <div className="space-y-1 text-xs text-green-700">
+                  <div className="space-y-1 text-xs text-green-300">
                     <div>
                       Network:{" "}
                       <span className="font-medium">{currentNetwork.name}</span>

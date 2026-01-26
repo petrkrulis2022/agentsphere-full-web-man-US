@@ -144,18 +144,6 @@ const Navbar = () => {
                 Dashboard
               </Link>
 
-              {/* Supabase Connection Button */}
-              <button
-                onClick={handleSupabaseSetup}
-                className="bg-gradient-to-br from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-black font-semibold px-3 py-2 text-xs rounded-xl transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl shadow-green-500/20 flex items-center gap-1 border-b-2 border-green-700"
-              >
-                <Database className="h-3 w-3" />
-                Database
-                {isSupabaseConnected && (
-                  <Check className="h-3 w-3 ml-1" />
-                )}
-              </button>
-
               {/* AR Preview Button */}
               <Link
                 to="/ar"
