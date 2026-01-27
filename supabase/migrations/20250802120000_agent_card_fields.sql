@@ -105,7 +105,10 @@ CHECK ((agent_type IS NULL) OR (agent_type = ANY (ARRAY[
   'tutor'::text, 
   'landmark'::text, 
   'building'::text,
-  -- Enhanced agent categories
+  -- Enhanced agent categories (updated labels)
+  'My Payment Terminal'::text,
+  'Payment Terminal - POS'::text,
+  'Virtual ATM'::text,
   'Intelligent Assistant'::text,
   'Local Services'::text, 
   'Payment Terminal'::text,
@@ -119,7 +122,14 @@ CHECK ((agent_type IS NULL) OR (agent_type = ANY (ARRAY[
   'Bus Stop Agent'::text,
   -- Previous enhanced types
   'Taxi driver'::text,
-  'Travel Influencer'::text
+  'Travel Influencer'::text,
+  -- Hedera AI Travel Agents
+  '🚌 Bus Agent (Hedera AI)'::text,
+  '🚆 Train Agent (Hedera AI)'::text,
+  '🏨 Hotel Agent (Hedera AI)'::text,
+  '✈️ Flight Agent (Hedera AI)'::text,
+  '🍽️ Restaurant Agent (Hedera AI)'::text,
+  '🌍 Travel Coordinator (Hedera AI)'::text
 ])));
 
 COMMENT ON TABLE deployed_objects IS 'Enhanced deployed objects table with agent card display compatibility fields';

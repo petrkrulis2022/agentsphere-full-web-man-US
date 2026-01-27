@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 5175",
     "dev:backend": "node server.js",
     "dev:all": "npm run dev:backend & npm run dev",
     "build": "tsc && vite build",

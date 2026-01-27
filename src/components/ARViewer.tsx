@@ -31,7 +31,7 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
     longitude: number;
   } | null>(null);
   const [selectedObject, setSelectedObject] = useState<DeployedObject | null>(
-    null
+    null,
   );
   const [showInteractionModal, setShowInteractionModal] =
     useState<boolean>(false);
@@ -102,14 +102,14 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
         console.log("Location error, using demo location:", error);
         setUserLocation({ latitude: 34.0522, longitude: -118.2437 }); // Fallback to demo location
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
     );
   };
 
   const loadObjects = async () => {
     if (!supabase) {
       setError(
-        "Database connection not available. Please connect to Supabase first."
+        "Database connection not available. Please connect to Supabase first.",
       );
       setIsLoading(false);
       return;
@@ -145,10 +145,10 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
 
           console.log(
             `📍 ${obj.name}: ${coords.latitude.toFixed(
-              6
+              6,
             )}, ${coords.longitude.toFixed(6)} ${
               obj.correctionapplied ? "(RTK)" : "(GPS)"
-            }`
+            }`,
           );
         });
       }
@@ -196,10 +196,12 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
   };
 
   const getShapeMixin = (objectType: string) => {
-    // Payment terminals and trailing payment terminals use terminal device model
+    // Payment terminals and all payment-related agents use terminal device model
     if (
       objectType === "payment_terminal" ||
-      objectType === "trailing_payment_terminal"
+      objectType === "trailing_payment_terminal" ||
+      objectType === "content_creator" || // My Payment Terminal
+      objectType === "home_security" // Virtual ATM
     ) {
       return "payment-terminal-model";
     }
@@ -211,7 +213,7 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
     lat1: number,
     lon1: number,
     lat2: number,
-    lon2: number
+    lon2: number,
   ) => {
     const R = 6371; // Earth's radius in km
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -239,7 +241,7 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
   const getRelativePosition = (
     objLat: number,
     objLon: number,
-    index: number
+    index: number,
   ) => {
     if (!userLocation) {
       // Demo mode: arrange objects in a circle around the viewer
@@ -257,14 +259,14 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
       userLocation.latitude,
       userLocation.longitude,
       objLat,
-      objLon
+      objLon,
     );
     const bearing = Math.atan2(
       Math.sin(((objLon - userLocation.longitude) * Math.PI) / 180),
       Math.cos((userLocation.latitude * Math.PI) / 180) *
         Math.tan((objLat * Math.PI) / 180) -
         Math.sin((userLocation.latitude * Math.PI) / 180) *
-          Math.cos(((objLon - userLocation.longitude) * Math.PI) / 180)
+          Math.cos(((objLon - userLocation.longitude) * Math.PI) / 180),
     );
 
     // Scale down distance for AR view (1 meter = 1 unit, but cap at reasonable distance)
@@ -357,11 +359,13 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
             const position = getRelativePosition(
               obj.preciselatitude || obj.latitude,
               obj.preciselongitude || obj.longitude,
-              index
+              index,
             );
             const isPaymentTerminal =
               obj.object_type === "payment_terminal" ||
-              obj.object_type === "trailing_payment_terminal";
+              obj.object_type === "trailing_payment_terminal" ||
+              obj.object_type === "content_creator" || // My Payment Terminal
+              obj.object_type === "home_security"; // Virtual ATM
 
             return (
               <a-entity
@@ -514,7 +518,7 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
                     userLocation.latitude,
                     userLocation.longitude,
                     obj.preciselatitude || obj.latitude,
-                    obj.preciselongitude || obj.longitude
+                    obj.preciselongitude || obj.longitude,
                   )
                 : null;
 
@@ -676,7 +680,7 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
                 <span className="ml-2 text-gray-600">
                   ±
                   {selectedObject.accuracy?.toFixed(
-                    selectedObject.correctionapplied ? 2 : 0
+                    selectedObject.correctionapplied ? 2 : 0,
                   ) || "10"}
                   m
                   {selectedObject.correctionapplied && (
@@ -700,7 +704,7 @@ const ARViewer = ({ supabase }: ARViewerProps) => {
                   {selectedObject.owner_wallet
                     ? `${selectedObject.owner_wallet.slice(
                         0,
-                        6
+                        6,
                       )}...${selectedObject.owner_wallet.slice(-4)}`
                     : "Unknown"}
                 </span>

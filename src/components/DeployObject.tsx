@@ -178,13 +178,15 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
   // Agent type options - Updated with new categories
   const agentTypes = [
+    // Top three payment-related agents
+    { value: "content_creator", label: "My Payment Terminal" },
+    { value: "payment_terminal", label: "Payment Terminal - POS" },
+    { value: "home_security", label: "Virtual ATM" },
+    // Other agent types
     { value: "intelligent_assistant", label: "Intelligent Assistant" },
     { value: "local_services", label: "Local Services" },
-    { value: "payment_terminal", label: "Payment Terminal" },
     { value: "game_agent", label: "Game Agent" },
     { value: "3d_world_builder", label: "3D World Builder" },
-    { value: "home_security", label: "Home Security" },
-    { value: "content_creator", label: "Content Creator" },
     { value: "real_estate_broker", label: "Real Estate Broker" },
     { value: "bus_stop_agent", label: "Bus Stop Agent" },
     // Hedera AI Travel Agents with A2A Communication
@@ -1802,7 +1804,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       className="min-h-screen py-8"
       style={{ background: "rgb(15, 23, 42)" }}
     >
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -2079,7 +2081,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
             {/* Supported Networks Modal */}
             {showSupportedNetworks && (
               <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-                <div className="bg-slate-800 border border-slate-600 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="bg-slate-800 border border-slate-600 rounded-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto">
                   <div className="sticky top-0 bg-slate-800 border-b border-slate-600 p-6 flex items-center justify-between">
                     <h3 className="text-xl font-semibold text-gray-100 flex items-center">
                       <Network className="h-6 w-6 mr-2 text-blue-400" />
