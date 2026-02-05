@@ -36,6 +36,20 @@ export async function testSupabaseConnection() {
 
 // Database types (based on your migrations)
 export interface DeployedObject {
+  // GPS Coordinates
+  latitude: number;
+  longitude: number;
+  altitude?: number;
+  preciselatitude?: number;
+  preciselongitude?: number;
+  precisealtitude?: number;
+  accuracy?: number;
+  correctionapplied?: boolean;
+  // Screen Percentage Positioning (NEW)
+  screen_position_x?: number; // 0-100%
+  screen_position_y?: number; // 0-100%
+  positioning_mode?: "gps" | "screen";
+  // Other fields
   id: string;
   user_id: string;
   object_type: string;

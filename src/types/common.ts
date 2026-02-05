@@ -23,6 +23,10 @@ export interface DeployedObject {
   altitude_rtk?: number;
   accuracy?: number;
   correctionapplied?: boolean;
+  // Screen percentage positioning (NEW)
+  screen_position_x?: number; // 0-100% horizontal position
+  screen_position_y?: number; // 0-100% vertical position
+  positioning_mode?: "gps" | "screen"; // Positioning system selector
   is_active: boolean;
   created_at: string;
   updated_at?: string;

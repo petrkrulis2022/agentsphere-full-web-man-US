@@ -5,7 +5,7 @@ import {
   QrCode,
   Mic,
   Volume2,
-  UserPlus,
+  Globe,
   AlertCircle,
   CheckCircle,
 } from "lucide-react";
@@ -15,6 +15,14 @@ interface BankDetails {
   account_number: string;
   bank_name: string;
   swift_code: string;
+}
+
+interface ENSPaymentDetails {
+  ens_domain?: string;
+  ens_resolved_address?: string;
+  ens_resolver_network?: string;
+  ens_avatar_url?: string;
+  ens_verified?: boolean;
 }
 
 interface PaymentMethod {
@@ -39,8 +47,9 @@ interface PaymentMethod {
     enabled: boolean;
     wallet_address?: string;
   };
-  onboard_crypto: {
+  ens_payment: {
     enabled: boolean;
+    ens_details?: ENSPaymentDetails;
   };
 }
 
@@ -61,7 +70,7 @@ const PaymentMethodsSelector: React.FC<PaymentMethodsSelectorProps> = ({
     bank_qr: { enabled: false },
     voice_pay: { enabled: false },
     sound_pay: { enabled: false },
-    onboard_crypto: { enabled: false },
+    ens_payment: { enabled: false },
   });
 
   const [showBankForm, setShowBankForm] = useState<
@@ -89,7 +98,7 @@ const PaymentMethodsSelector: React.FC<PaymentMethodsSelectorProps> = ({
 
     const errors: string[] = [];
     const enabledMethods = Object.values(paymentMethods).some(
-      (method) => method.enabled
+      (method) => method.enabled,
     );
 
     if (!enabledMethods) {
@@ -106,7 +115,7 @@ const PaymentMethodsSelector: React.FC<PaymentMethodsSelectorProps> = ({
 
     if (hasCryptoEnabled && !connectedWallet) {
       errors.push(
-        "Please connect your wallet to enable crypto payment methods"
+        "Please connect your wallet to enable crypto payment methods",
       );
     }
 
@@ -116,7 +125,7 @@ const PaymentMethodsSelector: React.FC<PaymentMethodsSelectorProps> = ({
       !paymentMethods.bank_virtual_card.bank_details?.account_holder
     ) {
       errors.push(
-        "Bank account details are required for virtual card payments"
+        "Bank account details are required for virtual card payments",
       );
     }
 
@@ -143,7 +152,7 @@ const PaymentMethodsSelector: React.FC<PaymentMethodsSelectorProps> = ({
   const updatePaymentMethod = (
     methodKey: keyof PaymentMethod,
     enabled: boolean,
-    additionalData?: any
+    additionalData?: any,
   ) => {
     setPaymentMethods((prev) => {
       const updated = { ...prev };
@@ -171,7 +180,7 @@ const PaymentMethodsSelector: React.FC<PaymentMethodsSelectorProps> = ({
       (methodKey === "bank_virtual_card" || methodKey === "bank_qr")
     ) {
       setShowBankForm(
-        methodKey === "bank_virtual_card" ? "virtual_card" : "bank_qr"
+        methodKey === "bank_virtual_card" ? "virtual_card" : "bank_qr",
       );
     }
   };
@@ -223,13 +232,13 @@ const PaymentMethodsSelector: React.FC<PaymentMethodsSelectorProps> = ({
       description: "Audio signal-based crypto transfers",
     },
     {
-      key: "onboard_crypto" as keyof PaymentMethod,
-      title: "Onboard Me to Crypto",
-      subtitle: "Crypto Education",
-      icon: UserPlus,
+      key: "ens_payment" as keyof PaymentMethod,
+      title: "ENS Payment",
+      subtitle: "ENS Domain Payments",
+      icon: Globe,
       color: "bg-indigo-500",
       requiresWallet: false,
-      description: "Help users get started with crypto payments",
+      description: "Accept crypto via ENS names (e.g., alice.eth)",
     },
   ];
 
@@ -293,8 +302,8 @@ const PaymentMethodsSelector: React.FC<PaymentMethodsSelectorProps> = ({
                 method.enabled
                   ? "border-blue-500 bg-blue-50"
                   : isDisabled
-                  ? "border-gray-200 bg-gray-50"
-                  : "border-gray-200 bg-white hover:border-gray-300"
+                    ? "border-gray-200 bg-gray-50"
+                    : "border-gray-200 bg-white hover:border-gray-300"
               } ${
                 isDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
               }`}

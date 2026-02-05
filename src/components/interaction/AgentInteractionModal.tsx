@@ -46,7 +46,7 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
     lat1: number,
     lon1: number,
     lat2: number,
-    lon2: number
+    lon2: number,
   ) => {
     const R = 6371e3; // Earth's radius in meters
     const φ1 = (lat1 * Math.PI) / 180;
@@ -87,8 +87,8 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
             userLocation.latitude,
             userLocation.longitude,
             agent.preciselatitude || agent.latitude,
-            agent.preciselongitude || agent.longitude
-          )
+            agent.preciselongitude || agent.longitude,
+          ),
         )
       : 25;
 
@@ -217,7 +217,7 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
     // Validate wallet address format
     if (!connectedAddress.startsWith("0x") || connectedAddress.length !== 42) {
       alert(
-        "Invalid wallet address format. Please ensure MetaMask is properly connected."
+        "Invalid wallet address format. Please ensure MetaMask is properly connected.",
       );
       return;
     }
@@ -226,7 +226,7 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
     console.log(
       "💰 Interaction fee:",
       getInteractionFee(selectedInteractionType),
-      "BDAG"
+      "BDAG",
     );
 
     const paymentData: PaymentData = {
@@ -244,7 +244,7 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
 
     console.log(
       "🎯 Generating MetaMask-compatible QR payment with data:",
-      paymentData
+      paymentData,
     );
     setQrCodeData(paymentData);
     setPaymentStep("qr-generated");
@@ -360,7 +360,7 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
 
     // Simulate agent typing delay
     await new Promise((resolve) =>
-      setTimeout(resolve, 1000 + Math.random() * 2000)
+      setTimeout(resolve, 1000 + Math.random() * 2000),
     );
 
     const agentResponse: Message = {
@@ -538,7 +538,7 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
                         >
                           {capability}
                         </span>
-                      )
+                      ),
                     )}
                   </div>
                 </div>
@@ -717,7 +717,7 @@ const AgentInteractionModal: React.FC<AgentInteractionModalProps> = ({
                           {connectedAddress
                             ? `${connectedAddress.slice(
                                 0,
-                                6
+                                6,
                               )}...${connectedAddress.slice(-4)}`
                             : "Connect Wallet"}
                         </span>
@@ -893,7 +893,7 @@ const ARQRModal: React.FC<ARQRModalProps> = ({
 
       console.log(
         "🎯 Generating EIP-681 compliant BDAG ERC-20 QR code:",
-        eip681Url
+        eip681Url,
       );
       console.log("📋 BDAG ERC-20 Transfer Details:", {
         tokenContract: tokenContractAddress,
@@ -1029,11 +1029,11 @@ const ARQRModal: React.FC<ARQRModalProps> = ({
           <span className="wallet-address">
             {connectedAddress
               ? `${connectedAddress.slice(0, 6)}...${connectedAddress.slice(
-                  -4
+                  -4,
                 )}`
               : `${paymentData.merchantAddress.slice(
                   0,
-                  6
+                  6,
                 )}...${paymentData.merchantAddress.slice(-4)}`}
           </span>
         </div>

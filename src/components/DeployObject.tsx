@@ -26,11 +26,13 @@ import {
   Train,
   Hotel,
   Plane,
+  Globe,
 } from "lucide-react";
 import { hederaService } from "../services/hederaService";
 import { useAddress } from "@thirdweb-dev/react";
 import PaymentMethodsSelector from "./PaymentMethodsSelector";
 import BankDetailsForm from "./BankDetailsForm";
+import { ensService } from "../services/ensService";
 import {
   solanaNetworkService,
   getUSDCMintForSolana,
@@ -84,6 +86,15 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   const [locationLoading, setLocationLoading] = useState(false);
   const [rtkLoading, setRtkLoading] = useState(false);
 
+  // Screen percentage positioning (NEW)
+  const [screenPosition, setScreenPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [positioningMode, setPositioningMode] = useState<"gps" | "screen">(
+    "gps",
+  );
+
   // Network detection states
   const [currentNetwork, setCurrentNetwork] = useState<any>(null);
   const [networkLoading, setNetworkLoading] = useState(false);
@@ -136,6 +147,19 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   const [showBankForm, setShowBankForm] = useState<
     "virtual_card" | "bank_qr" | null
   >(null);
+
+  // ENS Payment Configuration
+  const [ensDomain, setEnsDomain] = useState("");
+  const [ensResolvedAddress, setEnsResolvedAddress] = useState<string | null>(
+    null,
+  );
+  const [ensResolverNetwork, setEnsResolverNetwork] = useState<
+    "mainnet" | "sepolia"
+  >("mainnet");
+  const [ensAvatarUrl, setEnsAvatarUrl] = useState<string | null>(null);
+  const [ensResolving, setEnsResolving] = useState(false);
+  const [ensError, setEnsError] = useState<string | null>(null);
+  const [ensVerified, setEnsVerified] = useState(false);
 
   // Hedera AI Agent Kit States
   const [hederaWalletCreating, setHederaWalletCreating] = useState(false);
@@ -897,6 +921,85 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     console.log("💳 Payment methods updated:", methods);
   }, []);
 
+  // ENS domain resolution with debounce
+  useEffect(() => {
+    if (!paymentMethods?.ens_payment?.enabled || !ensDomain) {
+      setEnsResolvedAddress(null);
+      setEnsAvatarUrl(null);
+      setEnsError(null);
+      setEnsVerified(false);
+      return;
+    }
+
+    // Debounce ENS resolution (800ms)
+    const timeoutId = setTimeout(async () => {
+      await handleENSResolution();
+    }, 800);
+
+    return () => clearTimeout(timeoutId);
+  }, [ensDomain, ensResolverNetwork, paymentMethods?.ens_payment?.enabled]);
+
+  // Handle ENS domain resolution
+  const handleENSResolution = async () => {
+    if (!ensDomain) {
+      setEnsError(null);
+      setEnsResolvedAddress(null);
+      setEnsAvatarUrl(null);
+      setEnsVerified(false);
+      return;
+    }
+
+    // Validate domain format first
+    if (!ensService.isValidENSDomain(ensDomain)) {
+      setEnsError(
+        "Invalid ENS domain format. Must be lowercase and end with .eth",
+      );
+      setEnsResolvedAddress(null);
+      setEnsAvatarUrl(null);
+      setEnsVerified(false);
+      return;
+    }
+
+    setEnsResolving(true);
+    setEnsError(null);
+
+    try {
+      // Resolve domain and avatar in parallel
+      const { address, avatar } = await ensService.resolveWithAvatar(
+        ensDomain,
+        ensResolverNetwork,
+      );
+
+      if (address) {
+        setEnsResolvedAddress(address);
+        setEnsAvatarUrl(avatar);
+        setEnsVerified(true);
+        setEnsError(null);
+        console.log(`✅ ENS resolved: ${ensDomain} → ${address}`);
+      } else {
+        setEnsError(
+          `ENS domain "${ensDomain}" not found on ${ensResolverNetwork}`,
+        );
+        setEnsResolvedAddress(null);
+        setEnsAvatarUrl(null);
+        setEnsVerified(false);
+      }
+    } catch (error) {
+      console.error("ENS resolution error:", error);
+      setEnsError("Failed to resolve ENS domain. Please try again.");
+      setEnsResolvedAddress(null);
+      setEnsAvatarUrl(null);
+      setEnsVerified(false);
+    } finally {
+      setEnsResolving(false);
+    }
+  };
+
+  // Quick-fill cube-pay.eth
+  const handleQuickFillCubePay = () => {
+    setEnsDomain("cube-pay.eth");
+  };
+
   // Handle bank details updates
   const handleBankDetailsChange = (
     details: any,
@@ -1275,6 +1378,11 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         correctionapplied: preciseLocation?.correctionApplied || false,
         range_meters: visibilityRange,
 
+        // NEW: Screen percentage positioning
+        screen_position_x: screenPosition?.x || null,
+        screen_position_y: screenPosition?.y || null,
+        positioning_mode: positioningMode,
+
         // DYNAMIC NETWORK DATA - FIXED
         deployment_network_name: currentNetwork.name, // "Ethereum Sepolia" or "Solana Devnet"
         deployment_chain_id:
@@ -1396,6 +1504,15 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         deployed_at: new Date().toISOString(),
         deployment_status: "active",
         is_active: true,
+
+        // ENS Payment Configuration
+        ens_payment_enabled: paymentMethods?.ens_payment?.enabled || false,
+        ens_domain: ensDomain || null,
+        ens_address: ensResolvedAddress || null,
+        ens_resolved_address: ensResolvedAddress || null,
+        ens_resolver_network: ensResolverNetwork,
+        ens_avatar_url: ensAvatarUrl || null,
+        ens_verified: ensVerified,
       };
 
       console.log("🚀 Deploying agent with DYNAMIC data:", deploymentData);
@@ -1694,7 +1811,12 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   useEffect(() => {
     if (routerLocation.state?.arPlacedCoordinates) {
       const coords = routerLocation.state.arPlacedCoordinates;
+      const screenCoords = routerLocation.state.screenCoordinates;
+      const mode = routerLocation.state.positioning_mode;
+
       console.log("📍 AR-placed coordinates received:", coords);
+      console.log("📱 Screen coordinates:", screenCoords);
+      console.log("🎯 Positioning mode:", mode);
 
       setLocation({
         latitude: coords.latitude,
@@ -1702,6 +1824,19 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         altitude: coords.altitude || 0,
         accuracy: routerLocation.state.accuracy || 0,
       });
+
+      // NEW: Set screen coordinates if provided
+      if (screenCoords) {
+        setScreenPosition({
+          x: screenCoords.x,
+          y: screenCoords.y,
+        });
+      }
+
+      // NEW: Set positioning mode
+      if (mode) {
+        setPositioningMode(mode);
+      }
 
       // Restore all form data from AR navigation
       const savedData = routerLocation.state;
@@ -2142,6 +2277,65 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                 Location & Deployment
               </h2>
 
+              {/* NEW: Positioning Mode Toggle */}
+              <div className="bg-slate-700/50 rounded-lg p-4">
+                <label className="block text-sm font-medium text-gray-300 mb-3">
+                  Positioning Mode
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPositioningMode("gps")}
+                    className={`flex items-center justify-center px-4 py-3 rounded-lg transition-all ${
+                      positioningMode === "gps"
+                        ? "bg-green-600 text-white ring-2 ring-green-400"
+                        : "bg-slate-600 text-gray-300 hover:bg-slate-500"
+                    }`}
+                  >
+                    <MapPin className="h-5 w-5 mr-2" />
+                    <div className="text-left">
+                      <div className="font-semibold">GPS Mode</div>
+                      <div className="text-xs opacity-80">
+                        Real-world coordinates
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPositioningMode("screen")}
+                    className={`flex items-center justify-center px-4 py-3 rounded-lg transition-all ${
+                      positioningMode === "screen"
+                        ? "bg-blue-600 text-white ring-2 ring-blue-400"
+                        : "bg-slate-600 text-gray-300 hover:bg-slate-500"
+                    }`}
+                  >
+                    <Camera className="h-5 w-5 mr-2" />
+                    <div className="text-left">
+                      <div className="font-semibold">Screen Mode</div>
+                      <div className="text-xs opacity-80">
+                        Fixed screen position
+                      </div>
+                    </div>
+                  </button>
+                </div>
+
+                {/* Mode description */}
+                <div className="mt-3 text-xs text-gray-400">
+                  {positioningMode === "gps" ? (
+                    <p>
+                      🌍 GPS Mode: Agent placed at real-world location. Visible
+                      to viewers near that GPS coordinate.
+                    </p>
+                  ) : (
+                    <p>
+                      📱 Screen Mode: Agent appears at fixed screen position for
+                      all viewers regardless of location.
+                    </p>
+                  )}
+                </div>
+              </div>
+
               {/* Location Buttons */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <button
@@ -2221,6 +2415,36 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                       </div>
                     )}
                   </div>
+
+                  {/* NEW: Screen Position Display */}
+                  {screenPosition && positioningMode === "screen" && (
+                    <div className="mt-4 pt-4 border-t border-slate-600">
+                      <div className="flex items-center mb-2">
+                        <Camera className="h-4 w-4 mr-2 text-blue-400" />
+                        <h4 className="font-semibold text-gray-100 text-sm">
+                          Screen Position
+                        </h4>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-400">Horizontal (X):</span>
+                          <span className="ml-2 font-mono text-blue-300">
+                            {screenPosition.x.toFixed(1)}%
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">Vertical (Y):</span>
+                          <span className="ml-2 font-mono text-blue-300">
+                            {screenPosition.y.toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-2">
+                        📱 Agent will appear at this screen position for all
+                        viewers
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -2415,7 +2639,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
               </h2>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="flex items-center p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center p-4 border border-gray-600 rounded-lg bg-gray-800">
                   <input
                     type="checkbox"
                     id="textChat"
@@ -2425,14 +2649,14 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   />
                   <label
                     htmlFor="textChat"
-                    className="ml-2 text-sm font-medium text-gray-900 flex items-center"
+                    className="ml-2 text-sm font-medium text-gray-100 flex items-center"
                   >
                     <MessageCircle className="h-4 w-4 mr-1" />
                     Text Chat
                   </label>
                 </div>
 
-                <div className="flex items-center p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center p-4 border border-gray-600 rounded-lg bg-gray-800">
                   <input
                     type="checkbox"
                     id="voiceChat"
@@ -2442,14 +2666,14 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   />
                   <label
                     htmlFor="voiceChat"
-                    className="ml-2 text-sm font-medium text-gray-900 flex items-center"
+                    className="ml-2 text-sm font-medium text-gray-100 flex items-center"
                   >
                     <Mic className="h-4 w-4 mr-1" />
                     Voice Chat
                   </label>
                 </div>
 
-                <div className="flex items-center p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center p-4 border border-gray-600 rounded-lg bg-gray-800">
                   <input
                     type="checkbox"
                     id="videoChat"
@@ -2459,14 +2683,14 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   />
                   <label
                     htmlFor="videoChat"
-                    className="ml-2 text-sm font-medium text-gray-900 flex items-center"
+                    className="ml-2 text-sm font-medium text-gray-100 flex items-center"
                   >
                     <Video className="h-4 w-4 mr-1" />
                     Video Chat
                   </label>
                 </div>
 
-                <div className="flex items-center p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center p-4 border border-gray-600 rounded-lg bg-gray-800">
                   <input
                     type="checkbox"
                     id="defiFeatures"
@@ -2476,7 +2700,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   />
                   <label
                     htmlFor="defiFeatures"
-                    className="ml-2 text-sm font-medium text-gray-900 flex items-center"
+                    className="ml-2 text-sm font-medium text-gray-100 flex items-center"
                   >
                     <TrendingUp className="h-4 w-4 mr-1" />
                     DeFi Features
@@ -2521,29 +2745,29 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
               </h2>
 
               <div className="bg-slate-700/50 rounded-lg p-6 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Agent Wallet (Payment Receiver)
+                      Your Connected Wallet
                     </label>
-                    <div className="bg-slate-600/50 p-3 rounded border border-slate-500 font-mono text-sm text-gray-200">
-                      {hederaAccountId ||
-                        solanaWallet?.publicKey?.toString() ||
+                    <div className="bg-slate-600/50 p-3 rounded border border-slate-500 font-mono text-sm text-gray-200 break-all">
+                      {solanaWallet?.publicKey?.toString() ||
                         evmWallet ||
                         address ||
-                        "Will be created on deployment"}
+                        "Not connected"}
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Your Connected Wallet
+                      Agent Wallet (Payment Receiver)
                     </label>
-                    <div className="bg-slate-600/50 p-3 rounded border border-slate-500 font-mono text-sm text-gray-200">
-                      {solanaWallet?.publicKey?.toString() ||
+                    <div className="bg-slate-600/50 p-3 rounded border border-slate-500 font-mono text-sm text-gray-200 break-all">
+                      {hederaAccountId ||
+                        solanaWallet?.publicKey?.toString() ||
                         evmWallet ||
                         address ||
-                        "Not connected"}
+                        "Will be created on deployment"}
                     </div>
                   </div>
                 </div>
@@ -2888,6 +3112,169 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   initialDetails={paymentMethods.bank_qr.bank_details}
                 />
               )}
+
+              {/* ENS Payment Configuration */}
+              {paymentMethods?.ens_payment?.enabled && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-200"
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-indigo-500 rounded-lg">
+                      <Globe className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        ENS Payment Configuration
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Configure your ENS domain for human-readable payments
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* Network Selector */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Resolver Network
+                      </label>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setEnsResolverNetwork("mainnet")}
+                          className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
+                            ensResolverNetwork === "mainnet"
+                              ? "bg-indigo-500 text-white shadow-lg"
+                              : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
+                          }`}
+                        >
+                          Mainnet
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEnsResolverNetwork("sepolia")}
+                          className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
+                            ensResolverNetwork === "sepolia"
+                              ? "bg-indigo-500 text-white shadow-lg"
+                              : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
+                          }`}
+                        >
+                          Sepolia (Testnet)
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* ENS Domain Input */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        ENS Domain
+                      </label>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            type="text"
+                            value={ensDomain}
+                            onChange={(e) =>
+                              setEnsDomain(e.target.value.toLowerCase())
+                            }
+                            placeholder="your-domain.eth"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          />
+                          {ensResolving && (
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                              <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleQuickFillCubePay}
+                          className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg hover:from-indigo-600 hover:to-purple-600 transition-all shadow-md whitespace-nowrap"
+                        >
+                          📦 Fill cube-pay.eth
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Enter your ENS domain (e.g., vitalik.eth) or use
+                        cube-pay.eth
+                      </p>
+                    </div>
+
+                    {/* Resolution Status */}
+                    {ensDomain && !ensResolving && (
+                      <div>
+                        {ensError && (
+                          <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                            <div className="text-sm text-red-700">
+                              {ensError}
+                            </div>
+                          </div>
+                        )}
+
+                        {ensVerified && ensResolvedAddress && (
+                          <div className="space-y-3">
+                            <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-green-900">
+                                  ENS Domain Verified ✓
+                                </div>
+                                <div className="text-xs text-green-700 mt-1 font-mono break-all">
+                                  {ensResolvedAddress.slice(0, 6)}...
+                                  {ensResolvedAddress.slice(-4)}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Avatar Display */}
+                            {ensAvatarUrl && (
+                              <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200">
+                                <img
+                                  src={ensAvatarUrl}
+                                  alt="ENS Avatar"
+                                  className="w-12 h-12 rounded-full object-cover"
+                                  onError={(e) => {
+                                    (
+                                      e.target as HTMLImageElement
+                                    ).style.display = "none";
+                                  }}
+                                />
+                                <div className="text-sm text-gray-600">
+                                  Avatar found for {ensDomain}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Information Box */}
+                    <div className="bg-white rounded-lg p-4 border border-indigo-200">
+                      <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                        How ENS Payment Works
+                      </h4>
+                      <ul className="text-xs text-gray-600 space-y-1">
+                        <li>
+                          • Customers pay to your ENS domain (e.g., alice.eth)
+                        </li>
+                        <li>
+                          • ENS automatically resolves to your wallet address
+                        </li>
+                        <li>
+                          • Update your address anytime without redeploying
+                        </li>
+                        <li>
+                          • More professional and memorable than hex addresses
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
             </div>
 
             {/* Deployment Button */}
@@ -2965,10 +3352,11 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                 <span>Deploy with AR Camera</span>
               </button>
 
-              <div className="mt-3 text-center text-sm text-gray-600">
+              <div className="mt-3 text-center text-sm text-gray-400">
                 <p>
-                  💡 <strong>Tip:</strong> You can use AR Camera to place your
-                  agent first, then fill in the name and details after returning
+                  💡 <strong>Tip:</strong> AR Camera lets you{" "}
+                  <strong>click anywhere</strong> on screen to place your agent.
+                  Works on all devices - phone, tablet, desktop!
                 </p>
               </div>
 

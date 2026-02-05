@@ -31,6 +31,8 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
   const [placedPosition, setPlacedPosition] = useState<{
     screenX: number;
     screenY: number;
+    percentX: number;
+    percentY: number;
   } | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [error, setError] = useState<string>("");
@@ -40,24 +42,46 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
     beta: number | null;
     gamma: number | null;
   }>({ alpha: null, beta: null, gamma: null });
+  const [positioningMode, setPositioningMode] = useState<"gps" | "screen">(
+    location.state?.deploymentData?.positioning_mode || "screen",
+  );
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Get deployment data from navigation state
   const deploymentData = location.state?.deploymentData || {};
 
   useEffect(() => {
-    getCurrentLocation();
-    initializeCamera();
-    initializeDeviceOrientation();
+    let isMounted = true;
+
+    const initializeAll = async () => {
+      if (!isMounted) return;
+
+      await getCurrentLocation();
+
+      // Small delay to ensure component is fully mounted before camera init
+      setTimeout(async () => {
+        if (isMounted) {
+          await initializeCamera();
+        }
+      }, 500);
+
+      initializeDeviceOrientation();
+    };
+
+    initializeAll();
 
     // Add visibility change listener to stop camera when page is hidden
     const handleVisibilityChange = () => {
-      if (document.hidden) {
-        console.log("📹 Page hidden, stopping camera...");
+      if (document.hidden && isMounted) {
+        console.log("📹 Page hidden, pausing camera...");
         if (videoRef.current && videoRef.current.srcObject) {
           const stream = videoRef.current.srcObject as MediaStream;
-          stream.getTracks().forEach((track) => track.stop());
-          setCameraActive(false);
+          stream.getTracks().forEach((track) => (track.enabled = false));
         }
+      } else if (!document.hidden && isMounted && videoRef.current?.srcObject) {
+        console.log("📹 Page visible, resuming camera...");
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach((track) => (track.enabled = true));
       }
     };
 
@@ -65,6 +89,7 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
 
     return () => {
       // Cleanup camera stream
+      isMounted = false;
       console.log("📹 Component unmounting, stopping camera...");
       if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
@@ -78,10 +103,12 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
 
   const initializeCamera = async () => {
     try {
+      console.log("📹 Starting camera initialization...");
+
       // First, check if camera is available
       const devices = await navigator.mediaDevices.enumerateDevices();
       const videoDevices = devices.filter(
-        (device) => device.kind === "videoinput"
+        (device) => device.kind === "videoinput",
       );
 
       if (videoDevices.length === 0) {
@@ -89,11 +116,14 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
         return;
       }
 
+      console.log(`📹 Found ${videoDevices.length} camera(s)`);
+
       // Try to get camera stream with fallback options
-      let stream = null;
+      let stream: MediaStream | null = null;
 
       try {
         // First attempt: High quality with rear camera
+        console.log("📹 Attempting rear camera...");
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: "environment",
@@ -102,7 +132,7 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
           },
         });
       } catch (err) {
-        console.log("Rear camera unavailable, trying default camera...");
+        console.log("📹 Rear camera unavailable, trying default camera...");
         // Fallback: Try without facingMode
         try {
           stream = await navigator.mediaDevices.getUserMedia({
@@ -112,7 +142,7 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
             },
           });
         } catch (err2) {
-          console.log("HD failed, trying basic camera...");
+          console.log("📹 HD failed, trying basic camera...");
           // Final fallback: Basic camera
           stream = await navigator.mediaDevices.getUserMedia({
             video: true,
@@ -121,13 +151,76 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
       }
 
       if (stream && videoRef.current) {
+        console.log("📹 Camera stream obtained, setting up video element...");
+
+        // Set srcObject first
         videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-        setCameraActive(true);
-        setError("");
+
+        // Set attributes to help with autoplay
+        videoRef.current.muted = true;
+        videoRef.current.playsInline = true;
+        videoRef.current.autoplay = true;
+
+        // Wait for loadedmetadata event before playing
+        await new Promise<void>((resolve, reject) => {
+          if (!videoRef.current) {
+            reject(new Error("Video element not available"));
+            return;
+          }
+
+          const video = videoRef.current;
+
+          const onLoadedMetadata = () => {
+            console.log("📹 Video metadata loaded");
+            video.removeEventListener("loadedmetadata", onLoadedMetadata);
+            resolve();
+          };
+
+          const onError = (e: Event) => {
+            console.error("📹 Video error:", e);
+            video.removeEventListener("error", onError);
+            reject(new Error("Video loading error"));
+          };
+
+          video.addEventListener("loadedmetadata", onLoadedMetadata);
+          video.addEventListener("error", onError);
+
+          // Timeout fallback
+          setTimeout(() => {
+            video.removeEventListener("loadedmetadata", onLoadedMetadata);
+            video.removeEventListener("error", onError);
+            resolve();
+          }, 3000);
+        });
+
+        // Now try to play
+        try {
+          await videoRef.current.play();
+          console.log("📹 Camera playing successfully!");
+          setCameraActive(true);
+          setError("");
+        } catch (playErr) {
+          console.error("📹 Play error:", playErr);
+          // Try one more time after a short delay
+          setTimeout(async () => {
+            try {
+              if (videoRef.current) {
+                await videoRef.current.play();
+                console.log("📹 Camera playing after retry!");
+                setCameraActive(true);
+                setError("");
+              }
+            } catch (retryErr) {
+              console.error("📹 Retry play failed:", retryErr);
+              setError(
+                "Unable to start camera playback. Please refresh the page.",
+              );
+            }
+          }, 100);
+        }
       }
     } catch (err: any) {
-      console.error("Camera error:", err);
+      console.error("📹 Camera error:", err);
 
       let errorMessage = "Unable to access camera. ";
 
@@ -140,6 +233,14 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
           "Camera is already in use by another application. Please close other apps using the camera and try again.";
       } else if (err.name === "OverconstrainedError") {
         errorMessage += "Camera doesn't support the requested settings.";
+      } else if (err.name === "AbortError") {
+        errorMessage +=
+          "Camera initialization was interrupted. Please try again.";
+        // Try to reinitialize after a short delay
+        setTimeout(() => {
+          initializeCamera();
+        }, 1000);
+        return; // Don't set error for abort, we're retrying
       } else {
         errorMessage += "An unknown error occurred: " + err.message;
       }
@@ -161,7 +262,7 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
               window.addEventListener(
                 "deviceorientation",
                 handleOrientation,
-                true
+                true,
               );
             }
           })
@@ -204,7 +305,7 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
         enableHighAccuracy: true,
         timeout: 10000,
         maximumAge: 0,
-      }
+      },
     );
   };
 
@@ -215,9 +316,43 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
     const centerX = videoRef.current.videoWidth / 2;
     const centerY = videoRef.current.videoHeight / 2;
 
+    // Calculate percentage coordinates
+    const percentX = 50; // Center horizontally
+    const percentY = 50; // Center vertically
+
     setPlacedPosition({
       screenX: centerX,
       screenY: centerY,
+      percentX,
+      percentY,
+    });
+  };
+
+  // NEW: Click-to-place handler
+  const handleVideoClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!videoRef.current || !cameraActive || !userLocation) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    // Calculate percentage coordinates (0-100%)
+    const percentX = (clickX / rect.width) * 100;
+    const percentY = (clickY / rect.height) * 100;
+
+    // Calculate pixel coordinates on video
+    const screenX = (clickX / rect.width) * videoRef.current.videoWidth;
+    const screenY = (clickY / rect.height) * videoRef.current.videoHeight;
+
+    console.log(
+      `📍 Agent placed at (${percentX.toFixed(1)}%, ${percentY.toFixed(1)}%)`,
+    );
+
+    setPlacedPosition({
+      screenX,
+      screenY,
+      percentX,
+      percentY,
     });
   };
 
@@ -261,19 +396,30 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
     // Stop camera before navigating
     stopCamera();
 
-    // Navigate back to deployment page with coordinates
-    navigate("/deploy", {
-      state: {
-        ...deploymentData,
-        arPlacedCoordinates: finalCoordinates,
-        accuracy: locationAccuracy,
-      },
-    });
+    // Show success modal for 1 second
+    setShowSuccessModal(true);
 
-    // Also call callback if provided
-    if (onPlacementComplete) {
-      onPlacementComplete(finalCoordinates);
-    }
+    setTimeout(() => {
+      // Navigate back to deployment page with BOTH GPS and screen coordinates
+      navigate("/deploy", {
+        state: {
+          ...deploymentData,
+          arPlacedCoordinates: finalCoordinates,
+          accuracy: locationAccuracy,
+          // NEW: Screen percentage coordinates
+          screenCoordinates: {
+            x: placedPosition.percentX,
+            y: placedPosition.percentY,
+          },
+          positioning_mode: positioningMode,
+        },
+      });
+
+      // Also call callback if provided
+      if (onPlacementComplete) {
+        onPlacementComplete(finalCoordinates);
+      }
+    }, 1000);
   };
 
   const cancelPlacement = () => {
@@ -362,8 +508,14 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
-      {/* Camera Video Feed */}
-      <div className="absolute inset-0">
+      {/* Camera Video Feed with Click-to-Place */}
+      <div
+        className="absolute inset-0"
+        onClick={handleVideoClick}
+        style={{
+          cursor: cameraActive && userLocation ? "crosshair" : "default",
+        }}
+      >
         <video
           ref={videoRef}
           autoPlay
@@ -392,16 +544,23 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
             {/* Label */}
             <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-black/70 px-4 py-2 rounded-lg whitespace-nowrap">
               <p className="text-white text-sm font-medium">
-                Point at the ground
+                Click anywhere to place agent
               </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Placement Preview */}
+      {/* Placement Preview at Clicked Position */}
       {placedPosition && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            left: `${placedPosition.percentX}%`,
+            top: `${placedPosition.percentY}%`,
+            transform: "translate(-50%, -50%)",
+          }}
+        >
           <div className="relative">
             {/* Placed Marker */}
             <div className="w-24 h-24 relative animate-bounce">
@@ -414,9 +573,13 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
                 <div className="w-full h-full border-4 border-green-400 rounded-full opacity-40 animate-ping" />
               </div>
             </div>
-            {/* Label */}
+            {/* Label with coordinates */}
             <div className="absolute top-28 left-1/2 -translate-x-1/2 bg-green-500/90 px-4 py-2 rounded-lg whitespace-nowrap">
               <p className="text-white text-sm font-bold">Agent Placed Here</p>
+              <p className="text-white text-xs mt-1">
+                ({placedPosition.percentX.toFixed(1)}%,{" "}
+                {placedPosition.percentY.toFixed(1)}%)
+              </p>
             </div>
           </div>
         </div>
@@ -467,16 +630,22 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
           <div className="text-xs text-gray-300 space-y-1">
             {!placedPosition ? (
               <>
-                <div>• Look around using your device</div>
-                <div>• Point camera at the ground where you want the agent</div>
-                <div>• Tap "Place Agent" button below</div>
+                <div>• Camera is ready for agent placement</div>
+                <div>
+                  • <strong>Click/tap anywhere</strong> on screen to place agent
+                </div>
+                <div>• Position will be saved as screen coordinates</div>
+                <div>• Works on all devices (phone, tablet, desktop)</div>
               </>
             ) : (
               <>
-                <div>• Green box shows agent preview</div>
-                <div>• Red pin marks exact placement</div>
-                <div>• Tap "Confirm" to use this location</div>
-                <div>• Or "Reposition" to place again</div>
+                <div>• Green pin marks exact screen position</div>
+                <div>
+                  • Position: {placedPosition.percentX.toFixed(1)}% horizontal,{" "}
+                  {placedPosition.percentY.toFixed(1)}% vertical
+                </div>
+                <div>• Tap "Confirm" to save this location</div>
+                <div>• Or click elsewhere to reposition</div>
               </>
             )}
           </div>
@@ -497,8 +666,8 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
                 {!cameraActive
                   ? "Starting Camera..."
                   : !userLocation
-                  ? "Getting Location..."
-                  : "Place Agent Here"}
+                    ? "Getting Location..."
+                    : "Place Agent Here"}
               </span>
             </button>
           ) : (
@@ -526,6 +695,26 @@ const ARAgentPlacer = ({ onPlacementComplete }: ARAgentPlacerProps) => {
         <div className="absolute top-24 left-4 right-4 z-10 bg-red-500/90 backdrop-blur-sm rounded-lg p-4 text-white flex items-center">
           <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
           <span className="text-sm">{error}</span>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl p-8 max-w-md mx-4 transform scale-100 animate-bounce">
+            <div className="text-center">
+              <div className="mx-auto mb-4 w-20 h-20 bg-white rounded-full flex items-center justify-center">
+                <CheckCircle className="h-12 w-12 text-green-500" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                Agent Placement Confirmed!
+              </h3>
+              <p className="text-white/90 text-sm">
+                Position: {placedPosition?.percentX.toFixed(1)}%,{" "}
+                {placedPosition?.percentY.toFixed(1)}%
+              </p>
+            </div>
+          </div>
         </div>
       )}
     </div>
