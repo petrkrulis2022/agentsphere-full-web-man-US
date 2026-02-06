@@ -63,6 +63,16 @@ CREATE TABLE IF NOT EXISTS deployed_objects (
     rtk_provider text DEFAULT 'GeoNet',
     is_active boolean DEFAULT true,
     
+    -- Virtual Terminal / ARTM Configuration
+    bank_integrations text[] DEFAULT ARRAY['Revolut']::text[],
+    exchange_integrations text[] DEFAULT ARRAY[]::text[],
+    terminal_display_config jsonb DEFAULT jsonb_build_object(
+      'mock_balance_eur'::text, 2450.67::numeric,
+      'mock_wallet_usdc'::text, 1250.00::numeric,
+      'dispenser_id'::text, 'ATM_CZ_001'::text,
+      'ui_theme'::text, 'revolut'::text
+    ),
+    
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now()
 );
@@ -135,6 +145,7 @@ CHECK ((agent_type IS NULL) OR (agent_type = ANY (ARRAY[
   'Content Creator'::text,
   'Real Estate Broker'::text,
   'Bus Stop Agent'::text,
+  'Virtual Terminal'::text,
   'ai_agent'::text, 
   'study_buddy'::text, 
   'tutor'::text, 

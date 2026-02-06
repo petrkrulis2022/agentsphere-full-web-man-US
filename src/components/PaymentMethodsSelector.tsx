@@ -245,10 +245,10 @@ const PaymentMethodsSelector: React.FC<PaymentMethodsSelectorProps> = ({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <h3 className="text-lg font-semibold text-white mb-2">
           Payment Methods Configuration
         </h3>
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-gray-300 mb-4">
           Select the payment methods you want to offer to your customers. Each
           method will appear as a face on the 3D payment cube in AR.
         </p>

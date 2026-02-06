@@ -32,6 +32,10 @@ import { hederaService } from "../services/hederaService";
 import { useAddress } from "@thirdweb-dev/react";
 import PaymentMethodsSelector from "./PaymentMethodsSelector";
 import BankDetailsForm from "./BankDetailsForm";
+import BankExchangeIntegrations from "./BankExchangeIntegrations";
+import TerminalDisplayConfig, {
+  TerminalDisplayConfig as TerminalDisplayConfigType,
+} from "./TerminalDisplayConfig";
 import { ensService } from "../services/ensService";
 import {
   solanaNetworkService,
@@ -132,6 +136,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   const [voiceChat, setVoiceChat] = useState(false);
   const [videoChat, setVideoChat] = useState(false);
   const [defiFeatures, setDefiFeatures] = useState(false);
+  const [cardPayments, setCardPayments] = useState(false);
+  const [walletManagement, setWalletManagement] = useState(false);
 
   // MCP integrations
   const [mcpIntegrations, setMcpIntegrations] = useState<string[]>([]);
@@ -147,6 +153,21 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   const [showBankForm, setShowBankForm] = useState<
     "virtual_card" | "bank_qr" | null
   >(null);
+
+  // Virtual Terminal / ARTM Configuration
+  const [bankIntegrations, setBankIntegrations] = useState<string[]>([
+    "Revolut",
+  ]);
+  const [exchangeIntegrations, setExchangeIntegrations] = useState<string[]>(
+    [],
+  );
+  const [terminalDisplayConfig, setTerminalDisplayConfig] =
+    useState<TerminalDisplayConfigType>({
+      mock_balance_eur: 2450.67,
+      mock_wallet_usdc: 1250.0,
+      dispenser_id: "ATM_CZ_001",
+      ui_theme: "revolut",
+    });
 
   // ENS Payment Configuration
   const [ensDomain, setEnsDomain] = useState("");
@@ -203,9 +224,9 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   // Agent type options - Updated with new categories
   const agentTypes = [
     // Top three payment-related agents
-    { value: "content_creator", label: "My Payment Terminal" },
-    { value: "payment_terminal", label: "Payment Terminal - POS" },
-    { value: "home_security", label: "Virtual ATM" },
+    { value: "my_payment_terminal", label: "My Payment Terminal" },
+    { value: "pos_terminal", label: "Payment Terminal - POS" },
+    { value: "artm_terminal", label: "Virtual ATM" },
     // Other agent types
     { value: "intelligent_assistant", label: "Intelligent Assistant" },
     { value: "local_services", label: "Local Services" },
@@ -478,24 +499,25 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
     ...(trailingAgent ? ["Car"] : []),
   ];
 
-  // MCP integration options
+  // MCP integration options - Financial Servers
   const mcpOptions = [
-    "Chat",
-    "Voice",
-    "Analysis",
-    "Information Lookup",
-    "Educational Content",
-    "Study Planning",
-    "Q&A",
-    "Location Services",
-    "Directory",
-    "Navigation",
-    "Content Generation",
-    "Brainstorming",
-    "Writing",
-    "Game Creation",
-    "Puzzles",
-    "Entertainment",
+    // Blockchain
+    "🟣 Solana Network",
+    "⚙️ XFS",
+    // Banking
+    "🏦 SWIFT Transfers",
+    "🏧 ACH Transfers",
+    "💙 Revolut Banking",
+    // Payments
+    "🟦 Stripe Payments",
+    "📘 PayPal Payments",
+    // Market Data
+    "📊 CoinGecko Data",
+    "🔗 Chainlink Oracles",
+    "📈 TheGraph Indexing",
+    // Compliance
+    "🆔 KYC Verification",
+    "🚨 AML Screening",
   ];
 
   // Fetch USDC balance for current network
@@ -1020,6 +1042,17 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   const validatePaymentMethods = (): string[] => {
     const errors: string[] = [];
 
+    // Skip payment method validation for Virtual Terminals
+    if (agentType === "artm_terminal") {
+      // Virtual Terminals use bank/exchange integrations instead
+      if (!bankIntegrations || bankIntegrations.length === 0) {
+        errors.push(
+          "At least one bank integration must be selected for Virtual Terminal",
+        );
+      }
+      return errors;
+    }
+
     if (!paymentMethods) {
       errors.push("Payment methods configuration is required");
       return errors;
@@ -1207,6 +1240,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
       voiceChat,
       videoChat,
       defiFeatures,
+      cardPayments,
+      walletManagement,
       mcpIntegrations,
       trailingAgent,
       arNotifications,
@@ -1364,6 +1399,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         description:
           agentDescription.trim() ||
           `A ${agentType.toLowerCase()} agent deployed via AR`,
+        agent_type: agentType,
         object_type: agentType,
         location_type: locationType,
         latitude: preciseLocation?.preciseLatitude || location.latitude,
@@ -1401,19 +1437,19 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
         // DYNAMIC PAYMENT DATA - WITH FEE TYPE SUPPORT
         fee_type:
-          agentType === "payment_terminal" ||
+          agentType === "pos_terminal" ||
           agentType === "trailing_payment_terminal"
             ? feeType
             : "fixed", // Add fee_type field
         interaction_fee_amount:
-          (agentType === "payment_terminal" ||
+          (agentType === "pos_terminal" ||
             agentType === "trailing_payment_terminal") &&
           feeType === "dynamic"
             ? null
             : parseFloat(interactionFee.toString()), // null for dynamic payment terminals, amount for others
         interaction_fee_token: selectedToken, // "USDh" or "USDC"
         interaction_fee_usdfc:
-          (agentType === "payment_terminal" ||
+          (agentType === "pos_terminal" ||
             agentType === "trailing_payment_terminal") &&
           feeType === "dynamic"
             ? null
@@ -1451,10 +1487,14 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         chat_enabled: textChat,
         voice_enabled: voiceChat,
         defi_enabled: defiFeatures,
+        card_payments_enabled: cardPayments,
+        wallet_management_enabled: walletManagement,
         interaction_types: [
           ...(textChat ? ["text_chat"] : []),
           ...(voiceChat ? ["voice_interface"] : []),
           ...(videoChat ? ["video_interface"] : []),
+          ...(cardPayments ? ["card_payments"] : []),
+          ...(walletManagement ? ["wallet_management"] : []),
         ],
 
         // Integrations
@@ -1513,6 +1553,14 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         ens_resolver_network: ensResolverNetwork,
         ens_avatar_url: ensAvatarUrl || null,
         ens_verified: ensVerified,
+
+        // Virtual Terminal / ARTM Configuration
+        ...(agentType === "artm_terminal" && {
+          payment_methods: null, // Explicitly null for Virtual Terminals
+          bank_integrations: bankIntegrations,
+          exchange_integrations: exchangeIntegrations,
+          terminal_display_config: terminalDisplayConfig,
+        }),
       };
 
       console.log("🚀 Deploying agent with DYNAMIC data:", deploymentData);
@@ -2638,97 +2686,143 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                 Agent Interaction Methods
               </h2>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="flex items-center p-4 border border-gray-600 rounded-lg bg-gray-800">
-                  <input
-                    type="checkbox"
-                    id="textChat"
-                    checked={textChat}
-                    onChange={(e) => setTextChat(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <label
-                    htmlFor="textChat"
-                    className="ml-2 text-sm font-medium text-gray-100 flex items-center"
-                  >
-                    <MessageCircle className="h-4 w-4 mr-1" />
-                    Text Chat
-                  </label>
+              <div className="grid gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="flex items-center p-4 border border-gray-600 rounded-lg bg-gray-800">
+                    <input
+                      type="checkbox"
+                      id="textChat"
+                      checked={textChat}
+                      onChange={(e) => setTextChat(e.target.checked)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label
+                      htmlFor="textChat"
+                      className="ml-2 text-sm font-medium text-gray-100 flex items-center"
+                    >
+                      <MessageCircle className="h-4 w-4 mr-1" />
+                      Text Chat
+                    </label>
+                  </div>
+
+                  <div className="flex items-center p-4 border border-gray-600 rounded-lg bg-gray-800">
+                    <input
+                      type="checkbox"
+                      id="voiceChat"
+                      checked={voiceChat}
+                      onChange={(e) => setVoiceChat(e.target.checked)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label
+                      htmlFor="voiceChat"
+                      className="ml-2 text-sm font-medium text-gray-100 flex items-center"
+                    >
+                      <Mic className="h-4 w-4 mr-1" />
+                      Voice Chat
+                    </label>
+                  </div>
+
+                  <div className="flex items-center p-4 border border-gray-600 rounded-lg bg-gray-800">
+                    <input
+                      type="checkbox"
+                      id="videoChat"
+                      checked={videoChat}
+                      onChange={(e) => setVideoChat(e.target.checked)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label
+                      htmlFor="videoChat"
+                      className="ml-2 text-sm font-medium text-gray-100 flex items-center"
+                    >
+                      <Video className="h-4 w-4 mr-1" />
+                      Video Chat
+                    </label>
+                  </div>
+
+                  <div className="flex items-center p-4 border border-gray-600 rounded-lg bg-gray-800">
+                    <input
+                      type="checkbox"
+                      id="defiFeatures"
+                      checked={defiFeatures}
+                      onChange={(e) => setDefiFeatures(e.target.checked)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label
+                      htmlFor="defiFeatures"
+                      className="ml-2 text-sm font-medium text-gray-100 flex items-center"
+                    >
+                      <TrendingUp className="h-4 w-4 mr-1" />
+                      DeFi Features
+                    </label>
+                  </div>
                 </div>
 
-                <div className="flex items-center p-4 border border-gray-600 rounded-lg bg-gray-800">
-                  <input
-                    type="checkbox"
-                    id="voiceChat"
-                    checked={voiceChat}
-                    onChange={(e) => setVoiceChat(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <label
-                    htmlFor="voiceChat"
-                    className="ml-2 text-sm font-medium text-gray-100 flex items-center"
-                  >
-                    <Mic className="h-4 w-4 mr-1" />
-                    Voice Chat
-                  </label>
-                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center justify-start p-5 border-2 border-blue-500 rounded-lg bg-blue-900 bg-opacity-30 hover:bg-opacity-50 transition">
+                    <input
+                      type="checkbox"
+                      id="cardPayments"
+                      checked={cardPayments}
+                      onChange={(e) => setCardPayments(e.target.checked)}
+                      className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer flex-shrink-0"
+                    />
+                    <label
+                      htmlFor="cardPayments"
+                      className="ml-3 text-base font-semibold text-gray-100 flex items-center cursor-pointer"
+                    >
+                      <span className="text-2xl mr-2">💳</span>
+                      Card Payments
+                    </label>
+                  </div>
 
-                <div className="flex items-center p-4 border border-gray-600 rounded-lg bg-gray-800">
-                  <input
-                    type="checkbox"
-                    id="videoChat"
-                    checked={videoChat}
-                    onChange={(e) => setVideoChat(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <label
-                    htmlFor="videoChat"
-                    className="ml-2 text-sm font-medium text-gray-100 flex items-center"
-                  >
-                    <Video className="h-4 w-4 mr-1" />
-                    Video Chat
-                  </label>
-                </div>
-
-                <div className="flex items-center p-4 border border-gray-600 rounded-lg bg-gray-800">
-                  <input
-                    type="checkbox"
-                    id="defiFeatures"
-                    checked={defiFeatures}
-                    onChange={(e) => setDefiFeatures(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <label
-                    htmlFor="defiFeatures"
-                    className="ml-2 text-sm font-medium text-gray-100 flex items-center"
-                  >
-                    <TrendingUp className="h-4 w-4 mr-1" />
-                    DeFi Features
-                  </label>
+                  <div className="flex items-center justify-start p-5 border-2 border-green-500 rounded-lg bg-green-900 bg-opacity-30 hover:bg-opacity-50 transition">
+                    <input
+                      type="checkbox"
+                      id="walletManagement"
+                      checked={walletManagement}
+                      onChange={(e) => setWalletManagement(e.target.checked)}
+                      className="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded cursor-pointer flex-shrink-0"
+                    />
+                    <label
+                      htmlFor="walletManagement"
+                      className="ml-3 text-base font-semibold text-gray-100 flex items-center cursor-pointer"
+                    >
+                      <Wallet className="h-6 w-6 mr-2" />
+                      Wallet Management
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* MCP Server Interactions */}
+            {/* Financial MCP Server Integrations */}
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-100 flex items-center">
-                <Users className="h-6 w-6 mr-2 text-green-400" />
-                MCP Server Interactions
-              </h2>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-100 flex items-center">
+                  <Users className="h-6 w-6 mr-2 text-green-400" />
+                  Financial MCP Server Integrations
+                </h2>
+                <p className="text-sm text-yellow-400 mt-2 font-semibold">
+                  ⚠️ x402 Fees Apply
+                </p>
+              </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {mcpOptions.map((option) => (
-                  <div key={option} className="flex items-center">
+                  <div
+                    key={option}
+                    className="flex items-start p-3 border border-gray-700 rounded-lg bg-gray-800 hover:bg-gray-700 transition"
+                  >
                     <input
                       type="checkbox"
                       id={`mcp-${option}`}
                       checked={mcpIntegrations.includes(option)}
                       onChange={() => toggleMCPIntegration(option)}
-                      className="h-4 w-4 text-blue-500 focus:ring-blue-500 border-gray-500 rounded"
+                      className="h-4 w-4 text-green-500 focus:ring-green-500 border-gray-500 rounded flex-shrink-0 mt-0.5"
                     />
                     <label
                       htmlFor={`mcp-${option}`}
-                      className="ml-2 text-sm text-gray-300"
+                      className="ml-3 text-sm font-medium text-gray-200 cursor-pointer"
                     >
                       {option}
                     </label>
@@ -2736,6 +2830,26 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                 ))}
               </div>
             </div>
+
+            {/* Bank & Exchange Integrations (Virtual Terminal Only) */}
+            {agentType === "artm_terminal" && (
+              <BankExchangeIntegrations
+                agentType={agentType}
+                onBankIntegrationsChange={setBankIntegrations}
+                onExchangeIntegrationsChange={setExchangeIntegrations}
+                initialBanks={bankIntegrations}
+                initialExchanges={exchangeIntegrations}
+              />
+            )}
+
+            {/* Terminal Display Configuration (Virtual Terminal Only) - HIDDEN FOR DEMO */}
+            {false && agentType === "artm_terminal" && (
+              <TerminalDisplayConfig
+                agentType={agentType}
+                onConfigChange={setTerminalDisplayConfig}
+                initialConfig={terminalDisplayConfig}
+              />
+            )}
 
             {/* Agent Wallet Type */}
             <div className="space-y-6">
@@ -2833,7 +2947,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   </label>
 
                   {/* Fee Type Selector for Payment Terminals */}
-                  {(agentType === "payment_terminal" ||
+                  {(agentType === "pos_terminal" ||
                     agentType === "trailing_payment_terminal") && (
                     <div className="mb-4 space-y-3">
                       <div className="flex gap-4">
@@ -2872,7 +2986,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   )}
 
                   {/* Dynamic Fee Info Box */}
-                  {(agentType === "payment_terminal" ||
+                  {(agentType === "pos_terminal" ||
                     agentType === "trailing_payment_terminal") &&
                   feeType === "dynamic" ? (
                     <div className="w-full px-4 py-3 bg-blue-500/20 border border-blue-500/30 rounded-lg">
@@ -2904,7 +3018,7 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                         className="w-full px-4 py-2 border border-slate-600 bg-slate-700/50 text-gray-100 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder-gray-400"
                       />
                       <p className="text-xs text-gray-400 mt-1">
-                        {agentType === "payment_terminal" ||
+                        {agentType === "pos_terminal" ||
                         agentType === "trailing_payment_terminal"
                           ? "Fixed amount for this payment terminal"
                           : "This exact amount will be stored and displayed in agent cards"}
@@ -2916,12 +3030,12 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Revenue Sharing{" "}
-                    {agentType === "payment_terminal" ||
+                    {agentType === "pos_terminal" ||
                     agentType === "trailing_payment_terminal"
                       ? "(100% to you)"
                       : `(${revenueSharing}% to you)`}
                   </label>
-                  {agentType === "payment_terminal" ||
+                  {agentType === "pos_terminal" ||
                   agentType === "trailing_payment_terminal" ? (
                     <div className="w-full px-4 py-3 bg-green-500/20 border border-green-500/30 rounded-lg">
                       <p className="text-sm text-green-200 font-medium">
@@ -3078,204 +3192,221 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
               </div>
             )}
 
-            {/* Payment Methods Configuration (6-Faced Cube System) */}
-            <div className="space-y-6">
-              <PaymentMethodsSelector
-                onPaymentMethodsChange={handlePaymentMethodsChange}
-                connectedWallet={
-                  hederaAccountId ||
-                  solanaWallet?.publicKey?.toString() ||
-                  evmWallet ||
-                  address ||
-                  null
-                }
-                initialMethods={paymentMethods}
-              />
-
-              {/* Conditional Bank Details Forms */}
-              {paymentMethods?.bank_virtual_card?.enabled && (
-                <BankDetailsForm
-                  onBankDetailsChange={(details) =>
-                    handleBankDetailsChange(details, "virtual_card")
+            {/* Payment Methods Configuration (6-Faced Cube System) - Hidden for Virtual Terminals */}
+            {agentType !== "artm_terminal" && (
+              <div className="space-y-6">
+                <PaymentMethodsSelector
+                  onPaymentMethodsChange={handlePaymentMethodsChange}
+                  connectedWallet={
+                    hederaAccountId ||
+                    solanaWallet?.publicKey?.toString() ||
+                    evmWallet ||
+                    address ||
+                    null
                   }
-                  paymentType="virtual_card"
-                  initialDetails={paymentMethods.bank_virtual_card.bank_details}
+                  initialMethods={paymentMethods}
                 />
-              )}
 
-              {paymentMethods?.bank_qr?.enabled && (
-                <BankDetailsForm
-                  onBankDetailsChange={(details) =>
-                    handleBankDetailsChange(details, "bank_qr")
-                  }
-                  paymentType="bank_qr"
-                  initialDetails={paymentMethods.bank_qr.bank_details}
-                />
-              )}
+                {/* Conditional Bank Details Forms */}
+                {paymentMethods?.bank_virtual_card?.enabled && (
+                  <BankDetailsForm
+                    onBankDetailsChange={(details) =>
+                      handleBankDetailsChange(details, "virtual_card")
+                    }
+                    paymentType="virtual_card"
+                    initialDetails={
+                      paymentMethods.bank_virtual_card.bank_details
+                    }
+                  />
+                )}
 
-              {/* ENS Payment Configuration */}
-              {paymentMethods?.ens_payment?.enabled && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-200"
-                >
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-indigo-500 rounded-lg">
-                      <Globe className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        ENS Payment Configuration
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        Configure your ENS domain for human-readable payments
-                      </p>
-                    </div>
-                  </div>
+                {paymentMethods?.bank_qr?.enabled && (
+                  <BankDetailsForm
+                    onBankDetailsChange={(details) =>
+                      handleBankDetailsChange(details, "bank_qr")
+                    }
+                    paymentType="bank_qr"
+                    initialDetails={paymentMethods.bank_qr.bank_details}
+                  />
+                )}
 
-                  <div className="space-y-4">
-                    {/* Network Selector */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Resolver Network
-                      </label>
-                      <div className="flex gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setEnsResolverNetwork("mainnet")}
-                          className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
-                            ensResolverNetwork === "mainnet"
-                              ? "bg-indigo-500 text-white shadow-lg"
-                              : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
-                          }`}
-                        >
-                          Mainnet
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setEnsResolverNetwork("sepolia")}
-                          className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
-                            ensResolverNetwork === "sepolia"
-                              ? "bg-indigo-500 text-white shadow-lg"
-                              : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
-                          }`}
-                        >
-                          Sepolia (Testnet)
-                        </button>
+                {/* ENS Payment Configuration */}
+                {paymentMethods?.ens_payment?.enabled && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-200"
+                  >
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 bg-indigo-500 rounded-lg">
+                        <Globe className="w-5 h-5 text-white" />
                       </div>
-                    </div>
-
-                    {/* ENS Domain Input */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        ENS Domain
-                      </label>
-                      <div className="flex gap-2">
-                        <div className="relative flex-1">
-                          <input
-                            type="text"
-                            value={ensDomain}
-                            onChange={(e) =>
-                              setEnsDomain(e.target.value.toLowerCase())
-                            }
-                            placeholder="your-domain.eth"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                          />
-                          {ensResolving && (
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                              <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
-                            </div>
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={handleQuickFillCubePay}
-                          className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg hover:from-indigo-600 hover:to-purple-600 transition-all shadow-md whitespace-nowrap"
-                        >
-                          📦 Fill cube-pay.eth
-                        </button>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Enter your ENS domain (e.g., vitalik.eth) or use
-                        cube-pay.eth
-                      </p>
-                    </div>
-
-                    {/* Resolution Status */}
-                    {ensDomain && !ensResolving && (
                       <div>
-                        {ensError && (
-                          <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                            <div className="text-sm text-red-700">
-                              {ensError}
-                            </div>
-                          </div>
-                        )}
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          ENS Payment Configuration
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          Configure your ENS domain for human-readable payments
+                        </p>
+                      </div>
+                    </div>
 
-                        {ensVerified && ensResolvedAddress && (
-                          <div className="space-y-3">
-                            <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                              <div className="flex-1">
-                                <div className="text-sm font-medium text-green-900">
-                                  ENS Domain Verified ✓
-                                </div>
-                                <div className="text-xs text-green-700 mt-1 font-mono break-all">
-                                  {ensResolvedAddress.slice(0, 6)}...
-                                  {ensResolvedAddress.slice(-4)}
-                                </div>
-                              </div>
-                            </div>
+                    <div className="space-y-4">
+                      {/* Network Selector */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Resolver Network
+                        </label>
+                        <div className="flex gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setEnsResolverNetwork("mainnet")}
+                            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
+                              ensResolverNetwork === "mainnet"
+                                ? "bg-indigo-500 text-white shadow-lg"
+                                : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
+                            }`}
+                          >
+                            Mainnet
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEnsResolverNetwork("sepolia")}
+                            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
+                              ensResolverNetwork === "sepolia"
+                                ? "bg-indigo-500 text-white shadow-lg"
+                                : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
+                            }`}
+                          >
+                            Sepolia (Testnet)
+                          </button>
+                        </div>
+                      </div>
 
-                            {/* Avatar Display */}
-                            {ensAvatarUrl && (
-                              <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200">
-                                <img
-                                  src={ensAvatarUrl}
-                                  alt="ENS Avatar"
-                                  className="w-12 h-12 rounded-full object-cover"
-                                  onError={(e) => {
-                                    (
-                                      e.target as HTMLImageElement
-                                    ).style.display = "none";
-                                  }}
-                                />
-                                <div className="text-sm text-gray-600">
-                                  Avatar found for {ensDomain}
-                                </div>
+                      {/* ENS Domain Input */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          ENS Domain
+                        </label>
+                        <div className="flex gap-2">
+                          <div className="relative flex-1">
+                            <input
+                              type="text"
+                              value={ensDomain}
+                              onChange={(e) =>
+                                setEnsDomain(e.target.value.toLowerCase())
+                              }
+                              placeholder="your-domain.eth"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            />
+                            {ensResolving && (
+                              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
                               </div>
                             )}
                           </div>
-                        )}
+                          <button
+                            type="button"
+                            onClick={handleQuickFillCubePay}
+                            className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg hover:from-indigo-600 hover:to-purple-600 transition-all shadow-md whitespace-nowrap"
+                          >
+                            📦 Fill cube-pay.eth
+                          </button>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Enter your ENS domain (e.g., vitalik.eth) or use
+                          cube-pay.eth
+                        </p>
                       </div>
-                    )}
 
-                    {/* Information Box */}
-                    <div className="bg-white rounded-lg p-4 border border-indigo-200">
-                      <h4 className="text-sm font-semibold text-gray-900 mb-2">
-                        How ENS Payment Works
-                      </h4>
-                      <ul className="text-xs text-gray-600 space-y-1">
-                        <li>
-                          • Customers pay to your ENS domain (e.g., alice.eth)
-                        </li>
-                        <li>
-                          • ENS automatically resolves to your wallet address
-                        </li>
-                        <li>
-                          • Update your address anytime without redeploying
-                        </li>
-                        <li>
-                          • More professional and memorable than hex addresses
-                        </li>
-                      </ul>
+                      {/* Resolution Status */}
+                      {ensDomain && !ensResolving && (
+                        <div>
+                          {ensError && (
+                            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                              <div className="text-sm text-red-700">
+                                {ensError}
+                              </div>
+                            </div>
+                          )}
+
+                          {ensVerified && ensResolvedAddress && (
+                            <div className="space-y-3">
+                              <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                                <div className="flex-1">
+                                  <div className="text-sm font-medium text-green-900">
+                                    ENS Domain Verified ✓
+                                  </div>
+                                  <div className="text-xs text-green-700 mt-1 font-mono break-all">
+                                    {ensResolvedAddress.slice(0, 6)}...
+                                    {ensResolvedAddress.slice(-4)}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Avatar Display */}
+                              {ensAvatarUrl && (
+                                <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200">
+                                  <img
+                                    src={ensAvatarUrl}
+                                    alt="ENS Avatar"
+                                    className="w-12 h-12 rounded-full object-cover"
+                                    onError={(e) => {
+                                      (
+                                        e.target as HTMLImageElement
+                                      ).style.display = "none";
+                                    }}
+                                  />
+                                  <div className="text-sm text-gray-600">
+                                    Avatar found for {ensDomain}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Information Box */}
+                      <div className="bg-white rounded-lg p-4 border border-indigo-200">
+                        <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                          How ENS Payment Works
+                        </h4>
+                        <ul className="text-xs text-gray-600 space-y-1">
+                          <li>
+                            • Customers pay to your ENS domain (e.g., alice.eth)
+                          </li>
+                          <li>
+                            • ENS automatically resolves to your wallet address
+                          </li>
+                          <li>
+                            • Update your address anytime without redeploying
+                          </li>
+                          <li>
+                            • More professional and memorable than hex addresses
+                          </li>
+                        </ul>
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              )}
-            </div>
+                  </motion.div>
+                )}
+              </div>
+            )}
+
+            {/* Virtual Terminal Configuration - Only for ARTM agents */}
+            {agentType === "artm_terminal" && (
+              <div className="space-y-6">
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                  <p className="text-sm text-blue-300">
+                    ℹ️ <strong>Virtual Terminal Mode:</strong> Payment methods
+                    are disabled for ARTM agents. Bank and crypto integrations
+                    are configured below instead.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Deployment Button */}
             <div className="pt-6 border-t border-gray-200">
