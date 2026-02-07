@@ -48,8 +48,8 @@ export const TerminalDisplayConfig: React.FC<TerminalDisplayConfigProps> = ({
   const [config, setConfig] = useState<TerminalDisplayConfig>(initialConfig);
   const [errors, setErrors] = useState<string[]>([]);
 
-  // Only show for Virtual Terminal agents
-  if (agentType !== "home_security") {
+  // Only show for ARTM Terminal agents
+  if (agentType !== "artm_terminal") {
     return null;
   }
 

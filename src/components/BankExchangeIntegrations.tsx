@@ -20,7 +20,14 @@ const AVAILABLE_BANKS = [
   "Chase",
 ];
 
-const AVAILABLE_EXCHANGES = ["Binance", "Coinbase", "Kraken", "Bybit", "OKX"];
+const AVAILABLE_EXCHANGES = [
+  "Revolut",
+  "Binance",
+  "Coinbase",
+  "Kraken",
+  "Bybit",
+  "OKX",
+];
 
 export const BankExchangeIntegrations: React.FC<
   BankExchangeIntegrationsProps
@@ -29,14 +36,14 @@ export const BankExchangeIntegrations: React.FC<
   onBankIntegrationsChange,
   onExchangeIntegrationsChange,
   initialBanks = ["Revolut"],
-  initialExchanges = [],
+  initialExchanges = ["Revolut"],
 }) => {
   const [selectedBanks, setSelectedBanks] = useState<string[]>(initialBanks);
   const [selectedExchanges, setSelectedExchanges] =
     useState<string[]>(initialExchanges);
 
-  // Only show for Virtual Terminal agents
-  if (agentType !== "home_security") {
+  // Only show for ARTM Terminal agents
+  if (agentType !== "artm_terminal") {
     return null;
   }
 

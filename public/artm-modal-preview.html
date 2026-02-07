@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ARTM Modal Preview</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+          Cantarell, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 500px;
+        width: 100%;
+      }
+
+      .header {
+        text-align: center;
+        color: white;
+        margin-bottom: 30px;
+      }
+
+      .header h1 {
+        font-size: 32px;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        font-size: 14px;
+        opacity: 0.9;
+      }
+
+      .modal-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+
+      .modal-card {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        cursor: pointer;
+        transition:
+          transform 0.3s ease,
+          box-shadow 0.3s ease;
+      }
+
+      .modal-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.4);
+      }
+
+      .modal-icon {
+        font-size: 48px;
+        margin-bottom: 12px;
+        display: block;
+      }
+
+      .modal-card h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 6px;
+      }
+
+      .modal-card p {
+        font-size: 13px;
+        color: #666;
+        line-height: 1.4;
+      }
+
+      /* Card Withdrawal Modal */
+      .card-modal {
+        background: #fef3c7;
+        border: 2px solid #fbbf24;
+      }
+
+      .card-modal h3 {
+        color: #b45309;
+      }
+
+      /* Crypto Withdrawal Modal */
+      .crypto-modal {
+        background: #fed7aa;
+        border: 2px solid #fb923c;
+      }
+
+      .crypto-modal h3 {
+        color: #92400e;
+      }
+
+      /* Full Modal Views */
+      .full-modal {
+        background: white;
+        border-radius: 16px;
+        padding: 32px;
+        max-height: 600px;
+        overflow-y: auto;
+        margin-bottom: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+
+      .full-modal.hidden {
+        display: none;
+      }
+
+      .modal-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 24px;
+        gap: 12px;
+      }
+
+      .modal-header-icon {
+        font-size: 40px;
+      }
+
+      .modal-header h2 {
+        font-size: 24px;
+        color: #1a1a1a;
+      }
+
+      .modal-header p {
+        font-size: 14px;
+        color: #666;
+        margin-top: 4px;
+      }
+
+      .info-box {
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 24px;
+      }
+
+      .info-box.yellow {
+        background: #fef3c7;
+        border: 2px solid #fbbf24;
+      }
+
+      .info-box.orange {
+        background: #fed7aa;
+        border: 2px solid #fb923c;
+      }
+
+      .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        font-size: 14px;
+      }
+
+      .info-row:last-child {
+        margin-bottom: 0;
+      }
+
+      .info-label {
+        color: #666;
+        font-weight: 500;
+      }
+
+      .info-value {
+        color: #1a1a1a;
+        font-weight: 600;
+      }
+
+      .info-value.large {
+        font-size: 20px;
+      }
+
+      .info-row.secondary .info-label {
+        color: #999;
+        font-size: 12px;
+      }
+
+      .info-row.secondary .info-value {
+        color: #666;
+        font-size: 12px;
+      }
+
+      input[type="number"] {
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 14px;
+        font-weight: 600;
+        text-align: right;
+        width: 100px;
+        transition: border-color 0.2s;
+      }
+
+      input[type="number"]:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 12px;
+        flex-direction: column;
+      }
+
+      .btn {
+        padding: 12px 16px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .btn-primary {
+        color: white;
+        border: none;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn-secondary {
+        background: #e5e7eb;
+        color: #1a1a1a;
+      }
+
+      .btn-secondary:hover {
+        background: #d1d5db;
+      }
+
+      .btn-yellow {
+        background: #ca8a04;
+      }
+
+      .btn-orange {
+        background: #ea580c;
+      }
+
+      .tab-buttons {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+
+      .tab-btn {
+        padding: 10px 16px;
+        border: 2px solid #e5e7eb;
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .tab-btn.active {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+      }
+
+      .tab-btn:hover {
+        border-color: #667eea;
+      }
+
+      .badge {
+        display: inline-block;
+        background: #10b981;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🏧 ARTM Modals</h1>
+        <p>Virtual ATM Interaction Interface Preview</p>
+      </div>
+
+      <div class="tab-buttons">
+        <button class="tab-btn active" onclick="showModal('overview')">
+          Overview
+        </button>
+        <button class="tab-btn" onclick="showModal('card')">Card</button>
+        <button class="tab-btn" onclick="showModal('crypto')">Crypto</button>
+      </div>
+
+      <!-- Overview -->
+      <div id="overview" class="full-modal">
+        <div class="modal-header">
+          <span class="modal-header-icon">🏧</span>
+          <div>
+            <h2>ARTM 1</h2>
+            <p>Virtual Terminal<br />50m away</p>
+          </div>
+        </div>
+
+        <div
+          style="
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+          "
+        >
+          <h3 style="font-size: 16px; color: #1a1a1a; margin-bottom: 8px">
+            About this agent
+          </h3>
+          <p style="font-size: 14px; color: #666">
+            Augmented Reality Teller Machine for fast cash and crypto
+            withdrawals
+          </p>
+        </div>
+
+        <h3 style="font-size: 16px; color: #1a1a1a; margin-bottom: 12px">
+          Withdrawal Options
+        </h3>
+        <div style="display: grid; gap: 12px; margin-bottom: 20px">
+          <div
+            style="
+              padding: 16px;
+              background: #fef3c7;
+              border: 2px solid #fbbf24;
+              border-radius: 12px;
+              cursor: pointer;
+              transition: all 0.3s;
+              display: grid;
+              grid-template-columns: 40px 1fr;
+              gap: 12px;
+              align-items: center;
+            "
+            onmouseover="this.style.transform = 'translateY(-3px)'"
+            onmouseout="this.style.transform = 'translateY(0)'"
+          >
+            <span style="font-size: 24px">💳</span>
+            <div>
+              <div style="font-weight: 600; color: #b45309">
+                Card Withdrawal
+              </div>
+              <div style="font-size: 12px; color: #b45309; opacity: 0.8">
+                Withdraw cash from your card
+              </div>
+            </div>
+            <span class="badge">FREE</span>
+          </div>
+
+          <div
+            style="
+              padding: 16px;
+              background: #fed7aa;
+              border: 2px solid #fb923c;
+              border-radius: 12px;
+              cursor: pointer;
+              transition: all 0.3s;
+              display: grid;
+              grid-template-columns: 40px 1fr;
+              gap: 12px;
+              align-items: center;
+            "
+            onmouseover="this.style.transform = 'translateY(-3px)'"
+            onmouseout="this.style.transform = 'translateY(0)'"
+          >
+            <span style="font-size: 24px">📈</span>
+            <div>
+              <div style="font-weight: 600; color: #92400e">
+                Crypto Withdrawal
+              </div>
+              <div style="font-size: 12px; color: #92400e; opacity: 0.8">
+                Convert crypto to cash
+              </div>
+            </div>
+            <span class="badge">FREE</span>
+          </div>
+        </div>
+
+        <div style="padding-top: 16px; border-top: 2px solid #f0f0f0">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              font-size: 14px;
+              color: #666;
+            "
+          >
+            <span>Agent Wallet:</span>
+            <span style="font-family: monospace; font-size: 12px"
+              >0x7e5F...4b2c</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Withdrawal Modal -->
+      <div id="card" class="full-modal hidden">
+        <div class="modal-header">
+          <span class="modal-header-icon">💳</span>
+          <div>
+            <h2>Card Withdrawal</h2>
+            <p>Withdraw cash using your bank card</p>
+          </div>
+        </div>
+
+        <div class="info-box yellow">
+          <div class="info-row">
+            <span class="info-label">Available Balance:</span>
+            <span class="info-value large">€2,450.67</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Withdrawal Amount:</span>
+            <input type="number" placeholder="50" value="50" />
+          </div>
+          <div class="info-row secondary">
+            <span class="info-label">Transaction Fee:</span>
+            <span class="info-value">FREE</span>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="btn btn-primary btn-yellow">Confirm Withdrawal</button>
+          <button class="btn btn-secondary" onclick="showModal('overview')">
+            Cancel
+          </button>
+        </div>
+      </div>
+
+      <!-- Crypto Withdrawal Modal -->
+      <div id="crypto" class="full-modal hidden">
+        <div class="modal-header">
+          <span class="modal-header-icon">📈</span>
+          <div>
+            <h2>Crypto Withdrawal</h2>
+            <p>Convert your cryptocurrency to cash</p>
+          </div>
+        </div>
+
+        <div class="info-box orange">
+          <div class="info-row">
+            <span class="info-label">Available USDC:</span>
+            <span class="info-value large">1,250.00 USDC</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Withdraw USDC:</span>
+            <input type="number" placeholder="100" value="100" />
+          </div>
+          <div class="info-row">
+            <span class="info-label">Receives (EUR):</span>
+            <span class="info-value">≈ €95.00</span>
+          </div>
+          <div class="info-row secondary">
+            <span class="info-label">Exchange Rate:</span>
+            <span class="info-value">1 USDC = 0.95 EUR</span>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="btn btn-primary btn-orange">Confirm Conversion</button>
+          <button class="btn btn-secondary" onclick="showModal('overview')">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function showModal(modal) {
+        // Hide all modals
+        document.getElementById("overview").classList.add("hidden");
+        document.getElementById("card").classList.add("hidden");
+        document.getElementById("crypto").classList.add("hidden");
+
+        // Update tab buttons
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((btn) => btn.classList.remove("active"));
+
+        // Show selected modal
+        document.getElementById(modal).classList.remove("hidden");
+
+        // Update tab button
+        event.target.classList.add("active");
+      }
+    </script>
+  </body>
+</html>

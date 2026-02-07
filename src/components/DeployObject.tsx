@@ -158,9 +158,9 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
   const [bankIntegrations, setBankIntegrations] = useState<string[]>([
     "Revolut",
   ]);
-  const [exchangeIntegrations, setExchangeIntegrations] = useState<string[]>(
-    [],
-  );
+  const [exchangeIntegrations, setExchangeIntegrations] = useState<string[]>([
+    "Revolut",
+  ]);
   const [terminalDisplayConfig, setTerminalDisplayConfig] =
     useState<TerminalDisplayConfigType>({
       mock_balance_eur: 2450.67,
@@ -2842,8 +2842,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
               />
             )}
 
-            {/* Terminal Display Configuration (Virtual Terminal Only) - HIDDEN FOR DEMO */}
-            {false && agentType === "artm_terminal" && (
+            {/* Terminal Display Configuration (Virtual Terminal Only) */}
+            {agentType === "artm_terminal" && (
               <TerminalDisplayConfig
                 agentType={agentType}
                 onConfigChange={setTerminalDisplayConfig}

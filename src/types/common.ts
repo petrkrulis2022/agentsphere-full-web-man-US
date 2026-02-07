@@ -60,4 +60,15 @@ export interface DeployedObject {
   filecoin_cid?: string;
   ipfs_hash?: string;
   chainId?: number;
+  // ARTM Virtual Terminal fields
+  bank_integrations?: string[];
+  exchange_integrations?: string[];
+  terminal_display_config?: {
+    mock_balance_eur: number;
+    mock_wallet_usdc: number;
+    dispenser_id: string;
+    ui_theme: string;
+  };
+  card_payments_enabled?: boolean;
+  wallet_management_enabled?: boolean;
 }
