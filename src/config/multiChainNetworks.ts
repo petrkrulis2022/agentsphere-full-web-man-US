@@ -22,6 +22,8 @@ export interface NetworkConfig {
   ccipChainSelector?: string;
   ccipRouter?: string;
   ccipLanes?: Record<string, string>;
+  // Circle CCTP / Bridge Kit routing metadata
+  circleDomainId?: number; // Circle domain ID for CCTP/Bridge Kit routing
 }
 
 // EVM Testnets with CCIP Cross-Chain Support
@@ -41,6 +43,8 @@ export const EVM_NETWORKS: Record<string, NetworkConfig> = {
     gasPrice: "20000000000", // 20 gwei
     status: "active",
     isSupported: true,
+    // Circle CCTP / Bridge Kit domain
+    circleDomainId: 0, // Ethereum Sepolia
     // CCIP Configuration
     ccipSupported: true,
     ccipChainSelector: "16015286601757825753",
@@ -96,6 +100,8 @@ export const EVM_NETWORKS: Record<string, NetworkConfig> = {
     gasPrice: "1000000000", // 1 gwei
     status: "active",
     isSupported: true,
+    // Circle CCTP / Bridge Kit domain
+    circleDomainId: 6, // Base Sepolia
     // CCIP Configuration
     ccipSupported: true,
     ccipChainSelector: "10344971235874465080",
@@ -151,6 +157,8 @@ export const EVM_NETWORKS: Record<string, NetworkConfig> = {
     gasPrice: "25000000000", // 25 gwei
     status: "active",
     isSupported: true,
+    // Circle CCTP / Bridge Kit domain
+    circleDomainId: 1, // Avalanche Fuji
     // CCIP Configuration
     ccipSupported: true,
     ccipChainSelector: "14767482510784806043",
@@ -191,6 +199,27 @@ export const EVM_NETWORKS: Record<string, NetworkConfig> = {
       toEthereumSepolia: "0x719Aef2C63376AdeCD62D2b59D54682aFBde914a",
       toSolanaDevnet: "0xF4EbCC2c077d3939434C7Ab0572660c5A45e4df5",
     },
+  },
+  // Arc Testnet (Circle L1 — settlement hub for cross-chain USDC)
+  ARC_TESTNET: {
+    chainId: 5042002,
+    name: "Arc Testnet",
+    shortName: "Arc",
+    rpcUrl: "https://rpc.testnet.arc.network",
+    nativeCurrency: "USDC", // Arc uses USDC as gas token
+    symbol: "USDC",
+    blockExplorer: "https://testnet.arcscan.app",
+    type: "evm",
+    usdcAddress: "0x3600000000000000000000000000000000000000", // Circle proxy
+    icon: "arc",
+    isTestnet: true,
+    gasPrice: "1000000", // Arc gas is cheap (USDC-denominated)
+    status: "active",
+    isSupported: true,
+    // Circle CCTP / Bridge Kit domain
+    circleDomainId: 26, // Arc Testnet
+    // CCIP not applicable — Arc uses Bridge Kit / CCTP natively
+    ccipSupported: false,
   },
 };
 
@@ -288,20 +317,20 @@ export const ALL_NETWORKS = { ...EVM_NETWORKS, ...NON_EVM_NETWORKS };
 export const getNetworkByChainId = (chainId: number): NetworkConfig | null => {
   return (
     Object.values(ALL_NETWORKS).find(
-      (network) => network.chainId === chainId
+      (network) => network.chainId === chainId,
     ) || null
   );
 };
 
 export const getNetworksByType = (
-  type: NetworkConfig["type"]
+  type: NetworkConfig["type"],
 ): NetworkConfig[] => {
   return Object.values(ALL_NETWORKS).filter((network) => network.type === type);
 };
 
 export const getActiveNetworks = (): NetworkConfig[] => {
   return Object.values(ALL_NETWORKS).filter(
-    (network) => network.status === "active"
+    (network) => network.status === "active",
   );
 };
 
@@ -315,7 +344,7 @@ export const getNonEVMNetworks = (): NetworkConfig[] => {
 
 // Network status checker
 export const checkNetworkStatus = async (
-  network: NetworkConfig
+  network: NetworkConfig,
 ): Promise<boolean> => {
   try {
     if (network.type === "evm") {
@@ -341,7 +370,7 @@ export const checkNetworkStatus = async (
 
 // Network switching helper for MetaMask
 export const switchToNetwork = async (
-  network: NetworkConfig
+  network: NetworkConfig,
 ): Promise<boolean> => {
   if (
     typeof window === "undefined" ||
@@ -390,7 +419,7 @@ export const switchToNetwork = async (
 
 // Gas fee estimation
 export const estimateGasFee = async (
-  network: NetworkConfig
+  network: NetworkConfig,
 ): Promise<string> => {
   if (network.type !== "evm") {
     return "N/A";
@@ -432,14 +461,14 @@ export const getCCIPSupportedNetworks = (): NetworkConfig[] => {
 
 export const canSendCrossChainTo = (
   sourceNetwork: NetworkConfig,
-  targetChainId: number | string
+  targetChainId: number | string,
 ): boolean => {
   if (!sourceNetwork.ccipSupported || !sourceNetwork.ccipLanes) {
     return false;
   }
 
   const targetNetwork = getNetworkByChainId(
-    typeof targetChainId === "string" ? 0 : targetChainId
+    typeof targetChainId === "string" ? 0 : targetChainId,
   );
   if (!targetNetwork) return false;
 
@@ -450,7 +479,7 @@ export const canSendCrossChainTo = (
 
 export const getCCIPLaneAddress = (
   sourceNetwork: NetworkConfig,
-  targetNetwork: NetworkConfig
+  targetNetwork: NetworkConfig,
 ): string | null => {
   if (!sourceNetwork.ccipLanes) return null;
 
@@ -461,7 +490,7 @@ export const getCCIPLaneAddress = (
 export const estimateCrossChainFee = async (
   sourceNetwork: NetworkConfig,
   targetNetwork: NetworkConfig,
-  amount: number
+  amount: number,
 ): Promise<{
   canSend: boolean;
   estimatedFee?: number;
@@ -506,7 +535,7 @@ export const getAllCrossChainRoutes = (): Array<{
         ([targetKey, laneAddress]) => {
           const targetNetwork = Object.values(ALL_NETWORKS).find(
             (network) =>
-              network.name.replace(/\s+/g, "") === targetKey.replace("to", "")
+              network.name.replace(/\s+/g, "") === targetKey.replace("to", ""),
           );
 
           if (targetNetwork) {
@@ -516,7 +545,7 @@ export const getAllCrossChainRoutes = (): Array<{
               laneAddress,
             });
           }
-        }
+        },
       );
     }
   });

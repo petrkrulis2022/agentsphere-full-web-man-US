@@ -1,6 +1,6 @@
 /**
  * Cross-Chain Payment Service for AgentSphere
- * Handles CCIP-based cross-chain USDC payments for agent interactions
+ * Handles CCIP-based and Bridge Kit / CCTP cross-chain USDC payments for agent interactions
  */
 
 import {
@@ -10,8 +10,12 @@ import {
   getCCIPLaneAddress,
   estimateCrossChainFee,
   getNetworkByChainId,
+  ALL_NETWORKS,
 } from "../config/multiChainNetworks";
 import { getCCIPNetworkByChainId } from "../config/ccipNetworkConfig";
+
+// Payment rail type
+export type PaymentRail = "ccip" | "bridgekit" | "gateway";
 
 export interface CrossChainPaymentRequest {
   fromNetwork: NetworkConfig;
@@ -21,6 +25,7 @@ export interface CrossChainPaymentRequest {
   amount: number; // USDC amount
   agentId?: string;
   agentName?: string;
+  rail?: PaymentRail; // preferred rail; defaults to auto-detect
   metadata?: {
     interactionType?: string;
     transactionId?: string;
@@ -32,10 +37,16 @@ export interface CrossChainPaymentResult {
   success: boolean;
   transactionHash?: string;
   ccipMessageId?: string;
+  // Bridge Kit / CCTP fields
+  bridgeTransferId?: string;
+  arcIntermediateChainId?: number;
+  clientMustExecute?: boolean; // true when browser must sign txs
+  routePlan?: BridgeKitRoutePlan;
   estimatedFee?: number;
   totalCost?: number;
   error?: string;
   paymentType: "same_chain" | "cross_chain";
+  rail?: PaymentRail;
   sourceNetwork: string;
   destinationNetwork: string;
 }
@@ -43,22 +54,125 @@ export interface CrossChainPaymentResult {
 export interface PaymentEstimate {
   canProcess: boolean;
   agentFee: number; // What agent receives
-  ccipFee: number; // Cross-chain transfer fee
+  ccipFee: number; // Cross-chain transfer fee (legacy name kept for compat)
+  bridgeFee?: number; // Bridge Kit fee when applicable
   totalUserCost: number; // Total cost to user
   estimatedTime: string; // Estimated completion time
+  rail?: PaymentRail;
   route: {
     source: NetworkConfig;
     destination: NetworkConfig;
+    intermediate?: NetworkConfig; // Arc hub when using Bridge Kit
     isDirect: boolean;
   };
   error?: string;
 }
+
+// Bridge Kit route plan (returned to client for wallet-side execution)
+export interface BridgeKitRoutePlan {
+  source: { chainId: number; domainId: number | null };
+  intermediate: {
+    chainId: number;
+    domainId: number;
+    usdcAddress: string;
+    name: string;
+  };
+  destination: { chainId: number; domainId: number | null };
+  amount: number;
+  token: string;
+}
+
+// Arc Testnet constants
+const ARC_CHAIN_ID = 5042002;
+const ARC_CCTP_DOMAIN = 26;
+const ARC_USDC_ADDRESS = "0x3600000000000000000000000000000000000000";
+
+// Circle CCTP domain map (testnets)
+const CIRCLE_DOMAIN_MAP: Record<number, number> = {
+  11155111: 0, // Ethereum Sepolia
+  84532: 6, // Base Sepolia
+  43113: 1, // Avalanche Fuji
+  5042002: 26, // Arc Testnet
+};
 
 export class CrossChainPaymentService {
   private supportedNetworks: NetworkConfig[];
 
   constructor() {
     this.supportedNetworks = getCCIPSupportedNetworks();
+    // Also include Arc (which may not have CCIP but is reachable via Bridge Kit)
+    const arcNet = Object.values(ALL_NETWORKS).find(
+      (n) => n.chainId === ARC_CHAIN_ID,
+    );
+    if (
+      arcNet &&
+      !this.supportedNetworks.find((n) => n.chainId === ARC_CHAIN_ID)
+    ) {
+      this.supportedNetworks.push(arcNet);
+    }
+  }
+
+  /**
+   * Determine which rail to use for a given source → destination pair.
+   * - If either end is Arc, use bridgekit.
+   * - If both have circleDomainId, prefer bridgekit (routable via CCTP).
+   * - Otherwise fall back to ccip.
+   */
+  detectRail(source: NetworkConfig, destination: NetworkConfig): PaymentRail {
+    if (
+      source.chainId === ARC_CHAIN_ID ||
+      destination.chainId === ARC_CHAIN_ID
+    ) {
+      return "bridgekit";
+    }
+    if (
+      source.circleDomainId !== undefined &&
+      destination.circleDomainId !== undefined
+    ) {
+      return "bridgekit";
+    }
+    return "ccip";
+  }
+
+  /**
+   * Check if Bridge Kit / CCTP route is available between two chains
+   */
+  canRouteViaBridgeKit(
+    sourceChainId: number,
+    destinationChainId: number,
+  ): boolean {
+    return (
+      CIRCLE_DOMAIN_MAP[sourceChainId] !== undefined &&
+      CIRCLE_DOMAIN_MAP[destinationChainId] !== undefined
+    );
+  }
+
+  /**
+   * Build a Bridge Kit route plan (returned to client for wallet-side execution)
+   */
+  buildBridgeKitRoutePlan(
+    sourceChainId: number,
+    destinationChainId: number,
+    amount: number,
+  ): BridgeKitRoutePlan {
+    return {
+      source: {
+        chainId: sourceChainId,
+        domainId: CIRCLE_DOMAIN_MAP[sourceChainId] ?? null,
+      },
+      intermediate: {
+        chainId: ARC_CHAIN_ID,
+        domainId: ARC_CCTP_DOMAIN,
+        usdcAddress: ARC_USDC_ADDRESS,
+        name: "Arc Testnet",
+      },
+      destination: {
+        chainId: destinationChainId,
+        domainId: CIRCLE_DOMAIN_MAP[destinationChainId] ?? null,
+      },
+      amount,
+      token: "USDC",
+    };
   }
 
   /**
@@ -67,13 +181,13 @@ export class CrossChainPaymentService {
   async estimatePayment(
     sourceChainId: number | string,
     destinationChainId: number | string,
-    agentFee: number
+    agentFee: number,
   ): Promise<PaymentEstimate> {
     const sourceNetwork = getNetworkByChainId(
-      typeof sourceChainId === "string" ? 0 : sourceChainId
+      typeof sourceChainId === "string" ? 0 : sourceChainId,
     );
     const destinationNetwork = getNetworkByChainId(
-      typeof destinationChainId === "string" ? 0 : destinationChainId
+      typeof destinationChainId === "string" ? 0 : destinationChainId,
     );
 
     if (!sourceNetwork || !destinationNetwork) {
@@ -109,6 +223,31 @@ export class CrossChainPaymentService {
     }
 
     // Cross-chain payment estimation
+    // Try Bridge Kit route first (via Arc)
+    const srcId = typeof sourceChainId === "number" ? sourceChainId : 0;
+    const dstId =
+      typeof destinationChainId === "number" ? destinationChainId : 0;
+    if (this.canRouteViaBridgeKit(srcId, dstId)) {
+      const arcNetwork = getNetworkByChainId(ARC_CHAIN_ID);
+      const bridgeFee = agentFee * 0.001 + 0.5; // 0.1% + $0.50 base
+      return {
+        canProcess: true,
+        agentFee,
+        ccipFee: 0, // not using CCIP
+        bridgeFee,
+        totalUserCost: agentFee + bridgeFee,
+        estimatedTime: "<30 seconds (via Arc)",
+        rail: "bridgekit",
+        route: {
+          source: sourceNetwork,
+          destination: destinationNetwork,
+          intermediate: arcNetwork || undefined,
+          isDirect: false,
+        },
+      };
+    }
+
+    // Fallback: CCIP estimation
     if (!canSendCrossChainTo(sourceNetwork, destinationChainId)) {
       return {
         canProcess: false,
@@ -128,7 +267,7 @@ export class CrossChainPaymentService {
     const feeEstimate = await estimateCrossChainFee(
       sourceNetwork,
       destinationNetwork,
-      agentFee
+      agentFee,
     );
 
     if (!feeEstimate.canSend) {
@@ -165,7 +304,7 @@ export class CrossChainPaymentService {
    * Process cross-chain payment (implementation would integrate with actual CCIP contracts)
    */
   async processPayment(
-    request: CrossChainPaymentRequest
+    request: CrossChainPaymentRequest,
   ): Promise<CrossChainPaymentResult> {
     try {
       // Validate payment request
@@ -186,6 +325,14 @@ export class CrossChainPaymentService {
 
       if (isSameChain) {
         return this.processSameChainPayment(request);
+      }
+
+      // Determine rail
+      const rail =
+        request.rail || this.detectRail(request.fromNetwork, request.toNetwork);
+
+      if (rail === "bridgekit") {
+        return this.processBridgeKitPayment(request);
       } else {
         return this.processCrossChainPayment(request);
       }
@@ -223,7 +370,7 @@ export class CrossChainPaymentService {
     // Check if networks are supported
     if (
       !this.supportedNetworks.find(
-        (n) => n.chainId === request.fromNetwork.chainId
+        (n) => n.chainId === request.fromNetwork.chainId,
       )
     ) {
       return {
@@ -234,7 +381,7 @@ export class CrossChainPaymentService {
 
     if (
       !this.supportedNetworks.find(
-        (n) => n.chainId === request.toNetwork.chainId
+        (n) => n.chainId === request.toNetwork.chainId,
       )
     ) {
       return {
@@ -250,7 +397,7 @@ export class CrossChainPaymentService {
    * Process same-chain payment (existing functionality)
    */
   private async processSameChainPayment(
-    request: CrossChainPaymentRequest
+    request: CrossChainPaymentRequest,
   ): Promise<CrossChainPaymentResult> {
     // This would integrate with existing same-chain payment logic
     // For now, simulate successful payment
@@ -272,10 +419,54 @@ export class CrossChainPaymentService {
   }
 
   /**
+   * Process cross-chain payment using Bridge Kit (via Arc)
+   * Returns clientMustExecute: true — the AR Viewer frontend calls Bridge Kit SDK.
+   */
+  private async processBridgeKitPayment(
+    request: CrossChainPaymentRequest,
+  ): Promise<CrossChainPaymentResult> {
+    console.log(
+      "🌉 Processing Bridge Kit (Arc) payment — client-side execution required:",
+      request,
+    );
+
+    const routePlan = this.buildBridgeKitRoutePlan(
+      request.fromNetwork.chainId,
+      request.toNetwork.chainId,
+      request.amount,
+    );
+
+    if (!routePlan) {
+      return {
+        success: false,
+        error: "Cannot build Bridge Kit route plan between these networks",
+        paymentType: "cross_chain",
+        sourceNetwork: request.fromNetwork.name,
+        destinationNetwork: request.toNetwork.name,
+      };
+    }
+
+    const bridgeFee = request.amount * 0.001 + 0.5; // 0.1% + $0.50
+
+    return {
+      success: true,
+      paymentType: "cross_chain",
+      rail: "bridgekit",
+      clientMustExecute: true,
+      routePlan,
+      sourceNetwork: request.fromNetwork.name,
+      destinationNetwork: request.toNetwork.name,
+      arcIntermediateChainId: ARC_CHAIN_ID,
+      estimatedFee: bridgeFee,
+      totalCost: request.amount + bridgeFee,
+    };
+  }
+
+  /**
    * Process cross-chain payment using CCIP
    */
   private async processCrossChainPayment(
-    request: CrossChainPaymentRequest
+    request: CrossChainPaymentRequest,
   ): Promise<CrossChainPaymentResult> {
     console.log("🌉 Processing cross-chain payment via CCIP:", request);
 
@@ -296,7 +487,7 @@ export class CrossChainPaymentService {
     // Get CCIP lane address
     const laneAddress = getCCIPLaneAddress(
       request.fromNetwork,
-      request.toNetwork
+      request.toNetwork,
     );
     if (!laneAddress) {
       return {
@@ -312,7 +503,7 @@ export class CrossChainPaymentService {
     const feeEstimate = await estimateCrossChainFee(
       request.fromNetwork,
       request.toNetwork,
-      request.amount
+      request.amount,
     );
 
     if (!feeEstimate.canSend) {
@@ -361,7 +552,7 @@ export class CrossChainPaymentService {
       destinations: this.supportedNetworks.filter(
         (targetNetwork) =>
           targetNetwork.chainId !== sourceNetwork.chainId &&
-          canSendCrossChainTo(sourceNetwork, targetNetwork.chainId)
+          canSendCrossChainTo(sourceNetwork, targetNetwork.chainId),
       ),
     }));
   }

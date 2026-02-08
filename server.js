@@ -5,11 +5,26 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import crypto from "crypto";
+import { createClient } from "@supabase/supabase-js";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.API_PORT || 3001;
+
+// ==================== SUPABASE CLIENT ====================
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+
+let supabase = null;
+if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
+  supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+  console.log("✅ Supabase client initialized for payment sessions");
+} else {
+  console.warn(
+    "⚠️  VITE_SUPABASE_URL or VITE_SUPABASE_SERVICE_ROLE_KEY not set — falling back to in-memory sessions",
+  );
+}
 
 // CORS configuration
 const allowedOrigins = [
@@ -29,7 +44,7 @@ app.use(
       }
     },
     credentials: true,
-  })
+  }),
 );
 app.use(express.json());
 
@@ -53,8 +68,8 @@ const mockCards = new Map();
 // Mock agent storage (in-memory for testing)
 const mockAgents = new Map();
 
-// Payment session storage (in-memory for testing)
-const paymentSessions = new Map();
+// Payment session storage (Supabase-backed with in-memory fallback)
+const paymentSessionsFallback = new Map();
 
 // Helper: Check if agent is a terminal type
 function isTerminalAgent(agentType) {
@@ -66,37 +81,168 @@ function generatePaymentSessionId() {
   return `ps_${Date.now()}_${crypto.randomBytes(6).toString("hex")}`;
 }
 
-// Helper: Store payment session
-function storePaymentSession(session) {
-  paymentSessions.set(session.id, session);
-
-  // Auto-expire after 15 minutes
-  setTimeout(() => {
-    const currentSession = paymentSessions.get(session.id);
-    if (currentSession && currentSession.status === "pending") {
-      currentSession.status = "expired";
-      paymentSessions.set(session.id, currentSession);
-      console.log(`⏰ Payment session ${session.id} expired`);
+// Helper: Store payment session (Supabase or fallback)
+async function storePaymentSession(session) {
+  if (supabase) {
+    const { error } = await supabase.from("payment_sessions").insert({
+      id: session.id,
+      status: session.status,
+      amount: session.amount,
+      currency: session.currency,
+      token: session.token,
+      merchant_id: session.merchantId,
+      merchant_name: session.merchantName,
+      terminal_agent_id: session.terminalAgentId,
+      terminal_owner: session.terminalOwner,
+      payment_method: session.paymentMethod,
+      redirect_url: session.redirectUrl,
+      cart_data: session.cartData,
+      metadata: session.metadata,
+      created_at: session.createdAt,
+      expires_at: session.expiresAt,
+    });
+    if (error) {
+      console.error(
+        "❌ Supabase insert error (falling back to memory):",
+        error.message,
+      );
+      paymentSessionsFallback.set(session.id, session);
     }
-  }, 15 * 60 * 1000);
-
+  } else {
+    paymentSessionsFallback.set(session.id, session);
+    // Legacy auto-expire
+    setTimeout(
+      () => {
+        const s = paymentSessionsFallback.get(session.id);
+        if (s && s.status === "pending") {
+          s.status = "expired";
+          paymentSessionsFallback.set(session.id, s);
+          console.log(`⏰ Payment session ${session.id} expired (in-memory)`);
+        }
+      },
+      15 * 60 * 1000,
+    );
+  }
   return session;
 }
 
 // Helper: Get payment session
-function getPaymentSession(sessionId) {
-  return paymentSessions.get(sessionId);
+async function getPaymentSession(sessionId) {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from("payment_sessions")
+      .select("*")
+      .eq("id", sessionId)
+      .single();
+    if (error || !data) return null;
+    // Map DB columns back to the JS shape the endpoints expect
+    return mapDbToSession(data);
+  }
+  return paymentSessionsFallback.get(sessionId) || null;
 }
 
 // Helper: Update payment session
-function updatePaymentSession(sessionId, updates) {
-  const session = paymentSessions.get(sessionId);
+async function updatePaymentSession(sessionId, updates) {
+  if (supabase) {
+    // Map JS field names to DB column names
+    const dbUpdates = mapSessionToDb(updates);
+    const { data, error } = await supabase
+      .from("payment_sessions")
+      .update(dbUpdates)
+      .eq("id", sessionId)
+      .select()
+      .single();
+    if (error) {
+      console.error("❌ Supabase update error:", error.message);
+      return null;
+    }
+    return mapDbToSession(data);
+  }
+  const session = paymentSessionsFallback.get(sessionId);
   if (session) {
     const updatedSession = { ...session, ...updates };
-    paymentSessions.set(sessionId, updatedSession);
+    paymentSessionsFallback.set(sessionId, updatedSession);
     return updatedSession;
   }
   return null;
+}
+
+// ---- DB <-> JS mapping helpers ----
+function mapDbToSession(row) {
+  return {
+    id: row.id,
+    status: row.status,
+    amount: parseFloat(row.amount),
+    currency: row.currency,
+    token: row.token,
+    merchantId: row.merchant_id,
+    merchantName: row.merchant_name,
+    terminalAgentId: row.terminal_agent_id,
+    terminalOwner: row.terminal_owner,
+    paymentMethod: row.payment_method,
+    redirectUrl: row.redirect_url,
+    cartData: row.cart_data,
+    metadata: row.metadata || {},
+    createdAt: row.created_at,
+    expiresAt: row.expires_at,
+    completedAt: row.completed_at,
+    cancelledAt: row.cancelled_at,
+    cancelReason: row.cancel_reason,
+    transactionHash: row.transaction_hash,
+    revolutPaymentId: row.revolut_payment_id,
+    userWallet: row.user_wallet,
+    paymentProof: row.payment_proof,
+    // Arc / Bridge Kit fields
+    rail: row.rail,
+    arcEnabled: row.arc_enabled,
+    arcSourceChainId: row.arc_source_chain_id,
+    arcDestinationChainId: row.arc_destination_chain_id,
+    arcIntermediateChainId: row.arc_intermediate_chain_id,
+    arcUsdcAddress: row.arc_usdc_address,
+    cctpSourceDomain: row.cctp_source_domain,
+    cctpDestinationDomain: row.cctp_destination_domain,
+    cctpIntermediateDomain: row.cctp_intermediate_domain,
+    bridgeTransferId: row.bridge_transfer_id,
+    attestationStatus: row.attestation_status,
+    sourceTxHash: row.source_tx_hash,
+    arcTxHash: row.arc_tx_hash,
+    destinationTxHash: row.destination_tx_hash,
+    arcMetadata: row.arc_metadata,
+  };
+}
+
+function mapSessionToDb(updates) {
+  const map = {
+    status: "status",
+    completedAt: "completed_at",
+    cancelledAt: "cancelled_at",
+    cancelReason: "cancel_reason",
+    transactionHash: "transaction_hash",
+    revolutPaymentId: "revolut_payment_id",
+    userWallet: "user_wallet",
+    paymentProof: "payment_proof",
+    rail: "rail",
+    arcEnabled: "arc_enabled",
+    arcSourceChainId: "arc_source_chain_id",
+    arcDestinationChainId: "arc_destination_chain_id",
+    arcIntermediateChainId: "arc_intermediate_chain_id",
+    arcUsdcAddress: "arc_usdc_address",
+    cctpSourceDomain: "cctp_source_domain",
+    cctpDestinationDomain: "cctp_destination_domain",
+    cctpIntermediateDomain: "cctp_intermediate_domain",
+    bridgeTransferId: "bridge_transfer_id",
+    attestationStatus: "attestation_status",
+    sourceTxHash: "source_tx_hash",
+    arcTxHash: "arc_tx_hash",
+    destinationTxHash: "destination_tx_hash",
+    arcMetadata: "arc_metadata",
+  };
+  const dbObj = {};
+  for (const [jsKey, value] of Object.entries(updates)) {
+    const dbKey = map[jsKey] || jsKey; // pass-through unknown keys as-is
+    dbObj[dbKey] = value;
+  }
+  return dbObj;
 }
 
 // Helper: Verify blockchain transaction (simulated)
@@ -241,7 +387,7 @@ app.post("/api/revolut/create-bank-order", async (req, res) => {
         order.payment_url ||
         `https://merchant.revolut.com/pay/${order.public_id || order.id}`;
       console.log(
-        "🌐 PRODUCTION MODE: Using API payment_url or constructed production URL"
+        "🌐 PRODUCTION MODE: Using API payment_url or constructed production URL",
       );
     }
 
@@ -338,7 +484,7 @@ app.post("/api/revolut/process-virtual-card-payment", async (req, res) => {
         `/api/1.0/orders/${order.id}/capture`,
         {
           method: "POST",
-        }
+        },
       );
     }
 
@@ -446,13 +592,13 @@ app.post("/api/revolut/mock/create-virtual-card", async (req, res) => {
       (card) =>
         card.label &&
         card.label.includes(`Agent_${agentId}`) &&
-        card.state === "ACTIVE"
+        card.state === "ACTIVE",
     );
 
     if (existingCard) {
       console.log(
         "⚠️ MOCK: Agent already has an active card:",
-        existingCard.card_id
+        existingCard.card_id,
       );
       return res.status(409).json({
         success: false,
@@ -560,7 +706,7 @@ app.get(
         (card) =>
           card.label &&
           card.label.includes(`Agent_${agentId}`) &&
-          card.state === "ACTIVE"
+          card.state === "ACTIVE",
       );
 
       if (primaryCard) {
@@ -581,7 +727,7 @@ app.get(
     } catch (error) {
       res.status(500).json({ success: false, error: error.message });
     }
-  }
+  },
 );
 
 /**
@@ -630,7 +776,7 @@ app.post("/api/revolut/create-virtual-card", async (req, res) => {
       (card) =>
         card.label &&
         card.label.includes(`Agent_${agentId}`) &&
-        card.state === "ACTIVE"
+        card.state === "ACTIVE",
     );
 
     if (agentActiveCard) {
@@ -854,7 +1000,7 @@ app.get("/api/revolut/virtual-cards/agent/:agentId", async (req, res) => {
 
     // Filter by agent ID (based on label)
     const agentCards = cards.filter(
-      (card) => card.label && card.label.includes(`Agent_${agentId}`)
+      (card) => card.label && card.label.includes(`Agent_${agentId}`),
     );
 
     res.json({
@@ -897,7 +1043,7 @@ app.get(
         (card) =>
           card.label &&
           card.label.includes(`Agent_${agentId}`) &&
-          card.state === "ACTIVE"
+          card.state === "ACTIVE",
       );
 
       // Return the first active card (or null if none)
@@ -929,7 +1075,7 @@ app.get(
       console.error("❌ Failed to get primary card:", error);
       res.status(500).json({ success: false, error: error.message });
     }
-  }
+  },
 );
 
 // ==================== HELPER FUNCTIONS ====================
@@ -949,7 +1095,7 @@ async function handleRevolutWebhook(event) {
       console.log(
         "💰 Amount:",
         orderData.order_amount?.value || orderData.amount,
-        orderData.order_amount?.currency || orderData.currency
+        orderData.order_amount?.currency || orderData.currency,
       );
       // TODO: Update database
       // TODO: Notify AR Viewer via WebSocket
@@ -970,7 +1116,7 @@ async function handleRevolutWebhook(event) {
     case "ORDER_AUTHORISED":
       console.log(
         "🔐 Payment AUTHORISED (pending capture):",
-        orderData.id || orderData.order_id
+        orderData.id || orderData.order_id,
       );
       // TODO: Update database
       break;
@@ -1178,7 +1324,7 @@ app.post("/api/agents/deploy", async (req, res) => {
     console.log(`   Type: ${agentType}`);
     console.log(`   Dynamic Payment: ${isTerminal}`);
     console.log(
-      `   Revenue Split: ${agent.economics.revenueSharing.userPercentage}% user`
+      `   Revenue Split: ${agent.economics.revenueSharing.userPercentage}% user`,
     );
 
     res.json({
@@ -1373,7 +1519,7 @@ app.post("/api/payments/terminal/create-session", async (req, res) => {
     };
 
     // Store session
-    storePaymentSession(session);
+    await storePaymentSession(session);
 
     console.log(`✅ Payment session created: ${session.id}`);
     console.log(`   Terminal: ${terminalAgentId}`);
@@ -1417,7 +1563,7 @@ app.get("/api/payments/terminal/session/:sessionId", async (req, res) => {
 
     console.log(`📥 Get Payment Session: ${sessionId}`);
 
-    const session = getPaymentSession(sessionId);
+    const session = await getPaymentSession(sessionId);
 
     if (!session) {
       return res.status(404).json({
@@ -1429,7 +1575,7 @@ app.get("/api/payments/terminal/session/:sessionId", async (req, res) => {
     // Check if expired
     if (new Date() > new Date(session.expiresAt)) {
       session.status = "expired";
-      updatePaymentSession(sessionId, { status: "expired" });
+      await updatePaymentSession(sessionId, { status: "expired" });
 
       return res.status(410).json({
         success: false,
@@ -1479,7 +1625,7 @@ app.post("/api/payments/terminal/complete", async (req, res) => {
       userWallet,
     } = req.body;
 
-    const session = getPaymentSession(sessionId);
+    const session = await getPaymentSession(sessionId);
 
     if (!session) {
       return res.status(404).json({
@@ -1498,7 +1644,7 @@ app.post("/api/payments/terminal/complete", async (req, res) => {
 
     // Check if expired
     if (new Date() > new Date(session.expiresAt)) {
-      updatePaymentSession(sessionId, { status: "expired" });
+      await updatePaymentSession(sessionId, { status: "expired" });
 
       return res.status(410).json({
         success: false,
@@ -1513,13 +1659,13 @@ app.post("/api/payments/terminal/complete", async (req, res) => {
       verified = await verifyBlockchainTransaction(
         transactionHash,
         session.amount,
-        session.token
+        session.token,
       );
     } else if (session.paymentMethod.startsWith("revolut_")) {
       verified = await verifyRevolutPayment(
         revolutPaymentId,
         session.amount,
-        session.currency
+        session.currency,
       );
     }
 
@@ -1531,7 +1677,7 @@ app.post("/api/payments/terminal/complete", async (req, res) => {
     }
 
     // Update session
-    const updatedSession = updatePaymentSession(sessionId, {
+    const updatedSession = await updatePaymentSession(sessionId, {
       status: "completed",
       completedAt: new Date().toISOString(),
       transactionHash,
@@ -1591,7 +1737,7 @@ app.post("/api/payments/terminal/cancel/:sessionId", async (req, res) => {
 
     console.log(`📥 Cancel Payment Session: ${sessionId}`);
 
-    const session = getPaymentSession(sessionId);
+    const session = await getPaymentSession(sessionId);
 
     if (!session) {
       return res.status(404).json({
@@ -1609,7 +1755,7 @@ app.post("/api/payments/terminal/cancel/:sessionId", async (req, res) => {
     }
 
     // Update session
-    updatePaymentSession(sessionId, {
+    await updatePaymentSession(sessionId, {
       status: "cancelled",
       cancelledAt: new Date().toISOString(),
       cancelReason: reason || "User cancelled",
@@ -1631,6 +1777,209 @@ app.post("/api/payments/terminal/cancel/:sessionId", async (req, res) => {
     });
   }
 });
+
+// ==================== BRIDGE KIT / CCTP COORDINATION ====================
+
+/**
+ * Start Bridge Kit flow for a payment session
+ * Sets rail=bridgekit, arc_enabled=true, pre-fills Arc routing fields,
+ * and returns a route plan the client (AR Viewer) will execute with user wallet signatures.
+ */
+app.post(
+  "/api/payments/terminal/:sessionId/bridgekit/start",
+  async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const {
+        sourceChainId,
+        destinationChainId,
+        sourceAddress,
+        destinationAddress,
+      } = req.body;
+
+      console.log(`🌉 Bridge Kit start for session: ${sessionId}`);
+
+      const session = await getPaymentSession(sessionId);
+
+      if (!session) {
+        return res
+          .status(404)
+          .json({ success: false, error: "Payment session not found" });
+      }
+
+      if (session.status !== "pending") {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            error: "Session not in pending state",
+            status: session.status,
+          });
+      }
+
+      // Arc Testnet constants
+      const ARC_CHAIN_ID = 5042002;
+      const ARC_CCTP_DOMAIN = 26;
+      const ARC_USDC_ADDRESS = "0x3600000000000000000000000000000000000000";
+
+      // Domain ID lookup (Circle CCTP testnet domains)
+      const domainMap = {
+        11155111: 0, // Ethereum Sepolia
+        84532: 6, // Base Sepolia
+        43113: 1, // Avalanche Fuji
+        5042002: 26, // Arc Testnet
+      };
+
+      const srcDomain = domainMap[sourceChainId] ?? null;
+      const dstDomain = domainMap[destinationChainId] ?? null;
+
+      // Persist Arc routing proof fields
+      await updatePaymentSession(sessionId, {
+        rail: "bridgekit",
+        arcEnabled: true,
+        arcSourceChainId: sourceChainId || null,
+        arcDestinationChainId: destinationChainId || null,
+        arcIntermediateChainId: ARC_CHAIN_ID,
+        arcUsdcAddress: ARC_USDC_ADDRESS,
+        cctpSourceDomain: srcDomain,
+        cctpDestinationDomain: dstDomain,
+        cctpIntermediateDomain: ARC_CCTP_DOMAIN,
+      });
+
+      // Return route plan for client
+      res.json({
+        success: true,
+        routePlan: {
+          sessionId,
+          amount: session.amount,
+          token: session.token || "USDC",
+          rail: "bridgekit",
+          source: {
+            chainId: sourceChainId,
+            domainId: srcDomain,
+            address: sourceAddress || null,
+          },
+          intermediate: {
+            chainId: ARC_CHAIN_ID,
+            domainId: ARC_CCTP_DOMAIN,
+            usdcAddress: ARC_USDC_ADDRESS,
+            name: "Arc Testnet",
+            rpc: "https://rpc.testnet.arc.network",
+            explorer: "https://testnet.arcscan.app",
+          },
+          destination: {
+            chainId: destinationChainId,
+            domainId: dstDomain,
+            address: destinationAddress || session.terminalOwner || null,
+          },
+          // Fields the client must report back via /bridgekit/update
+          requiredFields: [
+            "bridge_transfer_id",
+            "source_tx_hash",
+            "arc_tx_hash",
+            "destination_tx_hash",
+            "attestation_status",
+            "step",
+            "outcome",
+          ],
+        },
+      });
+    } catch (error) {
+      console.error("❌ Bridge Kit start error:", error);
+      res
+        .status(500)
+        .json({
+          success: false,
+          error: "Failed to start Bridge Kit flow",
+          message: error.message,
+        });
+    }
+  },
+);
+
+/**
+ * Update Bridge Kit progress for a payment session
+ * Called by the client to report tx hashes, transfer IDs, attestation status, and outcome.
+ */
+app.post(
+  "/api/payments/terminal/:sessionId/bridgekit/update",
+  async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const {
+        bridge_transfer_id,
+        attestation_status,
+        source_tx_hash,
+        arc_tx_hash,
+        destination_tx_hash,
+        step,
+        outcome,
+        metadata: clientMeta,
+      } = req.body;
+
+      console.log(
+        `🌉 Bridge Kit update for session: ${sessionId}, step=${step}, outcome=${outcome}`,
+      );
+
+      const session = await getPaymentSession(sessionId);
+
+      if (!session) {
+        return res
+          .status(404)
+          .json({ success: false, error: "Payment session not found" });
+      }
+
+      // Build incremental update
+      const updates = {};
+
+      if (bridge_transfer_id) updates.bridgeTransferId = bridge_transfer_id;
+      if (attestation_status) updates.attestationStatus = attestation_status;
+      if (source_tx_hash) updates.sourceTxHash = source_tx_hash;
+      if (arc_tx_hash) updates.arcTxHash = arc_tx_hash;
+      if (destination_tx_hash) updates.destinationTxHash = destination_tx_hash;
+
+      // Merge client metadata into arc_metadata JSONB
+      if (clientMeta || step) {
+        const existingMeta = session.arcMetadata || {};
+        updates.arcMetadata = {
+          ...existingMeta,
+          ...(clientMeta || {}),
+          lastStep: step || existingMeta.lastStep,
+          lastUpdated: new Date().toISOString(),
+        };
+      }
+
+      // Map outcome to session status
+      if (outcome === "completed") {
+        updates.status = "completed";
+        updates.completedAt = new Date().toISOString();
+      } else if (outcome === "failed") {
+        updates.status = "failed";
+      }
+      // else: keep current status (still in progress)
+
+      const updatedSession = await updatePaymentSession(sessionId, updates);
+
+      res.json({
+        success: true,
+        sessionId,
+        status: updatedSession?.status || session.status,
+        arc_enabled: true,
+        arc_intermediate_chain_id: 5042002,
+        cctp_intermediate_domain: 26,
+      });
+    } catch (error) {
+      console.error("❌ Bridge Kit update error:", error);
+      res
+        .status(500)
+        .json({
+          success: false,
+          error: "Failed to update Bridge Kit progress",
+          message: error.message,
+        });
+    }
+  },
+);
 
 // Revolut Webhook Handler
 app.post("/api/revolut/webhook", async (req, res) => {
@@ -1707,6 +2056,10 @@ app.listen(PORT, () => {
    GET    /api/payments/terminal/session/:sessionId (get session details)
    POST   /api/payments/terminal/complete (complete payment)
    POST   /api/payments/terminal/cancel/:sessionId (cancel session)
+
+🌉 Bridge Kit / CCTP Coordination (Arc Integration):
+   POST   /api/payments/terminal/:sessionId/bridgekit/start (init Arc route plan)
+   POST   /api/payments/terminal/:sessionId/bridgekit/update (report progress)
 
 📞 Other Endpoints:
    POST   /api/revolut/process-virtual-card-payment
