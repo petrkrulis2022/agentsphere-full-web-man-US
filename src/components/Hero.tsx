@@ -32,7 +32,7 @@ const Hero = () => {
       try {
         const { supabase } = await import("../lib/supabase");
         const { count, error } = await supabase
-          .from("agents")
+          .from("deployed_objects")
           .select("*", { count: "exact", head: true });
 
         if (!error && count !== null) {
@@ -174,10 +174,10 @@ const Hero = () => {
     },
     {
       id: "experience",
-      title: "💳 Pay With CubePay",
+      title: "💳 CubePay",
       subtitle: "Make Payment",
       description: "Experience full AR with camera and real-world AI agents",
-      buttonText: "Pay With CubePay",
+      buttonText: "CubePay",
       buttonIcon: <Wallet className="h-4 w-4" />,
       link: "https://admirable-hamster-b9c370.netlify.app/",
       external: true,
@@ -206,15 +206,15 @@ const Hero = () => {
       description: "Find nearby virtual ATMs for cash access",
       buttonText: "Find Virtual ATMs",
       buttonIcon: <MapPin className="h-4 w-4" />,
-      link: "/atms",
-      external: false,
+      link: "http://localhost:5176/agent-map?filter=artm_terminal",
+      external: true,
     },
     {
       id: "terminal",
-      title: "💳 Pay With Terminal",
+      title: "💳 Agents in Range",
       subtitle: "Terminal Payment",
       description: "Use your payment terminal for transactions",
-      buttonText: "Pay With Your Terminal",
+      buttonText: "Agents in Range",
       buttonIcon: <CreditCard className="h-4 w-4" />,
       link: "/terminal",
       external: false,
@@ -299,13 +299,15 @@ const Hero = () => {
           </Link>
 
           {/* Agent Map */}
-          <Link
-            to="/map"
+          <a
+            href="http://localhost:5176/agent-map"
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-all duration-200 group"
           >
             <Map className="h-6 w-6 text-green-400 mb-2 group-hover:scale-110 transition-transform" />
             <span className="text-xs text-gray-300 font-medium">Agent Map</span>
-          </Link>
+          </a>
 
           {/* Database */}
           <Link

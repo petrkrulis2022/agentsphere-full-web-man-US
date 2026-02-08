@@ -1438,19 +1438,22 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
         // DYNAMIC PAYMENT DATA - WITH FEE TYPE SUPPORT
         fee_type:
           agentType === "pos_terminal" ||
-          agentType === "trailing_payment_terminal"
+          agentType === "trailing_payment_terminal" ||
+          agentType === "my_payment_terminal"
             ? feeType
             : "fixed", // Add fee_type field
         interaction_fee_amount:
           (agentType === "pos_terminal" ||
-            agentType === "trailing_payment_terminal") &&
+            agentType === "trailing_payment_terminal" ||
+            agentType === "my_payment_terminal") &&
           feeType === "dynamic"
             ? null
             : parseFloat(interactionFee.toString()), // null for dynamic payment terminals, amount for others
         interaction_fee_token: selectedToken, // "USDh" or "USDC"
         interaction_fee_usdfc:
           (agentType === "pos_terminal" ||
-            agentType === "trailing_payment_terminal") &&
+            agentType === "trailing_payment_terminal" ||
+            agentType === "my_payment_terminal") &&
           feeType === "dynamic"
             ? null
             : interactionFee, // Legacy field, null for dynamic
@@ -2948,7 +2951,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
                   {/* Fee Type Selector for Payment Terminals */}
                   {(agentType === "pos_terminal" ||
-                    agentType === "trailing_payment_terminal") && (
+                    agentType === "trailing_payment_terminal" ||
+                    agentType === "my_payment_terminal") && (
                     <div className="mb-4 space-y-3">
                       <div className="flex gap-4">
                         <label className="flex items-center space-x-2 cursor-pointer">
@@ -2987,7 +2991,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
 
                   {/* Dynamic Fee Info Box */}
                   {(agentType === "pos_terminal" ||
-                    agentType === "trailing_payment_terminal") &&
+                    agentType === "trailing_payment_terminal" ||
+                    agentType === "my_payment_terminal") &&
                   feeType === "dynamic" ? (
                     <div className="w-full px-4 py-3 bg-blue-500/20 border border-blue-500/30 rounded-lg">
                       <p className="text-sm text-blue-200 font-medium">
@@ -3019,7 +3024,8 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                       />
                       <p className="text-xs text-gray-400 mt-1">
                         {agentType === "pos_terminal" ||
-                        agentType === "trailing_payment_terminal"
+                        agentType === "trailing_payment_terminal" ||
+                        agentType === "my_payment_terminal"
                           ? "Fixed amount for this payment terminal"
                           : "This exact amount will be stored and displayed in agent cards"}
                       </p>
@@ -3031,12 +3037,14 @@ const DeployObject = ({ supabase }: DeployObjectProps) => {
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Revenue Sharing{" "}
                     {agentType === "pos_terminal" ||
-                    agentType === "trailing_payment_terminal"
+                    agentType === "trailing_payment_terminal" ||
+                    agentType === "my_payment_terminal"
                       ? "(100% to you)"
                       : `(${revenueSharing}% to you)`}
                   </label>
                   {agentType === "pos_terminal" ||
-                  agentType === "trailing_payment_terminal" ? (
+                  agentType === "trailing_payment_terminal" ||
+                  agentType === "my_payment_terminal" ? (
                     <div className="w-full px-4 py-3 bg-green-500/20 border border-green-500/30 rounded-lg">
                       <p className="text-sm text-green-200 font-medium">
                         ✓ 100% Revenue - No Platform Fee
